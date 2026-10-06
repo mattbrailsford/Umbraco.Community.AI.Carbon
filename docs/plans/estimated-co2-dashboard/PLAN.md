@@ -122,7 +122,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 - [x] **T17** — By-feature table. `aicarbon-feature-table`, including the "switched off" note.
   story: S5 · depends-on: T13 · parallel-group: C
 
-- [ ] **T18** — Method panel. `aicarbon-method-panel` sidebar modal opened from the header;
+- [x] **T18** — Method panel. `aicarbon-method-panel` sidebar modal opened from the header;
   shows zone, override flag, data version, what is and isn't counted, EcoLogits credit and the
   unofficial notice.
   story: S7 · depends-on: T13 · parallel-group: C
