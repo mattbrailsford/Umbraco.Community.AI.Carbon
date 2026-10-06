@@ -12,9 +12,8 @@ import {
     PointElement,
     Tooltip,
 } from "chart.js";
-import { color } from "chart.js/helpers";
 import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
-import { buildTrendChartConfig, type TrendChartColors, type TrendChartConfiguration } from "./trend-chart-config.js";
+import { bandFillColor, buildTrendChartConfig, type TrendChartColors, type TrendChartConfiguration } from "./trend-chart-config.js";
 import { describeTrend } from "./trend-format.js";
 
 // Only what a line chart with a filled band uses, so the rest of Chart.js stays out of the bundle.
@@ -93,10 +92,10 @@ export class AICarbonTrendChartElement extends UmbLitElement {
     #resolveColors(): TrendChartColors {
         const style = getComputedStyle(this);
         const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
-        const line = read("--uui-color-default", "#283a97");
+        const line = read("--uui-color-default-emphasis", "#2d42ab");
         return {
             line,
-            fill: color(line).alpha(0.25).rgbString(),
+            fill: bandFillColor(line),
             text: read("--uui-color-text-alt", "#68676b"),
             grid: read("--uui-color-border", "#d8d7d9"),
         };

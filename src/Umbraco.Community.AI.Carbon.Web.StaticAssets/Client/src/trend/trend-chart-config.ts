@@ -1,4 +1,5 @@
 import type { ChartConfiguration } from "chart.js";
+import { color } from "chart.js/helpers";
 import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
 import { co2eAxisUnit, formatCo2eAxisValue, formatCo2eRange } from "../estimate/format-co2.js";
 import { toTrendBand } from "../estimate/trend-dataset.js";
@@ -19,6 +20,13 @@ export interface TrendChartColors {
 }
 
 const MAX_X_TICKS = 12;
+
+/** The band fill: the line colour, translucent. If the colour can't be parsed, the line colour itself is used. */
+export function bandFillColor(line: string): string {
+    const parsed = color(line);
+    // An unparseable colour has no rgb value, and alpha() on it would throw.
+    return parsed.valid ? (parsed.alpha(0.25).rgbString() ?? line) : line;
+}
 
 /**
  * The Chart.js configuration for the min-max band: a lower line (min) and an upper line (max) with
