@@ -44,6 +44,12 @@ describe("Feature: aicarbon-feature-table element", () => {
         element.remove();
     });
 
+    it("renders nothing when the breakdown is unavailable and analytics state is unknown", async () => {
+        const element = await render({ available: false, items: [] }, undefined);
+        expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();
+        element.remove();
+    });
+
     it("renders nothing when available but there are no items", async () => {
         const element = await render({ available: true, items: [] }, true);
         expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();

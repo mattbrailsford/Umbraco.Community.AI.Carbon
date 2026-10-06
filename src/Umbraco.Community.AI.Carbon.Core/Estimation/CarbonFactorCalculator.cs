@@ -4,7 +4,7 @@
 //
 // Ported from EcoLogits 0.11.2 ecologits/impacts/llm.py (and the range arithmetic in
 // ecologits/utils/range_value.py).
-// Source: https://github.com/genai-impact/ecologits/blob/0.11.2/ecologits/impacts/llm.py
+// Source: https://github.com/mlco2/ecologits/blob/0.11.2/ecologits/impacts/llm.py
 //
 // Changes: only energy and GWP are ported (not water, ADPe or primary energy); the measured
 // request latency cap is dropped; the model is expressed per output token and per request.

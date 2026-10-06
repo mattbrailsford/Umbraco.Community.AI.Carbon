@@ -8,9 +8,11 @@
  */
 import type { UmbExtensionManifestKind } from "@umbraco-cms/backoffice/extension-registry";
 import { manifests as localizationManifests } from "./lang/manifests.js";
+import { manifests as methodManifests } from "./method/manifests.js";
 import { manifests as workspaceViewManifests } from "./workspace-view/manifests.js";
 
 export const manifests: Array<UmbExtensionManifest | UmbExtensionManifestKind> = [
     ...localizationManifests,
+    ...methodManifests,
     ...workspaceViewManifests,
 ];

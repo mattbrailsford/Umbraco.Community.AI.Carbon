@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $dest = Join-Path $root "src/Umbraco.Community.AI.Carbon.Core/Data/EcoLogits"
-$base = "https://raw.githubusercontent.com/genai-impact/ecologits/$Tag/ecologits/data"
+$base = "https://raw.githubusercontent.com/mlco2/ecologits/$Tag/ecologits/data"
 
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 foreach ($file in "models.json", "electricity_mixes.json") {

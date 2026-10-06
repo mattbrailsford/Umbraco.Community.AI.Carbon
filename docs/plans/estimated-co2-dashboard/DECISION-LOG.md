@@ -115,3 +115,8 @@
   (T18) still summarises the zones used. Missing values show an em dash; warnings use `title` +
   aria-label on a focusable icon (the backoffice has no tooltip component).
 - 06-10-2026: (T16) Chart is a min/max band with no mid line (a midpoint is not an estimate), UTC labels, single y unit from the series max. Colour from --uui-color-default; dark contrast is 2.53:1, so T17 switches to --uui-color-default-emphasis (passes 3:1 in both themes).
+- 06-10-2026: (T18 review) Credit corrected: EcoLogits 0.11.2 is part of the CodeCarbon non-profit
+  (started by GenAI Impact); repo moved to github.com/mlco2/ecologits. Earlier plan docs that say
+  "GenAI Impact" are historical. The zone hint must say to set the zone only to where models really
+  run, so the setting can't be used to lower figures. Panel copy needs a human read before release
+  (external-facing text).

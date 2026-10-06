@@ -3,7 +3,7 @@
 // https://mozilla.org/MPL/2.0/.
 //
 // Ported from EcoLogits 0.11.2 ecologits/tracers/utils.py (PROVIDER_CONFIG_MAP).
-// Source: https://github.com/genai-impact/ecologits/blob/0.11.2/ecologits/tracers/utils.py
+// Source: https://github.com/mlco2/ecologits/blob/0.11.2/ecologits/tracers/utils.py
 
 namespace Umbraco.Community.AI.Carbon.Core.EcoLogits;
 

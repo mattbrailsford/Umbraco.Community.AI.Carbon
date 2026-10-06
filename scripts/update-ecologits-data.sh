@@ -7,7 +7,7 @@ set -euo pipefail
 TAG="${1:-0.11.2}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$ROOT/src/Umbraco.Community.AI.Carbon.Core/Data/EcoLogits"
-BASE="https://raw.githubusercontent.com/genai-impact/ecologits/$TAG/ecologits/data"
+BASE="https://raw.githubusercontent.com/mlco2/ecologits/$TAG/ecologits/data"
 
 mkdir -p "$DEST"
 for file in models.json electricity_mixes.json; do

@@ -1,6 +1,7 @@
 import { css, customElement, html, property } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
+import type { EstimateMethodModel } from "../api/types.gen.js";
 import type { EstimateRange } from "../estimate/index.js";
 
 const RANGE_OPTIONS: ReadonlyArray<{ value: EstimateRange; key: string; fallback: string }> = [
@@ -14,18 +15,26 @@ function isEstimateRange(value: unknown): value is EstimateRange {
 }
 
 /**
- * Header controls for the CO2 view: the date-range select, plus the spot for the "How is this
- * calculated?" button (T18). Dispatches `range-change` with the chosen range in `detail`.
+ * Header controls for the CO2 view: the date-range select and the "How is this calculated?" button.
+ * Dispatches `range-change` with the chosen range in `detail`, and `method-open` when the button is
+ * clicked (the button stays disabled until `method` is set, i.e. an estimate has loaded).
  */
 @customElement("aicarbon-header")
 export class AICarbonHeaderElement extends UmbLitElement {
     @property({ type: String })
     range: EstimateRange = "last7d";
 
+    @property({ attribute: false })
+    method?: EstimateMethodModel;
+
     #onChange(event: Event) {
         const value = (event.target as HTMLInputElement).value;
         if (!isEstimateRange(value)) return;
         this.dispatchEvent(new CustomEvent<EstimateRange>("range-change", { detail: value }));
+    }
+
+    #onMethodClick() {
+        this.dispatchEvent(new CustomEvent("method-open"));
     }
 
     override render() {
@@ -40,7 +49,12 @@ export class AICarbonHeaderElement extends UmbLitElement {
                 .options=${options}
                 @change=${this.#onChange}
             ></uui-select>
-            <!-- T18: the "How is this calculated?" button goes here. -->
+            <uui-button
+                look="outline"
+                label=${this.localize.termOrDefault("aiCarbon_method_button", "How is this calculated?")}
+                ?disabled=${!this.method}
+                @click=${this.#onMethodClick}
+            ></uui-button>
         `;
     }
 

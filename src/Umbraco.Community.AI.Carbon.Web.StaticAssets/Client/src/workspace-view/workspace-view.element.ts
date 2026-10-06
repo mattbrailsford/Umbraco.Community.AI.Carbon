@@ -1,5 +1,6 @@
 import { css, html, customElement, nothing, state } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
+import { UMB_MODAL_MANAGER_CONTEXT } from "@umbraco-cms/backoffice/modal";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
 import type { EstimateResponseModel } from "../api/types.gen.js";
 import {
@@ -11,6 +12,7 @@ import {
 import "../by-feature/index.js";
 import "../by-model/index.js";
 import "../header/index.js";
+import { AICARBON_METHOD_PANEL_MODAL } from "../method/index.js";
 import "../summary/index.js";
 import "../trend/index.js";
 
@@ -69,6 +71,13 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         void this.#load();
     }
 
+    async #onMethodOpen() {
+        const method = this._estimate?.method;
+        if (!method) return;
+        const modalManager = await this.getContext(UMB_MODAL_MANAGER_CONTEXT);
+        modalManager?.open(this, AICARBON_METHOD_PANEL_MODAL, { data: { method } });
+    }
+
     #renderSummary() {
         if (this._error) {
             return html`<p>${this._error.isForbidden
@@ -95,7 +104,9 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 <aicarbon-header
                     slot="header-actions"
                     .range=${this._range}
+                    .method=${this._estimate?.method}
                     @range-change=${this.#onRangeChange}
+                    @method-open=${this.#onMethodOpen}
                 ></aicarbon-header>
                 ${this._loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                 <section id="summary">${this.#renderSummary()}</section>
