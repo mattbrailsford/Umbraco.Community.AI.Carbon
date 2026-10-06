@@ -44,3 +44,11 @@
 - 06-10-2026: (T2) Assigning ProviderMappings in code replaces the defaults; config binding merges.
   Dictionary setters copy into case-insensitive dictionaries. ModelMappingTarget.TryParse trims and
   splits at the first slash; T4's ConfiguredMappingResolver must reuse it.
+- 06-10-2026: (T3) Calculator types are internal; ranges use EcoLogits' two-corner evaluation (low
+  corner + PUE.min, high corner + PUE.max). Aggregated (O, R) equals the sum of R uncapped EcoLogits
+  calls for any token split, so per-bucket totals are exact apart from the dropped latency cap.
+- 06-10-2026: (T3) Invalid hand-built models (tps <= 0, negative ttft, non-positive or inverted
+  ranges, NaN) throw ArgumentOutOfRangeException. T5 must catch this per model and report the model
+  as not estimated rather than fail the whole estimate.
+- 06-10-2026: (T3 review) Each request adds a ttft cost even with zero output, so T5/T7 should use
+  successful request counts, not totals including failures.

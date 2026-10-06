@@ -34,7 +34,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   provider mapping that names an EcoLogits provider not in the data.
   story: S3, S6 · depends-on: — · parallel-group: A
 
-- [ ] **T3** — Carbon factor calculator. Internal port of EcoLogits `impacts/llm.py` producing a
+- [x] **T3** — Carbon factor calculator. Internal port of EcoLogits `impacts/llm.py` producing a
   `CarbonFactor` (kg CO2e and kWh per output token and per request, min/max) for a model +
   provider config + electricity mix, with the latency cap dropped. Unit tests check against
   EcoLogits reference outputs within 1% and that min ≤ max.
