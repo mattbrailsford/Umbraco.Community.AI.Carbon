@@ -14,7 +14,8 @@ export class AICarbonEquivalentStripElement extends UmbLitElement {
         const text = formatEquivalent(this.equivalent, (key, fallback) => this.localize.termOrDefault(key, fallback));
         if (!text) return nothing;
         return html`<div class="strip">
-            <uui-icon name="icon-globe"></uui-icon>
+            <uui-icon name="icon-globe" aria-hidden="true"></uui-icon>
+            <span class="sr-only">${this.localize.termOrDefault("aiCarbon_equivalent_srPrefix", "Estimated CO2e is ")}</span>
             <span class="text">${text}</span>
         </div>`;
     }
@@ -34,6 +35,19 @@ export class AICarbonEquivalentStripElement extends UmbLitElement {
                 background: var(--uui-color-surface);
                 border: 1px solid var(--uui-color-border);
                 border-radius: var(--uui-border-radius);
+            }
+
+            /* Gives screen readers the context the visible text leaves implicit. */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
             }
 
             uui-icon {

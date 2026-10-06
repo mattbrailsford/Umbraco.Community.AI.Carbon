@@ -24,7 +24,7 @@ describe("Feature: formatting the everyday equivalent", () => {
             [12_345, "13,000"],
             [1.2, "1.2"],
             [0.3, "0.3"],
-        ])("shows %d km by car as %s", (amount, shown) =>
+        ])("shows %s km by car as %s", (amount, shown) =>
             expect(formatEquivalent(equivalent("CarKm", amount))).toBe(`Up to about ${shown} km by car`));
     });
 

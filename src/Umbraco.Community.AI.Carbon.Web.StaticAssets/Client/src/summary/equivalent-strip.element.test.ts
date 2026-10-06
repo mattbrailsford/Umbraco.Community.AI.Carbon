@@ -20,6 +20,11 @@ describe("Feature: aicarbon-equivalent-strip element", () => {
         expect(element.shadowRoot!.querySelector(".text")!.textContent).toBe("Up to about 6.3 phone charges");
     });
 
+    it("has a visually hidden prefix that tells screen readers what the figure is", async () => {
+        const element = await render({ kind: "PhoneCharges", amount: 6.21, basisCo2eGrams: 77, source: "S", sourceYear: 2024 });
+        expect(element.shadowRoot!.querySelector(".sr-only")!.textContent).toBe("Estimated CO2e is ");
+    });
+
     it("renders nothing when there is no equivalent", async () => {
         const element = await render(null);
         expect(element.shadowRoot!.querySelector(".strip")).toBeNull();

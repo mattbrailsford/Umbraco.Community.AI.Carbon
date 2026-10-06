@@ -56,6 +56,7 @@ export default {
         trend_daily: "daily",
         trend_summary:
             "Estimated CO2e over time, {bucket} from {from} to {to}. The highest period is up to {high}.",
+        equivalent_srPrefix: "Estimated CO2e is ",
         equivalent_phoneChargesLessThanOne: "Less than one phone charge",
         equivalent_phoneChargeOne: "Up to about {amount} phone charge",
         equivalent_phoneChargeMany: "Up to about {amount} phone charges",
