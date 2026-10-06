@@ -24,4 +24,11 @@
     <ProjectReference Include="..\..\src\Umbraco.Community.AI.Carbon.Core\Umbraco.Community.AI.Carbon.Core.csproj" />
   </ItemGroup>
 
+  <!-- Pending specs (see docs/plans/*/PLAN.md): written ahead of the code they test, excluded
+       until the builder renames them for their task. -->
+  <ItemGroup>
+    <Compile Remove="**/*.pending.cs" />
+    <None Include="**/*.pending.cs" />
+  </ItemGroup>
+
 </Project>

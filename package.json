@@ -13,7 +13,8 @@
     "scripts": {
         "build": "npm run build -w @umbraco-community/ai-carbon",
         "watch": "npm run watch -w @umbraco-community/ai-carbon",
-        "generate-client": "npm run generate-client -w @umbraco-community/ai-carbon"
+        "generate-client": "npm run generate-client -w @umbraco-community/ai-carbon",
+        "test": "npm run test -w @umbraco-community/ai-carbon"
     },
     "devDependencies": {
         "@umbraco-cms/backoffice": "^18.0.0"
