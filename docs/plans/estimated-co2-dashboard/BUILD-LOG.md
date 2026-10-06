@@ -16,3 +16,4 @@
 - 06-10-2026 T14 1701318: header + cards; orchestrator Playwright smoke (picker reloads with aligned daily window, cards render, 0 console errors); npm 45. Passed first review.
 - 06-10-2026 T15 c1fdd33: by-model table; reviewer rendered it with hand-built data (escaping, roles, keyed rows); tab smoke clean (no usage on demo yet); npm 78. Zone column kept by orchestrator decision (SPEC updated).
 - 06-10-2026 T16 b1c35d1: trend chart; orchestrator seeded 505 hourly usage rows into the demo DB and checked in the browser: visible band, cards 417-670 g CO2e, by-model rows incl. Bedrock match; npm 106. 1 fix round (band colour invisible in light theme).
+- 06-10-2026 T17 8479018: by-feature table; browser check with seeded data (Agents/Prompts/Inline chat sum to the total, no Other row); chart colour passes 3:1 in light/dark/high-contrast; npm 119. 1 fix round (not-loaded state test).

@@ -119,7 +119,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 - [x] **T16** — Trend chart. `aicarbon-trend-chart` with bundled Chart.js, min-max band per bucket.
   story: S4 · depends-on: T13 · parallel-group: C
 
-- [ ] **T17** — By-feature table. `aicarbon-feature-table`, including the "switched off" note.
+- [x] **T17** — By-feature table. `aicarbon-feature-table`, including the "switched off" note.
   story: S5 · depends-on: T13 · parallel-group: C
 
 - [ ] **T18** — Method panel. `aicarbon-method-panel` sidebar modal opened from the header;
