@@ -87,3 +87,4 @@
   Copilot, Workspace, Automate), inline-agent, prompt, inline-chat (also guardrail/judge/chat API).
   Agent selector calls carry no feature type and land in Other. v17 port: check InlineAgent exists
   in the 17.0.0 floor package.
+- 06-10-2026: (T8) Other = per-model integer residual (chat successes/tokens minus known types), then one Apply per model, so floating-point drift between bucket and summary sums can never create an Other row.

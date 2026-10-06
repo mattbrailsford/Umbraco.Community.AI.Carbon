@@ -71,7 +71,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   total.
   story: S4 · depends-on: T5
 
-- [ ] **T8** — Feature split. Query known feature types (`agent`, `prompt`, and inline types
+- [x] **T8** — Feature split. Query known feature types (`agent`, `prompt`, and inline types
   from `Umbraco.AI.Core.Constants.FeatureTypes`) with `AIUsageFilter.FeatureType` per model,
   `other = total − known`; `available: false` when the feature-type dimension is off.
   story: S5 · depends-on: T7
