@@ -81,7 +81,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   logs and falls back. Response reports the zone actually used and `zoneIsOverride`.
   story: S6 · depends-on: T8
 
-- [ ] **T10** — Result cache. 5-minute runtime-cache entry per (from, to, granularity).
+- [x] **T10** — Result cache. 5-minute runtime-cache entry per (from, to, granularity).
   story: S1 · depends-on: T9
 
 ## Backend: Management API

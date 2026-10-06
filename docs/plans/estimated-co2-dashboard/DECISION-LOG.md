@@ -94,3 +94,6 @@
   IOptionsMonitor; factor cache keyed on model + zone. Untrimmed override values count as unknown.
 - 06-10-2026: (T9 review) For T10: include the resolved zone override in the result cache key, so a
   config change isn't hidden for 5 minutes. Unknown zones log once at startup and once at first use.
+- 06-10-2026: (T10) Cache key uses exact UTC ticks. The frontend (T14/T19) must align its window to
+  the bucket boundary (hourly: `to` = start of the next UTC hour, `from` = `to` minus the range; daily:
+  next UTC midnight) or the cache never hits. Mappings are left out of the key (restart-only).

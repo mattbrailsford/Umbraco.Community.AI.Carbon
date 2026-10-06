@@ -9,3 +9,4 @@
 - 06-10-2026 T7 9fb42c3: time series; bucket rules verified against Umbraco.AI source; reviewer mutation-tested the live-bucket merge, limits and UTC normalisation; Unit 283, Integration 2. 1 fix round (window limits, live-bucket test).
 - 06-10-2026 T8 1162010: feature split; feature types checked against every Umbraco.AI producer; reviewer 50-seed rounding probe clean, mutations caught, rounding regression proven to fail on old code; Unit 305, Integration 2. 2 fix rounds (rounding Other row, pinning tests).
 - 06-10-2026 T9 b44d296: zone resolution; reviewer matched override results to EcoLogits llm_impacts to ~1e-15 and mutation-tested (12 mutations, all observable ones caught); Unit 333, Integration 2. 1 fix round (numeric pins, read-once test).
+- 06-10-2026 T10 4421ce8: cache decorator; demo site (scope validation on) resolved the decorator, second call 0.02 ms vs 167 ms; all key/expiry mutations caught; Unit 350, Integration 2. Passed first review.
