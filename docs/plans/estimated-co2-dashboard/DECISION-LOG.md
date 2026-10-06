@@ -105,3 +105,4 @@
 - 06-10-2026: (T11 review) v17 port (T21): the OpenAPI registration and schema transformer are CMS 18
   (Microsoft.AspNetCore.OpenApi) APIs; v17 needs the Swashbuckle equivalents as in Content Checks v17.
 - 06-10-2026: (T11 review) The OpenAPI document is only generated on a running site, so T12 must check it generates (generate-client against the demo site) and add a cheap test via IOpenApiDocumentProvider if it works in the test host.
+- 06-10-2026: (T12) Abort signals go to the generated client (`signal`), not only tryExecute's abortSignal, which cannot cancel hey-api promises. app.ts keeps `export * from "./index.js"` until the package gets an importmap entry or public API.

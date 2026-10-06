@@ -97,7 +97,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 
 ## Frontend
 
-- [ ] **T12** — Generated client and repository. Run `npm run generate-client` against the demo
+- [x] **T12** — Generated client and repository. Run `npm run generate-client` against the demo
   site; `Client/src/estimate/` repository wrapping the generated service; configure the client
   auth in `app.ts` `onInit` (mirroring Content Checks).
   story: S1 · depends-on: T11
