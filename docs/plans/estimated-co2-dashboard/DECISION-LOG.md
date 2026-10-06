@@ -34,3 +34,8 @@
 - 06-10-2026: Provider map moved from code to `AICarbon:ProviderMappings` (shipped defaults,
   appsettings can add or replace), and the name-match resolver applies to any provider instead of
   a named list. New Umbraco.AI providers or EcoLogits vendors no longer need a package release.
+- 06-10-2026: (T1) EcoLogits aliases are copies whose Name is the alias, as in EcoLogits'
+  model_repository.py; GetModels() includes them (348). Lookups are case-insensitive (deviation).
+  Alias with a missing target or colliding name is skipped; a count test catches it on data updates.
+- 06-10-2026: (T1) Spec ModelResolverChainTests line 62 must expect the dated name for a dated id
+  (exact match wins); T4 fixes the spec. FindModelsByName order is Provider then Name.

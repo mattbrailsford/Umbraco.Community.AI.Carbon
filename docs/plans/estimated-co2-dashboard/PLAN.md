@@ -18,7 +18,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 
 ## Backend: reference data and maths
 
-- [ ] **T1** — EcoLogits reference data repository. Embed pinned `models.json` and
+- [x] **T1** — EcoLogits reference data repository. Embed pinned `models.json` and
   `electricity_mixes.json` under `Core/Data/EcoLogits/` as embedded resources; internal
   `EcoLogitsDataRepository` loads models (dense/MoE, min/max params, tps/ttft, warnings),
   aliases, electricity mixes, and a C# port of EcoLogits' `PROVIDER_CONFIG_MAP` (zone, PUE,
