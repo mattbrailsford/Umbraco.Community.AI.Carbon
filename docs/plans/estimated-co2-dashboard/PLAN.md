@@ -66,7 +66,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   resolves it from a booted Umbraco instance; re-checked through T11's endpoint).
   story: S1 · depends-on: T5
 
-- [ ] **T7** — Time series. Per-model filtered `GetTimeSeriesAsync`, factor applied per bucket,
+- [x] **T7** — Time series. Per-model filtered `GetTimeSeriesAsync`, factor applied per bucket,
   zero-filled buckets, granularity passed through (or Umbraco.AI's auto choice). Buckets sum to
   total.
   story: S4 · depends-on: T5

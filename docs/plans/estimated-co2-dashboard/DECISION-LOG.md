@@ -78,3 +78,5 @@
   covers raised hourly retention and ~5 years daily; UI only offers 24h/7d/30d). Service throws,
   T11 returns 400. Inputs normalised to UTC. Brief NotEstimated drift when a request lands between
   the summary and series reads is accepted as transient.
+- 06-10-2026: (T7 review) T11 must reject dates that would overflow bucket arithmetic (e.g. `to` near
+  DateTime.MaxValue) before calling the service.
