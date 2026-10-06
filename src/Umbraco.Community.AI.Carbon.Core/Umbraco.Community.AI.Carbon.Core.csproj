@@ -32,4 +32,15 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <!-- EcoLogits 0.11.2 reference data (MPL-2.0, unmodified; see Data/EcoLogits/NOTICE.md). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Data\EcoLogits\models.json" LogicalName="Umbraco.Community.AI.Carbon.Core.Data.EcoLogits.models.json" />
+    <EmbeddedResource Include="Data\EcoLogits\electricity_mixes.json" LogicalName="Umbraco.Community.AI.Carbon.Core.Data.EcoLogits.electricity_mixes.json" />
+  </ItemGroup>
+
+  <!-- MPL-2.0 section 3.2: ship the notice alongside the binary distribution. -->
+  <ItemGroup>
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" Link="THIRD-PARTY-NOTICES.md" />
+  </ItemGroup>
+
 </Project>
