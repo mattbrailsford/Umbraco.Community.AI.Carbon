@@ -104,3 +104,4 @@
 - 06-10-2026: (T11) Exact 7-day windows are Hourly (Umbraco.AI rule: more than 7 days is Daily).
 - 06-10-2026: (T11 review) v17 port (T21): the OpenAPI registration and schema transformer are CMS 18
   (Microsoft.AspNetCore.OpenApi) APIs; v17 needs the Swashbuckle equivalents as in Content Checks v17.
+- 06-10-2026: (T11 review) The OpenAPI document is only generated on a running site, so T12 must check it generates (generate-client against the demo site) and add a cheap test via IOpenApiDocumentProvider if it works in the test host.

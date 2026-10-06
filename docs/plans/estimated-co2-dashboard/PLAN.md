@@ -86,7 +86,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 
 ## Backend: Management API
 
-- [ ] **T11** — wire: `GET /estimate` into the Management API. Web project gains a
+- [x] **T11** — wire: `GET /estimate` into the Management API. Web project gains a
   `Umbraco.AI.Web` package reference (range in `Directory.Packages.props`), its own OpenAPI
   document `ai-carbon-management`, controller at `/umbraco/ai-carbon/management/api/v1/estimate`
   with `[Authorize(Policy = AIAuthorizationPolicies.SectionAccessAI)]`, request validation
