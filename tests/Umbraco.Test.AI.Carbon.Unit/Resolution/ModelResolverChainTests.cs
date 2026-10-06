@@ -1,4 +1,5 @@
 // S3 (AC1–AC10) — Model resolver chain. Task: T4.
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -58,8 +59,8 @@ public class ModelResolverChainTests
             => Assert.That(DefaultChain().Resolve("google", "gemini-2.5-flash")?.Provider, Is.EqualTo("google_genai"));
 
         [Test]
-        public void MatchesADatedIdThroughAnEcoLogitsAlias()
-            => Assert.That(DefaultChain().Resolve("anthropic", "claude-sonnet-4-5-20250929")?.Name, Is.EqualTo("claude-sonnet-4-5"));
+        public void MatchesTheDatedModelExactly()
+            => Assert.That(DefaultChain().Resolve("anthropic", "claude-sonnet-4-5-20250929")?.Name, Is.EqualTo("claude-sonnet-4-5-20250929"));
     }
 
     [TestFixture]
@@ -67,7 +68,7 @@ public class ModelResolverChainTests
     {
         [Test]
         public void StripsBedrockRegionAndVersionDecorations()
-            => Assert.That(DefaultChain().Resolve("amazon", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")?.Name, Is.EqualTo("claude-sonnet-4-5"));
+            => Assert.That(DefaultChain().Resolve("amazon", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")?.Name, Is.EqualTo("claude-sonnet-4-5-20250929"));
 
         [Test]
         public void StripsASlashVendorPrefix()
@@ -186,5 +187,86 @@ public class ModelResolverChainTests
         [Test]
         public void ResolvesToNothing()
             => Assert.That(DefaultChain().Resolve("zai", "glm-unknown-9000"), Is.Null);
+    }
+
+    [TestFixture]
+    public class GivenAMappingBoundFromJsonForABedrockId
+    {
+        private static AICarbonModelResolverCollection ChainFor(string json)
+        {
+            var config = new ConfigurationBuilder()
+                .AddJsonStream(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json)))
+                .Build();
+            var options = new AICarbonOptions();
+            config.GetSection(AICarbonOptions.SectionName).Bind(options);
+            return DefaultChain(options.ModelMappings);
+        }
+
+        private const string Target = "huggingface_hub/meta-llama/Meta-Llama-3.1-70B-Instruct";
+
+        [Test]
+        public void ColonFreeKeyWithVersionMatches()
+            => Assert.That(
+                ChainFor("{\"AICarbon\":{\"ModelMappings\":{\"meta.llama3-1-70b-instruct-v1\":\"" + Target + "\"}}}")
+                    .Resolve("amazon", "meta.llama3-1-70b-instruct-v1:0")?.Name,
+                Is.EqualTo("meta-llama/Meta-Llama-3.1-70B-Instruct"));
+
+        [Test]
+        public void KeyWithoutAnyVersionMatches()
+            => Assert.That(
+                ChainFor("{\"AICarbon\":{\"ModelMappings\":{\"meta.llama3-1-70b-instruct\":\"" + Target + "\"}}}")
+                    .Resolve("amazon", "meta.llama3-1-70b-instruct-v1:0")?.Name,
+                Is.EqualTo("meta-llama/Meta-Llama-3.1-70B-Instruct"));
+
+        [Test]
+        public void FullyStrippedKeyMatches()
+            => Assert.That(
+                ChainFor("{\"AICarbon\":{\"ModelMappings\":{\"llama3-1-70b-instruct\":\"" + Target + "\"}}}")
+                    .Resolve("amazon", "us.meta.llama3-1-70b-instruct-v1:0")?.Name,
+                Is.EqualTo("meta-llama/Meta-Llama-3.1-70B-Instruct"));
+    }
+
+    [TestFixture]
+    public class GivenACustomResolverThatThrows
+    {
+        private Mock<ILogger<AICarbonModelResolverCollection>> _logger = null!;
+        private AICarbonModelResolverCollection _chain = null!;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _logger = new Mock<ILogger<AICarbonModelResolverCollection>>();
+            var throwing = new Mock<IAICarbonModelResolver>();
+            throwing.Setup(r => r.Resolve(It.IsAny<AICarbonModelResolutionContext>())).Throws<InvalidOperationException>();
+            var data = EcoLogitsDataRepository.LoadEmbedded();
+            var options = Microsoft.Extensions.Options.Options.Create(new AICarbonOptions());
+            List<IAICarbonModelResolver> resolvers =
+            [
+                throwing.Object,
+                new ConfiguredMappingResolver(data, options, Mock.Of<ILogger<ConfiguredMappingResolver>>()),
+                new DirectProviderResolver(data, options),
+            ];
+            _chain = new AICarbonModelResolverCollection(() => resolvers, _logger.Object);
+        }
+
+        [Test]
+        public void TheBuiltInResolversStillResolve()
+            => Assert.That(_chain.Resolve("openai", "gpt-4o")?.Name, Is.EqualTo("gpt-4o"));
+
+        [Test]
+        public void TheFailureIsLoggedOnce()
+        {
+            _chain.Resolve("openai", "gpt-4o");
+            _chain.Resolve("openai", "gpt-4o-mini");
+
+            _logger.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
     }
 }

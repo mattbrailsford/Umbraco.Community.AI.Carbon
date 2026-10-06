@@ -148,7 +148,7 @@ AC1 — Direct provider match
 AC2 — Hosted name normalised
   Given provider `amazon` and model id `us.anthropic.claude-sonnet-4-5-20250929-v1:0`
   When  the model is resolved
-  Then  it is matched to the Anthropic `claude-sonnet-4-5` model
+  Then  it is matched to the Anthropic `claude-sonnet-4-5-20250929` model (exact dated name wins)
 
 AC3 — Slash-prefixed name normalised
   Given provider `openrouter` and model id `openai/gpt-4o`

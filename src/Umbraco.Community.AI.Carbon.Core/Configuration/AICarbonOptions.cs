@@ -37,6 +37,12 @@ public sealed class AICarbonOptions
     /// Gets or sets explicit model mappings: an Umbraco.AI model id to <c>ecologitsProvider/modelName</c>
     /// (for example <c>"my-gpt-deployment": "openai/gpt-4o"</c>). Keys are case-insensitive:
     /// assigning a dictionary copies it into a case-insensitive one.
+    /// <para>
+    /// .NET configuration treats <c>:</c> as a section separator, so a key containing one (a Bedrock id such as
+    /// <c>meta.llama3-1-70b-instruct-v1:0</c>) is silently dropped when bound from JSON or environment variables.
+    /// Leave the <c>:N</c> suffix off the key (<c>meta.llama3-1-70b-instruct-v1</c>); a lookup that misses the
+    /// exact id retries with the version suffix removed, then with every hosting decoration removed.
+    /// </para>
     /// </summary>
     public Dictionary<string, string> ModelMappings
     {
