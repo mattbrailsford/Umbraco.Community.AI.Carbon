@@ -2,7 +2,14 @@ import { css, html, customElement, nothing, state } from "@umbraco-cms/backoffic
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
 import type { EstimateResponseModel } from "../api/types.gen.js";
-import { alignedWindow, AICarbonEstimateRepository, type AICarbonEstimateError } from "../estimate/index.js";
+import {
+    alignedWindow,
+    AICarbonEstimateRepository,
+    type AICarbonEstimateError,
+    type EstimateRange,
+} from "../estimate/index.js";
+import "../header/index.js";
+import "../summary/index.js";
 
 /**
  * The "CO2" tab of Umbraco.AI's Analytics workspace. Owns loading and the estimate/error/loading
@@ -23,6 +30,9 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     @state()
     private _loading = false;
 
+    @state()
+    private _range: EstimateRange = "last7d";
+
     override connectedCallback() {
         super.connectedCallback();
         void this.#load();
@@ -31,6 +41,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     override disconnectedCallback() {
         super.disconnectedCallback();
         this.#abortController?.abort();
+        this._loading = false;
     }
 
     async #load() {
@@ -39,7 +50,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this.#abortController = abortController;
 
         this._loading = true;
-        const { from, to, granularity } = alignedWindow("last7d");
+        const { from, to, granularity } = alignedWindow(this._range);
         const { data, error } = await this.#repository.requestEstimate({ from, to, granularity }, abortController.signal);
 
         // A newer load, or leaving the tab, supersedes this one.
@@ -50,29 +61,31 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this._loading = false;
     }
 
-    #renderTotal() {
+    #onRangeChange(event: CustomEvent<EstimateRange>) {
+        this._range = event.detail;
+        void this.#load();
+    }
+
+    #renderSummary() {
         if (this._error) {
             return html`<p>${this._error.isForbidden
                 ? this.localize.termOrDefault("aiCarbon_forbidden", "You need access to the AI section to see this.")
                 : this.localize.termOrDefault("aiCarbon_loadFailed", "The estimate could not be loaded.")}</p>`;
         }
-        if (!this._estimate) return nothing;
-        const { min, max } = this._estimate.total.co2eGrams;
-        return html`<p>${this.localize.termOrDefault(
-            "aiCarbon_totalPlaceholder",
-            `${min} to ${max} g CO2e (estimated)`,
-            String(min),
-            String(max),
-        )}</p>`;
+        return html`<aicarbon-summary-cards .estimate=${this._estimate}></aicarbon-summary-cards>`;
     }
 
     override render() {
         return html`
             <uui-box>
                 <div slot="headline">${this.localize.termOrDefault("aiCarbon_headline", "Estimated CO2 emissions")}</div>
+                <aicarbon-header
+                    slot="header-actions"
+                    .range=${this._range}
+                    @range-change=${this.#onRangeChange}
+                ></aicarbon-header>
                 ${this._loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
-                <section id="header"></section>
-                <section id="summary">${this.#renderTotal()}</section>
+                <section id="summary">${this.#renderSummary()}</section>
                 <section id="trend"></section>
                 <section id="by-model"></section>
                 <section id="by-feature"></section>

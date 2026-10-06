@@ -39,3 +39,43 @@ describe("Feature: readable CO2e and energy ranges", () => {
         });
     });
 });
+
+describe("Feature: edge cases of range formatting", () => {
+    describe("Scenario: zero", () => {
+        it("shows 0 g CO2e", () => {
+            expect(formatCo2eRange({ min: 0, max: 0 })).toBe("0 g CO2e");
+        });
+
+        it("shows 0 Wh for energy", () => {
+            expect(formatEnergyRange({ min: 0, max: 0 })).toBe("0 Wh");
+        });
+    });
+
+    describe("Scenario: a tiny value", () => {
+        it("stays in milligrams with decimals", () => {
+            expect(formatCo2eRange({ min: 0.0002, max: 0.0005 })).toBe("0.2–0.5 mg CO2e");
+        });
+
+        it("stays in Wh with decimals for energy", () => {
+            expect(formatEnergyRange({ min: 0.02, max: 0.05 })).toBe("0.02–0.05 Wh");
+        });
+    });
+
+    describe("Scenario: ends of very different size", () => {
+        it("shares the unit of the larger end", () => {
+            expect(formatCo2eRange({ min: 0.5, max: 2400 })).toBe("0.0005–2.4 kg CO2e");
+        });
+    });
+
+    describe("Scenario: ends that round to the same value", () => {
+        it("shows a single value", () => {
+            expect(formatCo2eRange({ min: 1.21, max: 1.24 })).toBe("1.2 g CO2e");
+        });
+    });
+
+    describe("Scenario: three-digit values", () => {
+        it("rounds to whole numbers", () => {
+            expect(formatCo2eRange({ min: 120.4, max: 840.6 })).toBe("120–841 g CO2e");
+        });
+    });
+});

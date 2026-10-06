@@ -30,6 +30,7 @@ public class OpenApiDocumentTests : ManagementApiTest<BackOfficeController>
     protected override void CustomTestSetup(IUmbracoBuilder builder)
     {
         base.CustomTestSetup(builder);
+
         // The Web composer already registers the OpenAPI document, so AddAICarbonWeb() must not be called here
         // (a second registration makes document generation fail). The two calls below are repeats of what
         // composers do, kept to mirror EstimateEndpointTests.
