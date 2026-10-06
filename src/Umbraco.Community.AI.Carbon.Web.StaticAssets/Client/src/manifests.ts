@@ -7,5 +7,10 @@
  * instances, context tokens, singletons) will cause errors.
  */
 import type { UmbExtensionManifestKind } from "@umbraco-cms/backoffice/extension-registry";
+import { manifests as localizationManifests } from "./lang/manifests.js";
+import { manifests as workspaceViewManifests } from "./workspace-view/manifests.js";
 
-export const manifests: Array<UmbExtensionManifest | UmbExtensionManifestKind> = [];
+export const manifests: Array<UmbExtensionManifest | UmbExtensionManifestKind> = [
+    ...localizationManifests,
+    ...workspaceViewManifests,
+];
