@@ -76,7 +76,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   `other = total − known`; `available: false` when the feature-type dimension is off.
   story: S5 · depends-on: T7
 
-- [ ] **T9** — Electricity zone resolution. Provider default from the ported config map; hosting
+- [x] **T9** — Electricity zone resolution. Provider default from the ported config map; hosting
   providers use the resolved model's provider config; `ElectricityZone` override; unknown zone
   logs and falls back. Response reports the zone actually used and `zoneIsOverride`.
   story: S6 · depends-on: T8
