@@ -23,3 +23,4 @@
 - 06-10-2026 layout 5f8aa41: CO2 tab aligned with Usage dashboard plus user tweaks (edge-to-edge tables, icon-only method button, blue card icons, short status tags); side-by-side browser checks; npm 165. 2 review rounds (card a11y, unit field).
 - 06-10-2026 T22 fd58568: central figure + no status column; browser check with seeded data; npm 194. 1 fix round (central and range units could differ).
 - 06-10-2026 T23 ca5792c: equivalents backend; reviewer confirmed factors against the DESNZ 2025 spreadsheet (sheet/row/column) and the EPA page; 9 source/mapper mutations caught; Unit 373, Integration 49. 1 fix round (EPA year, source tests).
+- 06-10-2026 T24 365126b: equivalent strip + method panel box; browser check with ShowEquivalents on; reviewer fuzzed round-up over 2M values (never under, at most 10% over); npm 222, Unit 373, Integration 49. 1 fix round (rounding understated an up-to figure) + user layout change (own strip).

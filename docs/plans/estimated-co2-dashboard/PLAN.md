@@ -165,7 +165,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   amount (raw), source name, source year. Unit and integration tests; OpenAPI doc still generates.
   story: new S10 · depends-on: —
 
-- [ ] **T24** — Show the equivalent (frontend). Regenerate the client; under the CO2e card show
+- [x] **T24** — Show the equivalent (frontend). Regenerate the client; under the CO2e card show
   "Up to about {rounded amount} {phone charges / km by car / km flown}" (2 significant figures,
   localized), only when present; the method panel explains it uses the top of the estimate and
   names each factor with its source and year. Tests.
