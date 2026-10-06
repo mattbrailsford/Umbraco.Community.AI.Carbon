@@ -28,7 +28,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   (pinned tag) and `THIRD-PARTY-NOTICES.md`; ported files carry MPL-2.0 headers.
   story: S1, S3 · depends-on: — · parallel-group: A
 
-- [ ] **T2** — Options. `AICarbonOptions` bound from `AICarbon` (`ElectricityZone`,
+- [x] **T2** — Options. `AICarbonOptions` bound from `AICarbon` (`ElectricityZone`,
   `ModelMappings`, `ProviderMappings` with the five shipped defaults merged under appsettings
   entries), registered with startup validation that logs (not throws) on bad values, including a
   provider mapping that names an EcoLogits provider not in the data.

@@ -39,3 +39,8 @@
   Alias with a missing target or colliding name is skipped; a count test catches it on data updates.
 - 06-10-2026: (T1) Spec ModelResolverChainTests line 62 must expect the dated name for a dated id
   (exact match wins); T4 fixes the spec. FindModelsByName order is Provider then Name.
+- 06-10-2026: (T2) Validation runs on UmbracoApplicationStartingNotification, wrapped in a catch
+  that logs, so config mistakes never stop the site. Blank ElectricityZone counts as unset (T9 must match).
+- 06-10-2026: (T2) Assigning ProviderMappings in code replaces the defaults; config binding merges.
+  Dictionary setters copy into case-insensitive dictionaries. ModelMappingTarget.TryParse trims and
+  splits at the first slash; T4's ConfiguredMappingResolver must reuse it.
