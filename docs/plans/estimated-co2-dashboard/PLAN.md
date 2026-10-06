@@ -112,7 +112,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   energy, requests and not-estimated cards, unit scaling (mg/g/kg, Wh/kWh) with "CO2e" label.
   story: S1 (AC2–AC4, AC7), S2 (AC6) · depends-on: T13 · parallel-group: C
 
-- [ ] **T15** — By-model table. `aicarbon-model-table` with matched-as, status badges and
+- [x] **T15** — By-model table. `aicarbon-model-table` with matched-as, status badges and
   warning tooltips (plain-English text per EcoLogits warning code).
   story: S2 · depends-on: T13 · parallel-group: C
 

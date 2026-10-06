@@ -14,3 +14,4 @@
 - 06-10-2026 T12 397a2ee: client generated against the demo site; OpenAPI guard test proven to fail on a broken document; npm 24 tests, Unit 350, Integration 42. 2 fix rounds (duplicate test registration, abort signal not reaching fetch).
 - 06-10-2026 T13 9aa6dc1: CO2 tab; orchestrator Playwright smoke as admin: tab after Dashboard, aligned GET /estimate 200, 0 console errors from the package; npm 24. Passed first review.
 - 06-10-2026 T14 1701318: header + cards; orchestrator Playwright smoke (picker reloads with aligned daily window, cards render, 0 console errors); npm 45. Passed first review.
+- 06-10-2026 T15 c1fdd33: by-model table; reviewer rendered it with hand-built data (escaping, roles, keyed rows); tab smoke clean (no usage on demo yet); npm 78. Zone column kept by orchestrator decision (SPEC updated).
