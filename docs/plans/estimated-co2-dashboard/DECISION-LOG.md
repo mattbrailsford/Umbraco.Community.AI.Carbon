@@ -97,3 +97,10 @@
 - 06-10-2026: (T10) Cache key uses exact UTC ticks. The frontend (T14/T19) must align its window to
   the bucket boundary (hourly: `to` = start of the next UTC hour, `from` = `to` minus the range; daily:
   next UTC midnight) or the cache never hits. Mappings are left out of the key (restart-only).
+- 06-10-2026: (T11) Integration endpoint tests need two test-only workarounds: set Umbraco's static
+  GlobalSetupTeardown.TestConfiguration by reflection (the TestServer base has no hook) and copy
+  deps.json as Umbraco.Tests.Integration.deps.json. Both fail loudly if Umbraco changes. The fixture
+  derives from ManagementApiTest<BackOfficeController> only for its sign-in helpers.
+- 06-10-2026: (T11) Exact 7-day windows are Hourly (Umbraco.AI rule: more than 7 days is Daily).
+- 06-10-2026: (T11 review) v17 port (T21): the OpenAPI registration and schema transformer are CMS 18
+  (Microsoft.AspNetCore.OpenApi) APIs; v17 needs the Swashbuckle equivalents as in Content Checks v17.

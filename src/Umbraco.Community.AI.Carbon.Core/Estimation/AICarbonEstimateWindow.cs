@@ -25,4 +25,10 @@ internal static class AICarbonEstimateWindow
     /// <returns>The bucket size.</returns>
     public static AIUsagePeriod ResolveGranularity(AIUsagePeriod? requested, DateTime fromUtc, DateTime toUtc)
         => requested ?? ((toUtc - fromUtc).TotalDays <= 7 ? AIUsagePeriod.Hourly : AIUsagePeriod.Daily);
+
+    /// <summary>Gets the longest window <see cref="IAICarbonEstimateService"/> accepts for a bucket size.</summary>
+    /// <param name="bucket">The bucket size.</param>
+    /// <returns>The limit, in days.</returns>
+    public static int MaxWindowDays(AIUsagePeriod bucket)
+        => bucket == AIUsagePeriod.Hourly ? AICarbonEstimateLimits.MaxHourlyWindowDays : AICarbonEstimateLimits.MaxDailyWindowDays;
 }

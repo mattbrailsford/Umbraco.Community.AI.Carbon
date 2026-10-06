@@ -58,9 +58,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         }
 
         var bucket = AICarbonEstimateWindow.ResolveGranularity(granularity, from, to);
-        var maxDays = bucket == AIUsagePeriod.Hourly
-            ? AICarbonEstimateLimits.MaxHourlyWindowDays
-            : AICarbonEstimateLimits.MaxDailyWindowDays;
+        var maxDays = AICarbonEstimateWindow.MaxWindowDays(bucket);
         if ((to - from).TotalDays > maxDays)
         {
             throw new ArgumentException(
