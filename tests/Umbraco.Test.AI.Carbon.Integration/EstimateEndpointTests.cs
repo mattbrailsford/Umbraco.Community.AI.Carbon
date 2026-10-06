@@ -296,15 +296,42 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
     public void MapsTheGranularityAsAString()
         => Assert.That(MappedEstimate().RootElement.GetProperty("granularity").GetString(), Is.EqualTo("Daily"));
 
+    [Test]
+    public void MapsTheEquivalentKindAsAString()
+        => Assert.That(MappedEstimate().RootElement.GetProperty("total").GetProperty("equivalent").GetProperty("kind").GetString(), Is.EqualTo("PhoneCharges"));
+
+    [Test]
+    public void MapsTheEquivalentAmount()
+        => Assert.That(MappedEstimate().RootElement.GetProperty("total").GetProperty("equivalent").GetProperty("amount").GetDouble(), Is.EqualTo(0.36));
+
+    [Test]
+    public void MapsTheEquivalentBasis()
+        => Assert.That(MappedEstimate().RootElement.GetProperty("total").GetProperty("equivalent").GetProperty("basisCo2eGrams").GetDouble(), Is.EqualTo(4.5));
+
+    [Test]
+    public void MapsTheEquivalentSource()
+        => Assert.That(MappedEstimate().RootElement.GetProperty("total").GetProperty("equivalent").GetProperty("source").GetString(), Is.EqualTo("US EPA Greenhouse Gas Equivalencies Calculator"));
+
+    [Test]
+    public void MapsTheEquivalentSourceYear()
+        => Assert.That(MappedEstimate().RootElement.GetProperty("total").GetProperty("equivalent").GetProperty("sourceYear").GetInt32(), Is.EqualTo(2024));
+
+    [Test]
+    public void WritesNoEquivalentAsJsonNull()
+        => Assert.That(MappedEstimate(withEquivalent: false).RootElement.GetProperty("total").GetProperty("equivalent").ValueKind, Is.EqualTo(JsonValueKind.Null));
+
     private JsonElement Row(int index) => MappedEstimate().RootElement.GetProperty("byModel")[index];
 
-    private JsonDocument MappedEstimate()
+    private JsonDocument MappedEstimate(bool withEquivalent = true)
     {
+        var equivalent = withEquivalent
+            ? new AICarbonEquivalent(AICarbonEquivalentKind.PhoneCharges, 0.36, 4.5, "US EPA Greenhouse Gas Equivalencies Calculator", 2024)
+            : null;
         var estimate = new AICarbonEstimate(
             From,
             From.AddDays(1),
             AIUsagePeriod.Daily,
-            new AICarbonTotal(new RangeValue(1.5, 4.5), new RangeValue(2, 6), 12, 900),
+            new AICarbonTotal(new RangeValue(1.5, 4.5), new RangeValue(2, 6), 12, 900, equivalent),
             [
                 new AICarbonModelEstimate(
                     "openai",

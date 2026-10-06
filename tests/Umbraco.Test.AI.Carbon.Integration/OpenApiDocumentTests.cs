@@ -72,6 +72,16 @@ public class OpenApiDocumentTests : ManagementApiTest<BackOfficeController>
         Assert.That(requests.GetProperty("type").GetString(), Is.EqualTo("integer"), requests.ToString());
     }
 
+    [Test]
+    public async Task DescribesTheEquivalentOnTheTotal()
+    {
+        using var document = await GetDocumentAsync();
+        var properties = document.RootElement.GetProperty("components").GetProperty("schemas")
+            .GetProperty("EstimateTotalModel").GetProperty("properties");
+
+        Assert.That(properties.TryGetProperty("equivalent", out _), Is.True, properties.ToString());
+    }
+
     private async Task<JsonDocument> GetDocumentAsync()
     {
         var response = await Client.GetAsync(DocumentUrl);

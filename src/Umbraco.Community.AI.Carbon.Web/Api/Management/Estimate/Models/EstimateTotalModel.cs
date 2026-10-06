@@ -30,4 +30,9 @@ public class EstimateTotalModel
     /// </summary>
     [Required]
     public long OutputTokens { get; set; }
+
+    /// <summary>
+    /// The top of the emissions as an everyday equivalent; <c>null</c> when switched off or there are no emissions.
+    /// </summary>
+    public EstimateEquivalentModel? Equivalent { get; set; }
 }

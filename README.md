@@ -30,6 +30,7 @@ Everything is optional. Settings live in the `AICarbon` section of `appsettings.
 {
   "AICarbon": {
     "ElectricityZone": "SWE",
+    "ShowEquivalents": true,
     "ProviderMappings": {
       "my-company-gateway": "openai"
     },
@@ -42,6 +43,7 @@ Everything is optional. Settings live in the `AICarbon` section of `appsettings.
 ```
 
 - **`ElectricityZone`**: an [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code, such as `SWE`, or `WOR` for the world average. It is used for every estimate. When left out, each model uses its provider's default data centre location. Only set it to where your models really run, because it changes the result.
+- **`ShowEquivalents`**: `true` or `false`, off by default. When on, the dashboard also shows the top of the estimate as an everyday equivalent (smartphone charges, kilometres by car or kilometres flown). The sources are named in the "How is this calculated?" panel.
 - **`ProviderMappings`**: maps an Umbraco.AI provider id to an EcoLogits provider key, for example `mistralai`. The keys are `openai`, `anthropic`, `google_genai`, `mistralai`, `huggingface_hub` and `cohere`. The package already maps `openai`, `anthropic`, `google`, `mistral` and `huggingface`. Your entries add to these or replace them.
 - **`ModelMappings`**: maps an Umbraco.AI model id to `ecologitsProvider/modelName`, where the provider is an EcoLogits provider key (the same list as above). Use it for custom deployment names and fine-tunes. Keys are not case sensitive. Leave the `:N` suffix off a key (`...-v1`, not `...-v1:0`), because .NET configuration treats `:` as a section separator and silently drops such keys. Lookups retry without the suffix, so the mapping still matches.
 

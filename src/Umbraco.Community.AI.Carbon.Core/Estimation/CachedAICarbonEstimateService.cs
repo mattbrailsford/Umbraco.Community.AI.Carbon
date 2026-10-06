@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Umbraco.AI.Core.Analytics;
 using Umbraco.AI.Core.Analytics.Usage;
 using Umbraco.Cms.Core.Cache;
+using Umbraco.Community.AI.Carbon.Core.Configuration;
 
 namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 
@@ -21,6 +22,7 @@ internal sealed class CachedAICarbonEstimateService : IAICarbonEstimateService
     private readonly IAppPolicyCache _cache;
     private readonly IOptionsMonitor<AIAnalyticsOptions> _analyticsOptions;
     private readonly ModelFactorResolver _factors;
+    private readonly IOptionsMonitor<AICarbonOptions> _carbonOptions;
     private readonly TimeSpan _duration;
 
     /// <summary>Initializes a new instance of the <see cref="CachedAICarbonEstimateService"/> class.</summary>
@@ -28,18 +30,21 @@ internal sealed class CachedAICarbonEstimateService : IAICarbonEstimateService
     /// <param name="cache">The runtime cache.</param>
     /// <param name="analyticsOptions">Umbraco.AI's analytics options; their flags change the estimate, so they are part of the key.</param>
     /// <param name="factors">Provides the electricity zone override in force, which is also part of the key.</param>
+    /// <param name="carbonOptions">This package's options; the equivalents switch changes the estimate, so it is part of the key.</param>
     /// <param name="duration">How long an estimate is remembered; <see cref="Duration"/> unless a test says otherwise.</param>
     public CachedAICarbonEstimateService(
         IAICarbonEstimateService inner,
         IAppPolicyCache cache,
         IOptionsMonitor<AIAnalyticsOptions> analyticsOptions,
         ModelFactorResolver factors,
+        IOptionsMonitor<AICarbonOptions> carbonOptions,
         TimeSpan duration)
     {
         _inner = inner;
         _cache = cache;
         _analyticsOptions = analyticsOptions;
         _factors = factors;
+        _carbonOptions = carbonOptions;
         _duration = duration;
     }
 
@@ -73,6 +78,6 @@ internal sealed class CachedAICarbonEstimateService : IAICarbonEstimateService
         var zone = _factors.GetZoneOverride() ?? "-";
         var analytics = _analyticsOptions.CurrentValue;
 
-        return $"{KeyPrefix}|{fromUtc.Ticks}|{toUtc.Ticks}|{bucket}|{zone}|{analytics.Enabled}|{analytics.IncludeUsageFeatureTypeDimension}";
+        return $"{KeyPrefix}|{fromUtc.Ticks}|{toUtc.Ticks}|{bucket}|{zone}|{analytics.Enabled}|{analytics.IncludeUsageFeatureTypeDimension}|{_carbonOptions.CurrentValue.ShowEquivalents}";
     }
 }

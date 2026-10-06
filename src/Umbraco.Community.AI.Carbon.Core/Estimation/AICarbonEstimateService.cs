@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Umbraco.AI.Core.Analytics;
 using Umbraco.AI.Core.Analytics.Usage;
 using Umbraco.AI.Core.Models;
+using Umbraco.Community.AI.Carbon.Core.Configuration;
 using Umbraco.Community.AI.Carbon.Core.EcoLogits;
 
 namespace Umbraco.Community.AI.Carbon.Core.Estimation;
@@ -14,6 +15,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
     private readonly IEcoLogitsDataRepository _data;
     private readonly ModelFactorResolver _factors;
     private readonly AICarbonFeatureSplitter _featureSplitter;
+    private readonly IOptionsMonitor<AICarbonOptions> _carbonOptions;
 
     // A by-model row plus what the public row does not carry: its energy, the factor lookup (so later
     // per-feature work can reuse it without resolving the model again) and its emissions per bucket.
@@ -29,18 +31,21 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
     /// <param name="data">The EcoLogits reference data.</param>
     /// <param name="factors">Finds the carbon factor for a model.</param>
     /// <param name="featureSplitter">Builds the split by feature type.</param>
+    /// <param name="carbonOptions">This package's options, read on every estimate.</param>
     public AICarbonEstimateService(
         IAIUsageAnalyticsService usage,
         IOptionsMonitor<AIAnalyticsOptions> analyticsOptions,
         IEcoLogitsDataRepository data,
         ModelFactorResolver factors,
-        AICarbonFeatureSplitter featureSplitter)
+        AICarbonFeatureSplitter featureSplitter,
+        IOptionsMonitor<AICarbonOptions> carbonOptions)
     {
         _usage = usage;
         _analyticsOptions = analyticsOptions;
         _data = data;
         _factors = factors;
         _featureSplitter = featureSplitter;
+        _carbonOptions = carbonOptions;
     }
 
     /// <inheritdoc />
@@ -275,12 +280,14 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         var estimated = rows.Where(row => row.Estimate.Status == AICarbonEstimateStatus.Estimated).ToList();
         var notEstimated = rows.Where(row => row.Estimate.Status != AICarbonEstimateStatus.Estimated).Select(row => row.Estimate).ToList();
 
+        var co2eGrams = new RangeValue(
+            estimated.Sum(row => row.Estimate.Co2eGrams!.Value.Min), estimated.Sum(row => row.Estimate.Co2eGrams!.Value.Max));
         var total = new AICarbonTotal(
-            Co2eGrams: new RangeValue(
-                estimated.Sum(row => row.Estimate.Co2eGrams!.Value.Min), estimated.Sum(row => row.Estimate.Co2eGrams!.Value.Max)),
+            Co2eGrams: co2eGrams,
             EnergyWh: new RangeValue(estimated.Sum(row => row.EnergyWh.Min), estimated.Sum(row => row.EnergyWh.Max)),
             Requests: estimated.Sum(row => row.Estimate.Requests),
-            OutputTokens: estimated.Sum(row => row.Estimate.OutputTokens));
+            OutputTokens: estimated.Sum(row => row.Estimate.OutputTokens),
+            Equivalent: _carbonOptions.CurrentValue.ShowEquivalents ? AICarbonEquivalents.Create(co2eGrams.Max) : null);
 
         var byFeature = await BuildFeatureBreakdownAsync(from, to, bucket, analyticsEnabled, estimated, ct).ConfigureAwait(false);
 

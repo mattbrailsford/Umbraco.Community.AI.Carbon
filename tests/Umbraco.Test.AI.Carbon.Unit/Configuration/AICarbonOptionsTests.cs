@@ -27,6 +27,9 @@ public class AICarbonOptionsTests
         public void ElectricityZone_Is_Null() => Assert.That(_options.ElectricityZone, Is.Null);
 
         [Test]
+        public void ShowEquivalents_Is_Off() => Assert.That(_options.ShowEquivalents, Is.False);
+
+        [Test]
         public void ModelMappings_Are_Empty() => Assert.That(_options.ModelMappings, Is.Empty);
 
         [Test]
@@ -88,6 +91,22 @@ public class AICarbonOptionsTests
         {
             var options = Bind(new Dictionary<string, string?> { ["AICarbon:ProviderMappings:OpenAI"] = "anthropic" });
             Assert.That(options.ProviderMappings, Has.Count.EqualTo(5));
+        }
+    }
+
+    [TestFixture]
+    public class GivenShowEquivalentsInJsonConfiguration
+    {
+        [Test]
+        public void ShowEquivalents_Is_Bound()
+        {
+            using var json = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("""{"AICarbon":{"ShowEquivalents":true}}"""));
+            var configuration = new ConfigurationBuilder().AddJsonStream(json).Build();
+            var options = new AICarbonOptions();
+
+            configuration.GetSection(AICarbonOptions.SectionName).Bind(options);
+
+            Assert.That(options.ShowEquivalents, Is.True);
         }
     }
 

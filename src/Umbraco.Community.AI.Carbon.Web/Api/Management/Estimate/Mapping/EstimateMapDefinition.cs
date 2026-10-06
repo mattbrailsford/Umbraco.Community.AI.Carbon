@@ -26,6 +26,7 @@ public class EstimateMapDefinition : IMapDefinition
             EnergyWh = MapRange(source.Total.EnergyWh),
             Requests = source.Total.Requests,
             OutputTokens = source.Total.OutputTokens,
+            Equivalent = source.Total.Equivalent is { } equivalent ? MapEquivalent(equivalent) : null,
         };
         target.ByModel = source.ByModel.Select(MapModelRow).ToList();
         target.ByFeature = new EstimateFeatureBreakdownModel
@@ -75,6 +76,15 @@ public class EstimateMapDefinition : IMapDefinition
         Requests = row.Requests,
         OutputTokens = row.OutputTokens,
         Warnings = row.Warnings.ToList(),
+    };
+
+    private static EstimateEquivalentModel MapEquivalent(AICarbonEquivalent equivalent) => new()
+    {
+        Kind = equivalent.Kind,
+        Amount = equivalent.Amount,
+        BasisCo2eGrams = equivalent.BasisCo2eGrams,
+        Source = equivalent.Source,
+        SourceYear = equivalent.SourceYear,
     };
 
     private static EstimateRangeModel MapRange(RangeValue range) => new() { Min = range.Min, Max = range.Max };

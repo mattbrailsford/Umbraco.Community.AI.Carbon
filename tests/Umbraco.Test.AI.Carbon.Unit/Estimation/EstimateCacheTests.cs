@@ -62,8 +62,8 @@ public class EstimateCacheTests
                 carbonMonitor,
                 NullLogger<ModelFactorResolver>.Instance);
 
-            Inner = new CountingEstimateService(new AICarbonEstimateService(usage, analyticsMonitor, data, factors, new AICarbonFeatureSplitter(usage)));
-            Cache = new CachedAICarbonEstimateService(Inner, new ObjectCacheAppCache(), analyticsMonitor, factors, duration ?? CachedAICarbonEstimateService.Duration);
+            Inner = new CountingEstimateService(new AICarbonEstimateService(usage, analyticsMonitor, data, factors, new AICarbonFeatureSplitter(usage), carbonMonitor));
+            Cache = new CachedAICarbonEstimateService(Inner, new ObjectCacheAppCache(), analyticsMonitor, factors, carbonMonitor, duration ?? CachedAICarbonEstimateService.Duration);
         }
 
         public CountingEstimateService Inner { get; }
@@ -71,6 +71,8 @@ public class EstimateCacheTests
         public CachedAICarbonEstimateService Cache { get; }
 
         public string? ZoneOverride { set => _carbonOptions.ElectricityZone = value; }
+
+        public bool ShowEquivalents { set => _carbonOptions.ShowEquivalents = value; }
 
         public bool AnalyticsEnabled { set => _analyticsOptions.Enabled = value; }
 
@@ -182,6 +184,16 @@ public class EstimateCacheTests
             await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), null);
 
             Assert.That(_harness.Inner.Calls, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task TheEquivalentsSwitchComputesAgain()
+        {
+            _harness.ShowEquivalents = true;
+
+            await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), null);
+
+            Assert.That(_harness.Inner.Calls, Is.EqualTo(2));
         }
 
         [Test]

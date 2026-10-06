@@ -144,3 +144,4 @@
   equivalent based on the max CO2e worded "up to about", per the conservativeness principle (never
   understate). Factors read directly from the DESNZ 2025 condensed set spreadsheet and the US EPA
   calculator; mixing a UK and a US source is accepted and named in the panel.
+- 06-10-2026: (T23 review) EPA smartphone factor is from the October 2024 revision (not 2025) and is CO2 only; source year comes from the API and is never hardcoded in the UI. DESNZ source named by its official title.

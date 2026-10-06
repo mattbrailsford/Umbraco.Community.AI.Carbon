@@ -52,6 +52,7 @@ public static class AICarbonBuilderExtensions
             provider.GetRequiredService<AppCaches>().RuntimeCache,
             provider.GetRequiredService<IOptionsMonitor<AIAnalyticsOptions>>(),
             provider.GetRequiredService<ModelFactorResolver>(),
+            provider.GetRequiredService<IOptionsMonitor<AICarbonOptions>>(),
             CachedAICarbonEstimateService.Duration));
 
         builder.AICarbonModelResolvers()

@@ -158,7 +158,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 - [ ] **T23** — Everyday equivalent (backend + API). Opt-in `AICarbon:ShowEquivalents` (default
   false). When on and the total max is above zero, the estimate carries one equivalent based on
   the **max** CO2e: under 250 g → smartphone charges (12.4 g CO2 per charge, US EPA GHG
-  Equivalencies Calculator); under 50 kg → km by average car (0.16725 kg CO2e/km, UK DESNZ GHG
+  Equivalencies Calculator, October 2024 revision; CO2 only); under 50 kg → km by average car (0.16725 kg CO2e/km, UK DESNZ GHG
   conversion factors 2025, "Average car, unknown fuel"); otherwise → km of short-haul flight per
   passenger (0.12786 kg CO2e/passenger-km incl. radiative forcing, same DESNZ 2025 set). Factors,
   sources and years live in one Core class. API adds `total.equivalent` (null when off) with kind,

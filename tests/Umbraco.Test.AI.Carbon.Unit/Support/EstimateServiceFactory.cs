@@ -24,7 +24,8 @@ internal static class EstimateServiceFactory
         IEcoLogitsDataRepository? data = null,
         IAICarbonModelResolver? extraResolver = null,
         IOptionsMonitor<AICarbonOptions>? zoneOptions = null,
-        ILogger<ModelFactorResolver>? factorLogger = null)
+        ILogger<ModelFactorResolver>? factorLogger = null,
+        bool showEquivalents = false)
     {
         if (usage is FakeUsageAnalyticsService fake)
         {
@@ -35,6 +36,7 @@ internal static class EstimateServiceFactory
         var carbonOptions = Options.Create(new AICarbonOptions
         {
             ElectricityZone = electricityZone,
+            ShowEquivalents = showEquivalents,
             ModelMappings = new Dictionary<string, string>(modelMappings ?? new Dictionary<string, string>()),
         });
         var analyticsOptions = Mock.Of<IOptionsMonitor<AIAnalyticsOptions>>(monitor => monitor.CurrentValue == new AIAnalyticsOptions
@@ -54,13 +56,14 @@ internal static class EstimateServiceFactory
             resolvers.Insert(0, extraResolver);
         }
 
+        var carbonMonitor = zoneOptions ?? Mock.Of<IOptionsMonitor<AICarbonOptions>>(monitor => monitor.CurrentValue == carbonOptions.Value);
         var factors = new ModelFactorResolver(
             new AICarbonModelResolverCollection(() => resolvers),
             data,
             new CarbonFactorCalculator(),
-            zoneOptions ?? Mock.Of<IOptionsMonitor<AICarbonOptions>>(monitor => monitor.CurrentValue == carbonOptions.Value),
+            carbonMonitor,
             factorLogger ?? NullLogger<ModelFactorResolver>.Instance);
 
-        return new AICarbonEstimateService(usage, analyticsOptions, data, factors, new AICarbonFeatureSplitter(usage));
+        return new AICarbonEstimateService(usage, analyticsOptions, data, factors, new AICarbonFeatureSplitter(usage), carbonMonitor);
     }
 }

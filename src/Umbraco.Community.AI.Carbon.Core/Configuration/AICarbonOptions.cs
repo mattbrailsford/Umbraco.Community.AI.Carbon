@@ -34,6 +34,12 @@ public sealed class AICarbonOptions
     public string? ElectricityZone { get; set; }
 
     /// <summary>
+    /// Gets or sets whether the estimate includes an everyday equivalent (smartphone charges, car or flight
+    /// kilometres) of the top of the range. Off by default. Read on every estimate, so changes apply without a restart.
+    /// </summary>
+    public bool ShowEquivalents { get; set; }
+
+    /// <summary>
     /// Gets or sets explicit model mappings: an Umbraco.AI model id to <c>ecologitsProvider/modelName</c>
     /// (for example <c>"my-gpt-deployment": "openai/gpt-4o"</c>). Keys are case-insensitive:
     /// assigning a dictionary copies it into a case-insensitive one.

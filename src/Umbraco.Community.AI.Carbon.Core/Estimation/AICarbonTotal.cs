@@ -7,4 +7,10 @@ namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 /// <param name="EnergyWh">Estimated energy in watt hours.</param>
 /// <param name="Requests">The successful chat requests included in the estimate.</param>
 /// <param name="OutputTokens">The output tokens included in the estimate.</param>
-public sealed record AICarbonTotal(RangeValue Co2eGrams, RangeValue EnergyWh, long Requests, long OutputTokens);
+/// <param name="Equivalent">The top of the emissions as an everyday equivalent; <c>null</c> when switched off or there are no emissions.</param>
+public sealed record AICarbonTotal(
+    RangeValue Co2eGrams,
+    RangeValue EnergyWh,
+    long Requests,
+    long OutputTokens,
+    AICarbonEquivalent? Equivalent = null);
