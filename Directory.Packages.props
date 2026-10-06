@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <NoWarn>NU1507</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Umbraco CMS — this line (v18/dev) tracks the v18 major only. -->
+    <PackageVersion Include="Umbraco.Cms" Version="[18.0.0,18.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Api.Common" Version="[18.0.0,18.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Api.Management" Version="[18.0.0,18.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Infrastructure" Version="[18.0.0,18.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Web.Common" Version="[18.0.0,18.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Tests.Integration" Version="[18.0.0,18.999.999)" />
+    <!-- Umbraco.AI — an ordinary NuGet dependency (version range on the same v18 line),
+         never a project reference across repos. -->
+    <PackageVersion Include="Umbraco.AI.Core" Version="[18.0.0,18.999.999)" />
+    <!-- Test -->
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="NUnit" Version="3.14.0" />
+    <PackageVersion Include="NUnit.Analyzers" Version="3.9.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
+    <!-- Resolves NU1107 between Umbraco.Cms.Tests.Integration (Roslyn 5.3.0) and the Umbraco.Code analyzer (4.13.0) -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.3.0" />
+  </ItemGroup>
+</Project>

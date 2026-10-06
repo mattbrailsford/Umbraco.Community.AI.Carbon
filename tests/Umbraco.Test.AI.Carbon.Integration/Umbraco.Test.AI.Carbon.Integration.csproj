@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;SA0001</NoWarn>
+    <!-- See Umbraco.Test.AI.Carbon.Unit.csproj: "Umbraco.Test..." as a default namespace
+         collides with NUnit's [Test] attribute at the language level (CS0616). -->
+    <RootNamespace>Umbraco.Community.AI.Carbon.Tests.Integration</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit.Analyzers" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="Umbraco.Cms.Tests.Integration" />
+    <!-- Aligns Roslyn to the version Umbraco.Cms.Tests.Integration requires (see Directory.Packages.props) -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Umbraco.Community.AI.Carbon.Core\Umbraco.Community.AI.Carbon.Core.csproj" />
+    <ProjectReference Include="..\..\src\Umbraco.Community.AI.Carbon.Web\Umbraco.Community.AI.Carbon.Web.csproj" />
+  </ItemGroup>
+
+</Project>

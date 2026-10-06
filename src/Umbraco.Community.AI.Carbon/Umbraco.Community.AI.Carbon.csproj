@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Title>Umbraco AI Carbon</Title>
+    <Description>Estimated CO2 dashboard for Umbraco.AI usage. Unofficial community package.</Description>
+    <Company>Matt Brailsford</Company>
+    <Authors>Matt Brailsford</Authors>
+    <Copyright>Copyright © Matt Brailsford $([System.DateTime]::Today.ToString('yyyy'))</Copyright>
+    <Product>Umbraco AI Carbon</Product>
+    <PackageProjectUrl>https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon</RepositoryUrl>
+    <PackageTags>umbraco ai carbon co2 sustainability umbraco-marketplace</PackageTags>
+    <PackageReadmeFile>docs\README.md</PackageReadmeFile>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <IncludeReferencedProjects>true</IncludeReferencedProjects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="docs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Umbraco.Community.AI.Carbon.Web\Umbraco.Community.AI.Carbon.Web.csproj" />
+    <ProjectReference Include="..\Umbraco.Community.AI.Carbon.Web.StaticAssets\Umbraco.Community.AI.Carbon.Web.StaticAssets.csproj" />
+  </ItemGroup>
+
+</Project>

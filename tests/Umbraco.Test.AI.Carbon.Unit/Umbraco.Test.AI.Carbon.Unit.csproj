@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;SA0001</NoWarn>
+    <!-- The project's default namespace, "Umbraco.Test...", collides with NUnit's [Test]
+         attribute at the language level: an unqualified [Test] resolves to the sibling
+         "Umbraco.Test" namespace segment instead of NUnit.Framework.TestAttribute (CS0616).
+         Override the root namespace so test files can use plain [Test] like everywhere else. -->
+    <RootNamespace>Umbraco.Community.AI.Carbon.Tests.Unit</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit.Analyzers" />
+    <PackageReference Include="NUnit3TestAdapter" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Umbraco.Community.AI.Carbon.Core\Umbraco.Community.AI.Carbon.Core.csproj" />
+  </ItemGroup>
+
+</Project>

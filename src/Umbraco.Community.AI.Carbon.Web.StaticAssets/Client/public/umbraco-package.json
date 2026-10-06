@@ -1,0 +1,20 @@
+{
+    "id": "Umbraco.Community.AI.Carbon",
+    "name": "Umbraco AI Carbon",
+    "version": "0.0.0",
+    "allowTelemetry": true,
+    "extensions": [
+        {
+            "name": "Umbraco AI Carbon",
+            "alias": "AICarbon.Bundle",
+            "type": "bundle",
+            "js": "/App_Plugins/AICarbon/ai-carbon-manifests.js"
+        },
+        {
+            "type": "backofficeEntryPoint",
+            "name": "Umbraco AI Carbon Backoffice Entry Point",
+            "alias": "AICarbon.BackofficeEntryPoint",
+            "js": "/App_Plugins/AICarbon/ai-carbon-app.js"
+        }
+    ]
+}

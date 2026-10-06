@@ -1,0 +1,21 @@
+{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "AuthorDetails": {
+    "Description": "Matt Brailsford",
+    "Url": "https://mattbrailsford.dev/",
+    "ImageUrl": "https://github.com/mattbrailsford.png"
+  },
+  "DocumentationUrl": "https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon",
+  "Category": "Developer Tools",
+  "IssueTrackerUrl": "https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/issues",
+  "LicenseTypes": [
+    "Free"
+  ],
+  "PackageType": "Package",
+  "Tags": [
+    "ai",
+    "carbon",
+    "co2",
+    "sustainability"
+  ]
+}

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <Title>Umbraco AI Carbon — Static Assets</Title>
+    <Description>Backoffice UI static assets for Umbraco AI Carbon.</Description>
+    <Company>Matt Brailsford</Company>
+    <Authors>Matt Brailsford</Authors>
+    <Copyright>Copyright © Matt Brailsford $([System.DateTime]::Today.ToString('yyyy'))</Copyright>
+    <Product>Umbraco AI Carbon</Product>
+    <PackageProjectUrl>https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon</RepositoryUrl>
+    <PackageTags>umbraco ai carbon co2 sustainability umbraco-marketplace</PackageTags>
+    <StaticWebAssetBasePath>App_Plugins/AICarbon</StaticWebAssetBasePath>
+    <AddRazorSupportForMvc>false</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Don't include the client folder as part of the packaged nupkg -->
+    <Content Remove="Client\**" />
+    <Content Include="Client\package.json" Pack="false" />
+    <Content Include="Client\tsconfig.app.json" Pack="false" />
+    <Content Include="Client\tsconfig.json" Pack="false" />
+    <None Include="Client\public\umbraco-package.json" Pack="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+</Project>

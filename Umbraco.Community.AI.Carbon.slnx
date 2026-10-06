@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Umbraco.Community.AI.Carbon/Umbraco.Community.AI.Carbon.csproj" />
+    <Project Path="src/Umbraco.Community.AI.Carbon.Core/Umbraco.Community.AI.Carbon.Core.csproj" />
+    <Project Path="src/Umbraco.Community.AI.Carbon.Web/Umbraco.Community.AI.Carbon.Web.csproj" />
+    <Project Path="src/Umbraco.Community.AI.Carbon.Web.StaticAssets/Umbraco.Community.AI.Carbon.Web.StaticAssets.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Umbraco.Test.AI.Carbon.Integration/Umbraco.Test.AI.Carbon.Integration.csproj" />
+    <Project Path="tests/Umbraco.Test.AI.Carbon.Unit/Umbraco.Test.AI.Carbon.Unit.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- TODO: add icon.png at the repo root, then restore <PackageIcon>icon.png</PackageIcon> -->
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- TODO: Enable when 1.0 version is shipped -->
+    <EnablePackageValidation>false</EnablePackageValidation>
+    <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion>
+    <EnableStrictModeForCompatibleFrameworksInPackage>true</EnableStrictModeForCompatibleFrameworksInPackage>
+    <EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>
+    <GenerateCompatibilitySuppressionFile>true</GenerateCompatibilitySuppressionFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115" PrivateAssets="all" IsImplicitlyDefined="true" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all" IsImplicitlyDefined="true" />
+    <PackageReference Include="Umbraco.Code" Version="2.3.0" PrivateAssets="all" IsImplicitlyDefined="true" />
+    <PackageReference Include="Umbraco.GitVersioning.Extensions" Version="0.2.0" PrivateAssets="all" IsImplicitlyDefined="true" />
+  </ItemGroup>
+
+</Project>
