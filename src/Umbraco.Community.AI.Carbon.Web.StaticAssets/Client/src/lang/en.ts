@@ -67,11 +67,11 @@ export default {
             "Input tokens, embeddings, image generation, speech, model training, the network and your own devices. Models EcoLogits doesn't know are listed as not estimated.",
         method_how_headline: "How the estimate is made",
         method_how:
-            "Using EcoLogits' method, the GPU and server energy is worked out for each model based on its size (number of parameters). That is multiplied by the data centre's efficiency (PUE) and the CO2e per kWh of the electricity mix, and a share of the hardware's manufacturing footprint is added.",
+            "Using EcoLogits' method, the GPU and server energy is worked out for each model based on its size (number of parameters). That is multiplied by the data centre's overhead (PUE) and the CO2e per kWh of the electricity mix, and a share of the hardware's manufacturing footprint is added.",
         method_howCap:
             "EcoLogits normally limits the modelled generation time to how long each request actually took. Umbraco.AI does not record each request's duration, so that limit is not applied here. It rarely changes the result, and leaving it out can only make the estimate higher, not lower.",
         method_zone_headline: "Electricity zone",
-        method_zoneOverride: "Zone used: {zone}. This is set by you with AICarbon:ElectricityZone.",
+        method_zoneOverride: "Zone used: {zone}. This is set in AICarbon:ElectricityZone.",
         method_zoneShared:
             "Zone used: {zone}. This is the default for the data centres of the models that were estimated.",
         method_zoneMixed:
@@ -87,7 +87,15 @@ export default {
             "Figures use EcoLogits (data version {dataVersion}), licensed under MPL-2.0. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact.",
         method_notice:
             "This is an unofficial community package. It is not made or endorsed by Umbraco HQ. The figures are estimates, not claims by Umbraco.",
-        loadFailed: "The estimate could not be loaded.",
+        loading: "Loading the estimate…",
+        empty_headline: "No AI usage in this period yet",
+        empty_hint: "Pick a longer time range to look further back.",
+        analyticsDisabled_headline: "Umbraco.AI analytics are switched off",
+        analyticsDisabled_body:
+            "There is no usage recorded, so there is nothing to estimate. To turn analytics on, set Umbraco:AI:Analytics:Enabled to true in appsettings.json.",
+        loadFailed: "The estimate couldn't be loaded.",
+        loadFailed_hint: "Check your connection and try again.",
+        retry: "Retry",
         forbidden: "You need access to the AI section to see this.",
     },
 } as UmbLocalizationDictionary;

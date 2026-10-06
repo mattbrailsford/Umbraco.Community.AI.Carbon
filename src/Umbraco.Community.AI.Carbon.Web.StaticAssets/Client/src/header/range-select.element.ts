@@ -22,7 +22,7 @@ function isEstimateRange(value: unknown): value is EstimateRange {
 @customElement("aicarbon-header")
 export class AICarbonHeaderElement extends UmbLitElement {
     @property({ type: String })
-    range: EstimateRange = "last7d";
+    range?: EstimateRange;
 
     @property({ attribute: false })
     method?: EstimateMethodModel;

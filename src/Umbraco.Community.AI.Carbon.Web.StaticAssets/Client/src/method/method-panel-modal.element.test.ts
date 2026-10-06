@@ -52,7 +52,7 @@ describe("Feature: aicarbon-method-panel element", () => {
 
     it("shows the zone and that it is an override", async () => {
         const element = await render();
-        expect(element.shadowRoot!.textContent).toContain("Zone used: SWE. This is set by you");
+        expect(element.shadowRoot!.textContent).toContain("Zone used: SWE. This is set in AICarbon:ElectricityZone");
         element.remove();
     });
 

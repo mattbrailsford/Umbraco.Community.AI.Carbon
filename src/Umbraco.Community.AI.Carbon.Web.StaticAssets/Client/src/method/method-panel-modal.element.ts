@@ -22,7 +22,7 @@ export class AICarbonMethodPanelModalElement extends UmbModalBaseElement<AICarbo
     #renderZone(zone: MethodZoneView) {
         switch (zone.kind) {
             case "override":
-                return html`<p>${this.#t("aiCarbon_method_zoneOverride", "Zone used: {zone}. This is set by you with AICarbon:ElectricityZone.", { zone: zone.zone })}</p>`;
+                return html`<p>${this.#t("aiCarbon_method_zoneOverride", "Zone used: {zone}. This is set in AICarbon:ElectricityZone.", { zone: zone.zone })}</p>`;
             case "shared":
                 return html`<p>${this.#t("aiCarbon_method_zoneShared", "Zone used: {zone}. This is the default for the data centres of the models that were estimated.", { zone: zone.zone })}</p>`;
             case "mixed":
@@ -48,7 +48,7 @@ export class AICarbonMethodPanelModalElement extends UmbModalBaseElement<AICarbo
                         <p>${this.#t("aiCarbon_method_notCounted", "Input tokens, embeddings, image generation, speech, model training, the network and your own devices. Models EcoLogits doesn't know are listed as not estimated.")}</p>
                     </uui-box>
                     <uui-box headline=${this.#t("aiCarbon_method_how_headline", "How the estimate is made")}>
-                        <p>${this.#t("aiCarbon_method_how", "Using EcoLogits' method, the GPU and server energy is worked out for each model based on its size (number of parameters). That is multiplied by the data centre's efficiency (PUE) and the CO2e per kWh of the electricity mix, and a share of the hardware's manufacturing footprint is added.")}</p>
+                        <p>${this.#t("aiCarbon_method_how", "Using EcoLogits' method, the GPU and server energy is worked out for each model based on its size (number of parameters). That is multiplied by the data centre's overhead (PUE) and the CO2e per kWh of the electricity mix, and a share of the hardware's manufacturing footprint is added.")}</p>
                         <p>${this.#t("aiCarbon_method_howCap", "EcoLogits normally limits the modelled generation time to how long each request actually took. Umbraco.AI does not record each request's duration, so that limit is not applied here. It rarely changes the result, and leaving it out can only make the estimate higher, not lower.")}</p>
                     </uui-box>
                     <uui-box headline=${this.#t("aiCarbon_method_zone_headline", "Electricity zone")}>
