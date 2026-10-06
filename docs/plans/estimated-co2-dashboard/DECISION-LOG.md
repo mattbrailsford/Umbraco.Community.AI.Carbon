@@ -128,3 +128,14 @@
   analytics-off state. A run with real AI calls is left for the user to try.
 - 06-10-2026: (T20) README links to THIRD-PARTY-NOTICES and LICENSE point at blob/v18/main (404 until the first release). Release checklist: update the pre-release banner and confirm those links.
 - 06-10-2026: (T21, user decision) Open the v18 PR first; after it merges, create v17/dev from v18/dev and port on its own branch with its own review (CMS 17 uses Swashbuckle, older Umbraco.AI/backoffice APIs; check InlineAgent in the 17.0.0 floor).
+- 06-10-2026: (Layout follow-up, user request) The CO2 tab now mirrors Umbraco.AI's Usage dashboard
+  layout: no outer box, page header on the background, compact cards (descriptions as tooltip +
+  hidden text), chart and each table in their own uui-box, Title Case headings and labels. This
+  supersedes T13 (header in the uui-box header-actions slot) and T14 (auto-fit grid accepting 3+1):
+  the four cards now show 4 across, 2x2 or 1 column via a container query. Tables stay stacked full
+  width (by-model has 7 columns). Chart style and the method button are unchanged.
+- 06-10-2026: (User request) Tables run edge to edge inside their boxes (no box padding or inset
+  rounded table border), unlike Umbraco.AI's inset breakdown tables. The method button becomes an
+  icon-only button with an accessible label and tooltip. Status tags shortened to Estimated /
+  Unknown Model / Not Supported, with the longer explanation in a tooltip and hidden text.
+- 06-10-2026: (User request) Summary card icons use --uui-color-default-emphasis (the chart's blue) instead of Umbraco.AI's pale --uui-color-current pink, for readability.

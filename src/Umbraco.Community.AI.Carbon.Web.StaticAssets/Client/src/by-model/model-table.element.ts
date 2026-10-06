@@ -5,14 +5,38 @@ import type { AiCarbonEstimateStatus, EstimateModelRowModel } from "../api/types
 import { describeWarning } from "../estimate/warning-text.js";
 import { buildModelRows, type ModelRowViewModel } from "./model-table-model.js";
 
-const STATUS: Record<AiCarbonEstimateStatus, { key: string; fallback: string; color: "positive" | "warning" | "default" }> = {
+interface StatusText {
+    key: string;
+    fallback: string;
+    color: "positive" | "warning" | "default";
+    /** Longer explanation, shown as the tag's tooltip and read out by assistive technology. */
+    detail?: { key: string; fallback: string };
+}
+
+const STATUS: Record<AiCarbonEstimateStatus, StatusText> = {
     Estimated: { key: "aiCarbon_status_estimated", fallback: "Estimated", color: "positive" },
-    UnknownModel: { key: "aiCarbon_status_unknownModel", fallback: "Not estimated (unknown model)", color: "warning" },
-    UnsupportedCapability: { key: "aiCarbon_status_unsupported", fallback: "Not estimated (not supported)", color: "default" },
+    UnknownModel: {
+        key: "aiCarbon_status_unknownModel",
+        fallback: "Unknown Model",
+        color: "warning",
+        detail: {
+            key: "aiCarbon_status_unknownModel_detail",
+            fallback: "Not estimated: EcoLogits doesn't know this model.",
+        },
+    },
+    UnsupportedCapability: {
+        key: "aiCarbon_status_unsupported",
+        fallback: "Not Supported",
+        color: "default",
+        detail: {
+            key: "aiCarbon_status_unsupported_detail",
+            fallback: "Not estimated: only chat/text generation is estimated.",
+        },
+    },
 };
 
 /**
- * The "By model" table. Renders from the `rows` property, in the order given; it never fetches.
+ * The "By Model" table. Renders from the `rows` property, in the order given; it never fetches.
  * Renders nothing when there are no rows: the empty page state belongs to the view (T19), and a
  * second "no models" line here would repeat it.
  */
@@ -33,6 +57,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
 
     #renderRow(row: ModelRowViewModel) {
         const status = STATUS[row.status];
+        const detail = status.detail ? this.localize.termOrDefault(status.detail.key, status.detail.fallback) : undefined;
         return html`<uui-table-row>
             <uui-table-cell>
                 <div class="model">
@@ -44,12 +69,13 @@ export class AICarbonModelTableElement extends UmbLitElement {
             <uui-table-cell>${row.zone}</uui-table-cell>
             <uui-table-cell class="number">${row.requests}</uui-table-cell>
             <uui-table-cell class="number">${row.outputTokens}</uui-table-cell>
-            <uui-table-cell class="number">${row.co2e}</uui-table-cell>
+            <uui-table-cell class="number co2e">${row.co2e}</uui-table-cell>
             <uui-table-cell>
                 <div class="status">
-                    <uui-tag look="secondary" color=${status.color}>
+                    <uui-tag look="secondary" color=${status.color} title=${detail ?? nothing}>
                         ${this.localize.termOrDefault(status.key, status.fallback)}
                     </uui-tag>
+                    ${detail ? html`<span class="sr-only">${detail}</span>` : nothing}
                     ${this.#renderWarnings(row)}
                 </div>
             </uui-table-cell>
@@ -60,19 +86,22 @@ export class AICarbonModelTableElement extends UmbLitElement {
         if (!this.rows || this.rows.length === 0) return nothing;
         const t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
         return html`
-            <h3>${t("aiCarbon_byModel_headline", "By model")}</h3>
+            <uui-box class="flush" headline=${t("aiCarbon_byModel_headline", "By Model")}>
+            <div class="table-scroll">
             <uui-table>
                 <uui-table-head>
                     <uui-table-head-cell>${t("aiCarbon_byModel_model", "Model")}</uui-table-head-cell>
-                    <uui-table-head-cell>${t("aiCarbon_byModel_matchedAs", "Matched as")}</uui-table-head-cell>
+                    <uui-table-head-cell>${t("aiCarbon_byModel_matchedAs", "Matched As")}</uui-table-head-cell>
                     <uui-table-head-cell>${t("aiCarbon_byModel_zone", "Zone")}</uui-table-head-cell>
                     <uui-table-head-cell class="number">${t("aiCarbon_byModel_requests", "Requests")}</uui-table-head-cell>
-                    <uui-table-head-cell class="number">${t("aiCarbon_byModel_outputTokens", "Output tokens")}</uui-table-head-cell>
+                    <uui-table-head-cell class="number">${t("aiCarbon_byModel_outputTokens", "Output Tokens")}</uui-table-head-cell>
                     <uui-table-head-cell class="number">${t("aiCarbon_byModel_co2e", "Estimated CO2e")}</uui-table-head-cell>
                     <uui-table-head-cell>${t("aiCarbon_byModel_status", "Status")}</uui-table-head-cell>
                 </uui-table-head>
                 ${repeat(buildModelRows(this.rows), (row) => row.key, (row) => this.#renderRow(row))}
             </uui-table>
+            </div>
+            </uui-box>
         `;
     }
 
@@ -81,11 +110,20 @@ export class AICarbonModelTableElement extends UmbLitElement {
         css`
             :host {
                 display: block;
-                overflow-x: auto;
             }
 
-            h3 {
-                margin: 0 0 var(--uui-size-space-4);
+            /* Tables run edge to edge inside the box: no box padding, no inset table border. */
+            uui-box.flush {
+                --uui-box-default-padding: 0;
+            }
+
+            uui-table {
+                border: 0;
+                border-radius: 0;
+            }
+
+            .table-scroll {
+                overflow-x: auto;
             }
 
             uui-table-head-cell,
@@ -95,6 +133,10 @@ export class AICarbonModelTableElement extends UmbLitElement {
 
             .number {
                 text-align: right;
+            }
+
+            .co2e {
+                white-space: nowrap;
             }
 
             uui-table-row:nth-child(even) {
@@ -111,7 +153,25 @@ export class AICarbonModelTableElement extends UmbLitElement {
                 color: var(--uui-color-text-alt);
             }
 
+            uui-tag {
+                white-space: nowrap;
+            }
+
+            /* The tag's tooltip is hover-only; this keeps the explanation for keyboard, touch and screen readers. */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+
             .status {
+                position: relative;
                 display: flex;
                 align-items: center;
                 gap: var(--uui-size-space-2);

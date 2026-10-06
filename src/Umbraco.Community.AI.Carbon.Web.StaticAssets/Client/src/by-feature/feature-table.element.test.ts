@@ -40,31 +40,31 @@ describe("Feature: aicarbon-feature-table element", () => {
 
     it("renders nothing when analytics are disabled, even if the breakdown is unavailable", async () => {
         const element = await render({ available: false, items: [] }, false);
-        expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();
+        expect(element.shadowRoot!.querySelector("uui-box, .note, uui-table")).toBeNull();
         element.remove();
     });
 
     it("renders nothing when the breakdown is unavailable and analytics state is unknown", async () => {
         const element = await render({ available: false, items: [] }, undefined);
-        expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();
+        expect(element.shadowRoot!.querySelector("uui-box, .note, uui-table")).toBeNull();
         element.remove();
     });
 
     it("renders nothing when available but there are no items", async () => {
         const element = await render({ available: true, items: [] }, true);
-        expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();
+        expect(element.shadowRoot!.querySelector("uui-box, .note, uui-table")).toBeNull();
         element.remove();
     });
 
     it("renders nothing before the estimate has loaded (both properties undefined)", async () => {
         const element = await render(undefined, undefined);
-        expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();
+        expect(element.shadowRoot!.querySelector("uui-box, .note, uui-table")).toBeNull();
         element.remove();
     });
 
     it("renders nothing when analytics are on but there is no breakdown", async () => {
         const element = await render(undefined, true);
-        expect(element.shadowRoot!.querySelector("h3, .note, uui-table")).toBeNull();
+        expect(element.shadowRoot!.querySelector("uui-box, .note, uui-table")).toBeNull();
         element.remove();
     });
 

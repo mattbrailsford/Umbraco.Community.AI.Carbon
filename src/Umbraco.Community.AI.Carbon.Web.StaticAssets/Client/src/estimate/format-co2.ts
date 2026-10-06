@@ -41,9 +41,19 @@ const ENERGY_UNITS: readonly Unit[] = [
     { label: "kWh", size: 1000 },
 ];
 
+/** A range as its number part and unit part, e.g. "1.2–8.4" and "g CO2e". `unit` is empty when there is no value ("—"). */
+export interface FormattedRange {
+    value: string;
+    unit: string;
+}
+
+export function formatCo2eRangeParts(range: EstimateRangeModel): FormattedRange {
+    const { value, unit } = formatRangeParts(range, CO2E_UNITS, "g");
+    return unit ? { value, unit: `${unit} CO2e` } : { value, unit };
+}
+
 export function formatCo2eRange(range: EstimateRangeModel): string {
-    const formatted = formatRange(range, CO2E_UNITS, "g");
-    return formatted === NO_VALUE ? formatted : `${formatted} CO2e`;
+    return joinParts(formatCo2eRangeParts(range));
 }
 
 /** A CO2e unit shared by a whole chart axis, so every tick reads in the same unit. */
@@ -67,22 +77,29 @@ export function formatCo2eAxisValue(grams: number, unit: Co2eAxisUnit): string {
     return ENGLISH_NUMBER_FORMAT.format(Number((Math.max(0, grams) / unit.size).toPrecision(6)));
 }
 
-export function formatEnergyRange(range: EstimateRangeModel): string {
-    return formatRange(range, ENERGY_UNITS, "Wh");
+export function formatEnergyRangeParts(range: EstimateRangeModel): FormattedRange {
+    return formatRangeParts(range, ENERGY_UNITS, "Wh");
 }
 
-function formatRange(range: EstimateRangeModel, units: readonly Unit[], zeroUnit: string): string {
-    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return NO_VALUE;
+export function formatEnergyRange(range: EstimateRangeModel): string {
+    return joinParts(formatEnergyRangeParts(range));
+}
+
+function joinParts({ value, unit }: FormattedRange): string {
+    return unit ? `${value} ${unit}` : value;
+}
+
+function formatRangeParts(range: EstimateRangeModel, units: readonly Unit[], zeroUnit: string): FormattedRange {
+    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return { value: NO_VALUE, unit: "" };
 
     const minValue = Math.max(0, range.min);
     const maxValue = Math.max(0, range.max);
-    if (maxValue === 0 && minValue === 0) return `0 ${zeroUnit}`;
+    if (maxValue === 0 && minValue === 0) return { value: "0", unit: zeroUnit };
 
     const unit = pickUnit(maxValue, units);
     const min = formatNumber(minValue / unit.size);
     const max = formatNumber(maxValue / unit.size);
-    const value = min === max ? max : `${min}${RANGE_SEPARATOR}${max}`;
-    return `${value} ${unit.label}`;
+    return { value: min === max ? max : `${min}${RANGE_SEPARATOR}${max}`, unit: unit.label };
 }
 
 /**

@@ -2,7 +2,7 @@ import { css, customElement, html, nothing, property } from "@umbraco-cms/backof
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
 
-/** One figure with a label and a short description. Styled after Umbraco.AI's Usage summary card. */
+/** One figure with a label; the description is the hover tooltip. Styled after Umbraco.AI's Usage summary card. */
 @customElement("aicarbon-summary-card")
 export class AICarbonSummaryCardElement extends UmbLitElement {
     @property({ type: String })
@@ -10,6 +10,10 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
 
     @property({ type: String })
     value = "";
+
+    /** Smaller text after the value (e.g. "g CO2e"), so a long range doesn't wrap in a card of Usage's width. */
+    @property({ type: String })
+    unit = "";
 
     @property({ type: String })
     label = "";
@@ -21,12 +25,16 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
     warning = false;
 
     override render() {
-        return html`<uui-card class="summary-card">
+        return html`<uui-card class="summary-card" title=${this.description || nothing}>
             <div class="card-icon"><uui-icon .name=${this.icon}></uui-icon></div>
             <div class="card-content">
-                <div class="card-value">${this.value}</div>
+                <div class="card-value">
+                    <span class="card-number">${this.value}</span>${this.unit
+                        ? html`<span class="card-unit"> ${this.unit}</span>`
+                        : nothing}
+                </div>
                 <div class="card-label">${this.label}</div>
-                ${this.description ? html`<div class="card-description">${this.description}</div>` : nothing}
+                ${this.description ? html`<div class="sr-only">${this.description}</div>` : nothing}
             </div>
         </uui-card>`;
     }
@@ -54,7 +62,7 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
 
             .card-icon uui-icon {
                 font-size: 1.5rem;
-                color: var(--uui-color-current);
+                color: var(--uui-color-default-emphasis, #2d42ab);
             }
 
             :host([warning]) .card-icon uui-icon,
@@ -66,7 +74,6 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
                 flex: 1;
                 display: flex;
                 flex-direction: column;
-                gap: var(--uui-size-space-1);
             }
 
             .card-value {
@@ -81,9 +88,26 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
                 font-weight: 500;
             }
 
-            .card-description {
-                font-size: var(--uui-type-small-size);
-                color: var(--uui-color-text-alt);
+            /* Hover shows the description as a tooltip; this keeps it for keyboard, touch and screen readers. */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+
+            .card-number {
+                white-space: nowrap;
+            }
+
+            .card-unit {
+                font-size: var(--uui-type-default-size);
+                white-space: nowrap;
             }
         `,
     ];

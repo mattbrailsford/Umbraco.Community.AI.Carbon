@@ -5,7 +5,7 @@ import type { EstimateFeatureBreakdownModel } from "../api/types.gen.js";
 import { buildFeatureRows, type FeatureRowViewModel } from "./feature-table-model.js";
 
 /**
- * The "By feature" table. Renders from the `byFeature` property, in the order given; it never fetches.
+ * The "By Feature" table. Renders from the `byFeature` property, in the order given; it never fetches.
  * - Analytics switched off: renders nothing, because the whole-view message (T19) covers it.
  * - Breakdown unavailable (analytics on): a short note pointing at the Umbraco.AI setting.
  * - Available but no items: renders nothing, the empty page state belongs to the view.
@@ -33,20 +33,23 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
     override render() {
         if (!this.analyticsEnabled || !this.byFeature) return nothing;
         const t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
-        const heading = html`<h3>${t("aiCarbon_byFeature_headline", "By feature")}</h3>`;
+        const headline = t("aiCarbon_byFeature_headline", "By Feature");
 
         if (!this.byFeature.available) {
-            return html`${heading}<p class="note">
-                ${t(
-                    "aiCarbon_byFeature_switchedOff",
-                    "Feature breakdown is switched off in Umbraco.AI analytics settings.",
-                )}
-            </p>`;
+            return html`<uui-box headline=${headline}>
+                <p class="note">
+                    ${t(
+                        "aiCarbon_byFeature_switchedOff",
+                        "Feature breakdown is switched off in Umbraco.AI analytics settings.",
+                    )}
+                </p>
+            </uui-box>`;
         }
         if (this.byFeature.items.length === 0) return nothing;
 
         return html`
-            ${heading}
+            <uui-box class="flush" headline=${headline}>
+            <div class="table-scroll">
             <uui-table>
                 <uui-table-head>
                     <uui-table-head-cell>${t("aiCarbon_byFeature_feature", "Feature")}</uui-table-head-cell>
@@ -55,6 +58,8 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
                 </uui-table-head>
                 ${repeat(buildFeatureRows(this.byFeature.items), (row) => row.key, (row) => this.#renderRow(row))}
             </uui-table>
+            </div>
+            </uui-box>
         `;
     }
 
@@ -63,11 +68,20 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
         css`
             :host {
                 display: block;
-                overflow-x: auto;
             }
 
-            h3 {
-                margin: 0 0 var(--uui-size-space-4);
+            /* Tables run edge to edge inside the box: no box padding, no inset table border. */
+            uui-box.flush {
+                --uui-box-default-padding: 0;
+            }
+
+            uui-table {
+                border: 0;
+                border-radius: 0;
+            }
+
+            .table-scroll {
+                overflow-x: auto;
             }
 
             .note {

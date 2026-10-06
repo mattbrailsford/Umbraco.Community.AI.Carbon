@@ -111,10 +111,11 @@ export class AICarbonTrendChartElement extends UmbLitElement {
         const t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
         const summary = describeTrend(this.points, this.granularity, t);
         return html`
-            <h3>${t("aiCarbon_trend_headline", "Over time")}</h3>
-            <div class="chart-container">
-                <canvas role="img" aria-label=${summary}></canvas>
-            </div>
+            <uui-box headline=${t("aiCarbon_trend_headline", "CO2e Over Time")}>
+                <div class="chart-container">
+                    <canvas role="img" aria-label=${summary}></canvas>
+                </div>
+            </uui-box>
         `;
     }
 
@@ -125,13 +126,11 @@ export class AICarbonTrendChartElement extends UmbLitElement {
                 display: block;
             }
 
-            h3 {
-                margin: 0 0 var(--uui-size-space-4);
-            }
-
+            /* Same chart sizing as Umbraco.AI's Usage chart box. */
             .chart-container {
                 position: relative;
-                height: 300px;
+                height: 350px;
+                padding: 0 var(--uui-size-space-4);
             }
         `,
     ];

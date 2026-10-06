@@ -13,7 +13,8 @@ describe("Feature: aicarbon-summary-cards element", () => {
         await element.updateComplete;
 
         const cards = [...element.shadowRoot!.querySelectorAll("aicarbon-summary-card")];
-        expect(cards.map((c) => c.getAttribute("value"))).toEqual(["1.2–8.4 g CO2e", "1.4–2.4 Wh", "5", "2"]);
+        expect(cards.map((c) => c.getAttribute("value"))).toEqual(["1.2–8.4", "1.4–2.4", "5", "2"]);
+        expect(cards.map((c) => c.getAttribute("unit"))).toEqual(["g CO2e", "Wh", "", ""]);
         expect(cards.map((c) => c.hasAttribute("warning"))).toEqual([false, false, false, true]);
         element.remove();
     });

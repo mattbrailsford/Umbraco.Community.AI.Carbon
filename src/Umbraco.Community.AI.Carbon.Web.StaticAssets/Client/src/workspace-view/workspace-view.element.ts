@@ -149,27 +149,33 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     #renderBody(state: ViewState) {
         switch (state) {
             case "loading":
-                return html`<uui-loader-bar></uui-loader-bar>
-                    <p class="loading-text">${this.#t("aiCarbon_loading", "Loading the estimate…")}</p>`;
+                return html`<uui-box>
+                    <uui-loader-bar></uui-loader-bar>
+                    <p class="loading-text">${this.#t("aiCarbon_loading", "Loading the estimate…")}</p>
+                </uui-box>`;
             case "content":
                 return this._estimate ? this.#renderContent(this._estimate) : nothing;
             case "empty":
-                return this.#renderMessage(
-                    this.#t("aiCarbon_empty_headline", "No AI usage in this period yet"),
-                    this.#t("aiCarbon_empty_hint", "Pick a longer time range to look further back."),
-                );
+                return html`<uui-box>
+                    ${this.#renderMessage(
+                        this.#t("aiCarbon_empty_headline", "No AI usage in this period yet"),
+                        this.#t("aiCarbon_empty_hint", "Pick a longer time range to look further back."),
+                    )}
+                </uui-box>`;
             case "analyticsDisabled":
-                return this.#renderMessage(
-                    this.#t("aiCarbon_analyticsDisabled_headline", "Umbraco.AI analytics are switched off"),
-                    this.#t(
-                        "aiCarbon_analyticsDisabled_body",
-                        "There is no usage recorded, so there is nothing to estimate. To turn analytics on, set Umbraco:AI:Analytics:Enabled to true in appsettings.json.",
-                    ),
-                );
+                return html`<uui-box>
+                    ${this.#renderMessage(
+                        this.#t("aiCarbon_analyticsDisabled_headline", "Umbraco.AI analytics are switched off"),
+                        this.#t(
+                            "aiCarbon_analyticsDisabled_body",
+                            "There is no usage recorded, so there is nothing to estimate. To turn analytics on, set Umbraco:AI:Analytics:Enabled to true in appsettings.json.",
+                        ),
+                    )}
+                </uui-box>`;
             case "forbidden":
-                return this.#renderMessage(
-                    this.#t("aiCarbon_forbidden", "You need access to the AI section to see this."),
-                );
+                return html`<uui-box>
+                    ${this.#renderMessage(this.#t("aiCarbon_forbidden", "You need access to the AI section to see this."))}
+                </uui-box>`;
             case "error":
                 return html`<uui-box class="error" role="alert">
                     ${this.#renderMessage(
@@ -194,15 +200,16 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         // Reloading: figures from the previous range stay visible, dimmed, until the new ones arrive.
         const reloading = this._loading && state !== "loading";
         return html`
-            <uui-box>
-                <div slot="headline">${this.#t("aiCarbon_headline", "Estimated CO2 emissions")}</div>
-                <aicarbon-header
-                    slot="header-actions"
-                    .range=${this._range}
-                    .method=${this._estimate?.method}
-                    @range-change=${this.#onRangeChange}
-                    @method-open=${this.#onMethodOpen}
-                ></aicarbon-header>
+            <div class="layout">
+                <div class="page-header">
+                    <h3>${this.#t("aiCarbon_headline", "Estimated CO2 Emissions")}</h3>
+                    <aicarbon-header
+                        .range=${this._range}
+                        .method=${this._estimate?.method}
+                        @range-change=${this.#onRangeChange}
+                        @method-open=${this.#onMethodOpen}
+                    ></aicarbon-header>
+                </div>
                 ${reloading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                 <div
                     id="body"
@@ -212,7 +219,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 >
                     ${this.#renderBody(state)}
                 </div>
-            </uui-box>
+            </div>
         `;
     }
 
@@ -221,7 +228,27 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         css`
             :host {
                 display: block;
-                padding: var(--uui-size-layout-1);
+                /* Same page padding and section spacing as Umbraco.AI's Usage dashboard. */
+                padding: var(--uui-size-layout-2);
+            }
+
+            .layout {
+                display: flex;
+                flex-direction: column;
+                gap: var(--uui-size-space-5);
+            }
+
+            .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: var(--uui-size-space-3);
+                margin-bottom: var(--uui-size-space-3);
+            }
+
+            .page-header h3 {
+                margin: 0;
             }
 
             .sections {
@@ -241,7 +268,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
 
             .message {
                 text-align: center;
-                padding: var(--uui-size-layout-1);
+                padding: var(--uui-size-space-6);
             }
 
             .loading-text {

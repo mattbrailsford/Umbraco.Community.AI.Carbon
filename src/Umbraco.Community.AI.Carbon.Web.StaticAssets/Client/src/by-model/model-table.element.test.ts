@@ -38,9 +38,17 @@ describe("Feature: aicarbon-model-table element", () => {
         expect(rows.map((r) => r.querySelector(".model-id")!.textContent)).toEqual(["a", "b", "c"]);
         expect(rows.map((r) => r.querySelector("uui-tag")!.textContent!.trim())).toEqual([
             "Estimated",
-            "Not estimated (unknown model)",
-            "Not estimated (not supported)",
+            "Unknown Model",
+            "Not Supported",
         ]);
+        element.remove();
+    });
+
+    it("explains a not-estimated status in the tooltip and in text for assistive technology", async () => {
+        const element = await render([row({ status: "UnknownModel", co2eGrams: null })]);
+        const tag = element.shadowRoot!.querySelector("uui-tag")!;
+        expect(tag.getAttribute("title")).toBe("Not estimated: EcoLogits doesn't know this model.");
+        expect(element.shadowRoot!.querySelector(".sr-only")!.textContent).toBe(tag.getAttribute("title"));
         element.remove();
     });
 

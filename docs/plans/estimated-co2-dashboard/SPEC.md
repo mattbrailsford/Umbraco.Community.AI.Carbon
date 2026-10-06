@@ -60,7 +60,7 @@ All in `Umbraco.Community.AI.Carbon.Web.StaticAssets/Client`, Lit + UUI, strings
 
 **`aicarbon-workspace-view` (the "CO2" tab)** — `workspaceView` on
 `UmbracoAI.Workspace.AnalyticsRoot`, shown after "Dashboard".
-- Header row: title, a date-range selector (`Last 24 hours` / `Last 7 days` / `Last 30 days`,
+- Header row: title, a date-range selector (`Last 24 Hours` / `Last 7 Days` / `Last 30 Days`,
   same options as the Usage dashboard; a short static list, so a `uui-select` is a deliberate
   choice, not a missing picker), and a "How is this calculated?" button.
 - Four summary cards: estimated CO2e (shown as a range, e.g. "1.2–8.4 g CO2e"), estimated energy

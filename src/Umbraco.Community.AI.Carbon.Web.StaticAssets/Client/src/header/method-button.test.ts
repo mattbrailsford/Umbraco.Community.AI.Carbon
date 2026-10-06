@@ -26,7 +26,7 @@ async function render(withMethod: boolean) {
     await element.updateComplete;
     let opened = 0;
     element.addEventListener("method-open", () => opened++);
-    const button = element.shadowRoot!.querySelector("uui-button") as HTMLElement & { disabled: boolean };
+    const button = element.shadowRoot!.querySelector('uui-button[label="How is this calculated?"]') as HTMLElement & { disabled: boolean };
     return { element, button, opened: () => opened };
 }
 
