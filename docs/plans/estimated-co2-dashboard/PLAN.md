@@ -51,7 +51,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 
 ## Backend: estimate service
 
-- [ ] **T5** — Estimate service: totals and by model. Public `IAICarbonEstimateService.GetEstimateAsync(from, to, granularity)`
+- [x] **T5** — Estimate service: totals and by model. Public `IAICarbonEstimateService.GetEstimateAsync(from, to, granularity)`
   using `IAIUsageAnalyticsService`: list providers and models from `GetBreakdownByProviderAsync`
   and `GetBreakdownByModelAsync` (the model breakdown carries no provider), then filtered
   `GetSummaryAsync` per (provider, model) pair with `Capability = Chat` for output

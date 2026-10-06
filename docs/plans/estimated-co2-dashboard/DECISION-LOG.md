@@ -65,3 +65,7 @@
 - 06-10-2026: (T5 review) Requests count successes only; output tokens include failed requests'
   tokens (generated tokens used energy anyway). Model ids differing only by case may double count on
   SQL Server (case-insensitive filters vs ordinal breakdown grouping); accepted as rare.
+- 06-10-2026: (T5) Granularity auto-pick duplicates Umbraco.AI's rule (<= 7 days hourly) and is passed
+  explicitly to every call. GetEstimateAsync throws ArgumentException when from >= to (T11 returns 400 first).
+- 06-10-2026: (T5) One (provider, model) pair can give two rows (chat estimated + unsupported non-chat);
+  the frontend row key is ProviderId + ModelId + Status. ByFeature reports Available=false until T8.
