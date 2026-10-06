@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Umbraco.AI.Core.Analytics;
+using Umbraco.AI.Core.Analytics.Usage;
 using Umbraco.Community.AI.Carbon.Core.Configuration;
 using Umbraco.Community.AI.Carbon.Core.EcoLogits;
 using Umbraco.Community.AI.Carbon.Core.Estimation;
@@ -14,7 +15,7 @@ internal static class EstimateServiceFactory
 {
     // T9 adds the behaviour behind electricityZone; T5 only feeds it into the options.
     public static IAICarbonEstimateService Create(
-        FakeUsageAnalyticsService usage,
+        IAIUsageAnalyticsService usage,
         bool analyticsEnabled = true,
         bool featureTypeDimension = true,
         string? electricityZone = null,
@@ -22,7 +23,11 @@ internal static class EstimateServiceFactory
         IEcoLogitsDataRepository? data = null,
         IAICarbonModelResolver? extraResolver = null)
     {
-        usage.IncludeFeatureTypeDimension = featureTypeDimension;
+        if (usage is FakeUsageAnalyticsService fake)
+        {
+            fake.IncludeFeatureTypeDimension = featureTypeDimension;
+        }
+
         data ??= EcoLogitsDataRepository.LoadEmbedded();
         var carbonOptions = Options.Create(new AICarbonOptions
         {

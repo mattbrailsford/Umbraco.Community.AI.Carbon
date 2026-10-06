@@ -72,3 +72,9 @@
 - 06-10-2026: (T6) All services singletons (Umbraco.AI's analytics service is a singleton). No
   ComposeAfter needed (resolution is lazy). Integration tests reference Umbraco.AI.Startup (test
   project only) for AddUmbracoAI() and run Umbraco.AI's migration handler in SetUp.
+- 06-10-2026: (T7) Per-model totals are derived from the time-series buckets so the series always
+  sums to the total. A non-aligned `from` drops the partial first bucket, matching Umbraco.AI.
+- 06-10-2026: (T7 review) Window limits: Hourly <= 93 days, Daily <= 1,830 days (orchestrator call,
+  covers raised hourly retention and ~5 years daily; UI only offers 24h/7d/30d). Service throws,
+  T11 returns 400. Inputs normalised to UTC. Brief NotEstimated drift when a request lands between
+  the summary and series reads is accepted as transient.

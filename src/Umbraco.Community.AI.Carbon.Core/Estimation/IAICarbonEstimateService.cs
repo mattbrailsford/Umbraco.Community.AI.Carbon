@@ -12,7 +12,10 @@ public interface IAICarbonEstimateService
     /// <param name="to">End of the period (exclusive); must be after <paramref name="from"/>.</param>
     /// <param name="granularity">The bucket size, or <c>null</c> for the automatic choice Umbraco.AI makes.</param>
     /// <param name="cancellationToken">Cancels the estimate.</param>
-    /// <returns>The estimate.</returns>
+    /// <returns>The estimate. <c>From</c> and <c>To</c> are normalised to UTC (local times convert, unspecified ones are taken as UTC).</returns>
+    /// <exception cref="ArgumentException">
+    /// The period is empty, or longer than <see cref="AICarbonEstimateLimits"/> allows for its bucket size.
+    /// </exception>
     Task<AICarbonEstimate> GetEstimateAsync(
         DateTime from,
         DateTime to,

@@ -6,6 +6,10 @@
 //  - The real service reads hourly/daily statistics only up to the start of the current period and raw
 //    records only for the current period, so with Daily granularity today's already-aggregated hours are
 //    missing upstream. The fake returns everything in the window.
+//  - Time series buckets match the real service for stored statistics: UTC start of the hour/day, kept when the
+//    bucket start lies in [from, to), so a window starting mid-bucket drops its partial first bucket. The real
+//    service also reads the current period live and stores it at the current bucket start even when that start
+//    is before `from`; the fake has no clock and does not model that. Empty buckets are never returned (both).
 //  - The real filters run in the database under its collation (SQL Server case-insensitive, SQLite ordinal)
 //    while its breakdowns group ordinally. The fake compares everything ordinally.
 //  - With IncludeUsageFeatureTypeDimension off, Umbraco.AI records FeatureType = null. Set

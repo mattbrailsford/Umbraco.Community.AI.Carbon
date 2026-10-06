@@ -14,7 +14,7 @@ Every endpoint requires a signed-in backoffice user who passes Umbraco.AI's
 Query: `from` (ISO 8601, required), `to` (ISO 8601, required), `granularity`
 (`Hourly` | `Daily`, optional; when omitted the same automatic choice Umbraco.AI makes).
 
-Validation: `from` must be before `to`, else `400` problem details naming the field. A range
+Validation: `from` must be before `to`, else `400` problem details naming the field. The window may be at most 93 days for `Hourly` and 1,830 days for `Daily` (after the automatic choice), else `400` naming the field; this keeps the zero-filled series bounded. Inputs without an offset are treated as UTC. A range
 older than Umbraco.AI's retention returns whatever data exists (possibly empty), not an error.
 
 Response `200`:
