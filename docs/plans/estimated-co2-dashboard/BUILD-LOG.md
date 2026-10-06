@@ -20,3 +20,4 @@
 - 06-10-2026 T18 728d0ec: method panel; browser check (opens, closes, 0 errors); reviewer fact-checked every sentence against the code and EcoLogits 0.11.2; npm 134. 1 fix round (cap sentence, zone hint, EcoLogits credit).
 - 06-10-2026 T19 f6b2fe7: view states; browser: range remembered across reload (24h request), content layout, analytics-off message with Umbraco__AI__Analytics__Enabled=false; tests pass on Node 22 and 26; npm 157. 1 fix round (first load stuck on a foreign abort).
 - 06-10-2026 T20 5f5a32d: README written; reviewer fact-checked every claim, compiled the C# examples, checked links. End-to-end check done with seeded demo usage (user decision, see DECISION-LOG).
+- 06-10-2026 layout 5f8aa41: CO2 tab aligned with Usage dashboard plus user tweaks (edge-to-edge tables, icon-only method button, blue card icons, short status tags); side-by-side browser checks; npm 165. 2 review rounds (card a11y, unit field).
