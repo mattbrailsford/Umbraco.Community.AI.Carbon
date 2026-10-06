@@ -25,7 +25,7 @@ export default {
         byModel_requests: "Requests",
         byModel_outputTokens: "Output Tokens",
         byModel_co2e: "Estimated CO2e",
-        byModel_status: "Status",
+        byModel_notEstimated: "Not estimated",
         byFeature_headline: "By Feature",
         byFeature_feature: "Feature",
         byFeature_requests: "Requests",
@@ -36,11 +36,8 @@ export default {
         "feature_inline-chat": "Inline chat",
         "feature_inline-agent": "Inline agents",
         feature_other: "Other",
-        status_estimated: "Estimated",
-        status_unknownModel: "Unknown Model",
-        status_unknownModel_detail: "Not estimated: EcoLogits doesn't know this model.",
-        status_unsupported: "Not Supported",
-        status_unsupported_detail: "Not estimated: only chat/text generation is estimated.",
+        byModel_unknownModel_detail: "Unknown model \u2014 EcoLogits doesn't know this model.",
+        byModel_unsupported_detail: "Not supported \u2014 only chat (text generation) is estimated.",
         "warning_model-arch-not-released":
             "This model's size isn't published, so its size is estimated and the range is wide.",
         "warning_model-arch-multimodal":

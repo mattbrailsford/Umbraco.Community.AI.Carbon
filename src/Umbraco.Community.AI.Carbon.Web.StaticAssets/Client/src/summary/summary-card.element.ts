@@ -15,6 +15,10 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
     @property({ type: String })
     unit = "";
 
+    /** Small secondary line under the label, e.g. "48–77 g CO2e". Empty hides it. */
+    @property({ type: String })
+    range = "";
+
     @property({ type: String })
     label = "";
 
@@ -34,6 +38,7 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
                         : nothing}
                 </div>
                 <div class="card-label">${this.label}</div>
+                ${this.range ? html`<div class="card-range">${this.range}</div>` : nothing}
                 ${this.description ? html`<div class="sr-only">${this.description}</div>` : nothing}
             </div>
         </uui-card>`;
@@ -86,6 +91,12 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
                 font-size: var(--uui-type-small-size);
                 color: var(--uui-color-text-alt);
                 font-weight: 500;
+            }
+
+            .card-range {
+                font-size: var(--uui-type-small-size);
+                color: var(--uui-color-text-alt);
+                white-space: nowrap;
             }
 
             /* Hover shows the description as a tooltip; this keeps it for keyboard, touch and screen readers. */

@@ -28,8 +28,20 @@ describe("Feature: aicarbon-summary-card element", () => {
 
     describe("Scenario: a figure with a unit", () => {
         it("renders the unit apart from the number", async () => {
-            const element = await render({ value: "48–77", unit: "g CO2e", label: "Estimated CO2e" });
+            const element = await render({ value: "≈ 60", unit: "g CO2e", label: "Estimated CO2e" });
             expect(element.shadowRoot!.querySelector(".card-unit")!.textContent!.trim()).toBe("g CO2e");
+        });
+    });
+
+    describe("Scenario: a figure with a range", () => {
+        it("shows the range as a secondary line", async () => {
+            const element = await render({ value: "≈ 60", unit: "g CO2e", range: "48–77 g CO2e", label: "Estimated CO2e" });
+            expect(element.shadowRoot!.querySelector(".card-range")!.textContent).toBe("48–77 g CO2e");
+        });
+
+        it("shows no range line without a range", async () => {
+            const element = await render({ value: "5", label: "Requests" });
+            expect(element.shadowRoot!.querySelector(".card-range")).toBeNull();
         });
     });
 });

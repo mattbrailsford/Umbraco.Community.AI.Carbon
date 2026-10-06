@@ -1,5 +1,5 @@
 import type { EstimateFeatureItemModel } from "../api/types.gen.js";
-import { formatCo2eRange } from "../estimate/format-co2.js";
+import { formatCo2eFigure } from "../estimate/format-co2.js";
 import { formatCount } from "../estimate/format-count.js";
 
 export interface FeatureRowViewModel {
@@ -10,7 +10,10 @@ export interface FeatureRowViewModel {
     /** Shown when the localized name is missing: the English name, or the raw feature type if unknown. */
     fallbackLabel: string;
     requests: string;
+    /** The headline figure with its unit, e.g. "≈ 1.5 g CO2e". */
     co2e: string;
+    /** The range as small text, e.g. "1–2 g CO2e"; empty when the ends read the same. */
+    co2eRange: string;
 }
 
 /** Feature types with a friendly name (and its English default); anything else shows its raw value. */
@@ -29,6 +32,11 @@ export function buildFeatureRows(items: readonly EstimateFeatureItemModel[]): Fe
         labelKey: KNOWN_FEATURES.has(item.featureType) ? `aiCarbon_feature_${item.featureType}` : undefined,
         fallbackLabel: KNOWN_FEATURES.get(item.featureType) ?? item.featureType,
         requests: formatCount(item.requests),
-        co2e: formatCo2eRange(item.co2eGrams),
+        ...co2eText(item.co2eGrams),
     }));
+}
+
+function co2eText(range: EstimateFeatureItemModel["co2eGrams"]): Pick<FeatureRowViewModel, "co2e" | "co2eRange"> {
+    const figure = formatCo2eFigure(range);
+    return { co2e: figure.centralText, co2eRange: figure.range };
 }

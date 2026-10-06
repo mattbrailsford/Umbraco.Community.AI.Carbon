@@ -5,33 +5,15 @@ import type { AiCarbonEstimateStatus, EstimateModelRowModel } from "../api/types
 import { describeWarning } from "../estimate/warning-text.js";
 import { buildModelRows, type ModelRowViewModel } from "./model-table-model.js";
 
-interface StatusText {
-    key: string;
-    fallback: string;
-    color: "positive" | "warning" | "default";
-    /** Longer explanation, shown as the tag's tooltip and read out by assistive technology. */
-    detail?: { key: string; fallback: string };
-}
-
-const STATUS: Record<AiCarbonEstimateStatus, StatusText> = {
-    Estimated: { key: "aiCarbon_status_estimated", fallback: "Estimated", color: "positive" },
+/** Why a row has no estimate, as a localization key and its English default. */
+const NOT_ESTIMATED_REASON: Partial<Record<AiCarbonEstimateStatus, { key: string; fallback: string }>> = {
     UnknownModel: {
-        key: "aiCarbon_status_unknownModel",
-        fallback: "Unknown Model",
-        color: "warning",
-        detail: {
-            key: "aiCarbon_status_unknownModel_detail",
-            fallback: "Not estimated: EcoLogits doesn't know this model.",
-        },
+        key: "aiCarbon_byModel_unknownModel_detail",
+        fallback: "Unknown model \u2014 EcoLogits doesn't know this model.",
     },
     UnsupportedCapability: {
-        key: "aiCarbon_status_unsupported",
-        fallback: "Not Supported",
-        color: "default",
-        detail: {
-            key: "aiCarbon_status_unsupported_detail",
-            fallback: "Not estimated: only chat/text generation is estimated.",
-        },
+        key: "aiCarbon_byModel_unsupported_detail",
+        fallback: "Not supported \u2014 only chat (text generation) is estimated.",
     },
 };
 
@@ -55,9 +37,28 @@ export class AICarbonModelTableElement extends UmbLitElement {
         </span>`;
     }
 
+    #renderCo2e(row: ModelRowViewModel) {
+        if (row.status === "Estimated") {
+            return html`<div class="figure">
+                <div class="figure-text">
+                    <div class="central">${row.co2e}</div>
+                    ${row.co2eRange ? html`<div class="range">${row.co2eRange}</div>` : nothing}
+                </div>
+                ${this.#renderWarnings(row)}
+            </div>`;
+        }
+        const reason = NOT_ESTIMATED_REASON[row.status];
+        const detail = reason ? this.localize.termOrDefault(reason.key, reason.fallback) : undefined;
+        return html`<div class="figure">
+            <span class="not-estimated" title=${detail ?? nothing}>
+                ${this.localize.termOrDefault("aiCarbon_byModel_notEstimated", "Not estimated")}
+            </span>
+            ${detail ? html`<span class="sr-only">${detail}</span>` : nothing}
+            ${this.#renderWarnings(row)}
+        </div>`;
+    }
+
     #renderRow(row: ModelRowViewModel) {
-        const status = STATUS[row.status];
-        const detail = status.detail ? this.localize.termOrDefault(status.detail.key, status.detail.fallback) : undefined;
         return html`<uui-table-row>
             <uui-table-cell>
                 <div class="model">
@@ -69,16 +70,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
             <uui-table-cell>${row.zone}</uui-table-cell>
             <uui-table-cell class="number">${row.requests}</uui-table-cell>
             <uui-table-cell class="number">${row.outputTokens}</uui-table-cell>
-            <uui-table-cell class="number co2e">${row.co2e}</uui-table-cell>
-            <uui-table-cell>
-                <div class="status">
-                    <uui-tag look="secondary" color=${status.color} title=${detail ?? nothing}>
-                        ${this.localize.termOrDefault(status.key, status.fallback)}
-                    </uui-tag>
-                    ${detail ? html`<span class="sr-only">${detail}</span>` : nothing}
-                    ${this.#renderWarnings(row)}
-                </div>
-            </uui-table-cell>
+            <uui-table-cell class="number co2e">${this.#renderCo2e(row)}</uui-table-cell>
         </uui-table-row>`;
     }
 
@@ -96,7 +88,6 @@ export class AICarbonModelTableElement extends UmbLitElement {
                     <uui-table-head-cell class="number">${t("aiCarbon_byModel_requests", "Requests")}</uui-table-head-cell>
                     <uui-table-head-cell class="number">${t("aiCarbon_byModel_outputTokens", "Output Tokens")}</uui-table-head-cell>
                     <uui-table-head-cell class="number">${t("aiCarbon_byModel_co2e", "Estimated CO2e")}</uui-table-head-cell>
-                    <uui-table-head-cell>${t("aiCarbon_byModel_status", "Status")}</uui-table-head-cell>
                 </uui-table-head>
                 ${repeat(buildModelRows(this.rows), (row) => row.key, (row) => this.#renderRow(row))}
             </uui-table>
@@ -153,11 +144,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
                 color: var(--uui-color-text-alt);
             }
 
-            uui-tag {
-                white-space: nowrap;
-            }
-
-            /* The tag's tooltip is hover-only; this keeps the explanation for keyboard, touch and screen readers. */
+            /* The tooltip is hover-only; this keeps the explanation for keyboard, touch and screen readers. */
             .sr-only {
                 position: absolute;
                 width: 1px;
@@ -170,11 +157,27 @@ export class AICarbonModelTableElement extends UmbLitElement {
                 border: 0;
             }
 
-            .status {
+            .figure {
                 position: relative;
                 display: flex;
                 align-items: center;
+                justify-content: flex-end;
                 gap: var(--uui-size-space-2);
+            }
+
+            .central,
+            .range,
+            .not-estimated {
+                white-space: nowrap;
+            }
+
+            .range,
+            .not-estimated {
+                color: var(--uui-color-text-alt);
+            }
+
+            .range {
+                font-size: var(--uui-type-small-size);
             }
 
             .warnings {

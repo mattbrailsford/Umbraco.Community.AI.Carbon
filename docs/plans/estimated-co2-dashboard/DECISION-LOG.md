@@ -139,3 +139,8 @@
   icon-only button with an accessible label and tooltip. Status tags shortened to Estimated /
   Unknown Model / Not Supported, with the longer explanation in a tooltip and hidden text.
 - 06-10-2026: (User request) Summary card icons use --uui-color-default-emphasis (the chart's blue) instead of Umbraco.AI's pale --uui-color-current pink, for readability.
+- 06-10-2026: (User feedback) Lead with a rounded central figure ("≈", midpoint) and keep the range
+  in small text; drop the Status column (reason shown in the CO2e cell); add an opt-in everyday
+  equivalent based on the max CO2e worded "up to about", per the conservativeness principle (never
+  understate). Factors read directly from the DESNZ 2025 condensed set spreadsheet and the US EPA
+  calculator; mixing a UK and a US source is accepted and named in the panel.

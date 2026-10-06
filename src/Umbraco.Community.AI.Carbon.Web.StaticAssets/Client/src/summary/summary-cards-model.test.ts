@@ -14,12 +14,15 @@ describe("Feature: summary cards", () => {
         const cards = buildSummaryCards(estimate(1));
         const byKind = (kind: string) => cards.find((c) => c.kind === kind)!;
 
-        it("shows the CO2e range number", () => expect(byKind("co2e").value).toBe("1.2–8.4"));
-        it("gives the CO2e range its unit separately", () => expect(byKind("co2e").unit).toBe("g CO2e"));
-        it("shows the energy range number", () => expect(byKind("energy").value).toBe("1.4–2.4"));
-        it("gives the energy range its unit separately", () => expect(byKind("energy").unit).toBe("kWh"));
+        it("leads with the central CO2e figure", () => expect(byKind("co2e").value).toBe("≈ 4.8"));
+        it("gives the CO2e figure its unit separately", () => expect(byKind("co2e").unit).toBe("g CO2e"));
+        it("shows the CO2e range as the secondary line", () => expect(byKind("co2e").range).toBe("1.2–8.4 g CO2e"));
+        it("leads with the central energy figure", () => expect(byKind("energy").value).toBe("≈ 1.9"));
+        it("gives the energy figure its unit separately", () => expect(byKind("energy").unit).toBe("kWh"));
+        it("shows the energy range as the secondary line", () => expect(byKind("energy").range).toBe("1.4–2.4 kWh"));
         it("shows the request count", () => expect(byKind("requests").value).toBe("1,234"));
         it("gives counts no unit", () => expect([byKind("requests").unit, byKind("notEstimated").unit]).toEqual(["", ""]));
+        it("gives counts no range line", () => expect([byKind("requests").range, byKind("notEstimated").range]).toEqual(["", ""]));
         it("shows the models not estimated count", () => expect(byKind("notEstimated").value).toBe("1"));
         it("uses the warning colour for models not estimated", () => expect(byKind("notEstimated").warning).toBe(true));
         it("leaves the other cards unwarned", () =>
@@ -31,7 +34,7 @@ describe("Feature: summary cards", () => {
             const bad = estimate(0);
             bad.total.co2eGrams = { min: NaN, max: NaN };
             const card = buildSummaryCards(bad).find((c) => c.kind === "co2e")!;
-            expect([card.value, card.unit]).toEqual(["—", ""]);
+            expect([card.value, card.unit, card.range]).toEqual(["—", "", ""]);
         });
     });
 

@@ -26,6 +26,7 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
                 icon=${card.icon}
                 value=${card.value}
                 unit=${card.unit}
+                range=${card.range}
                 label=${this.localize.termOrDefault(`aiCarbon_card_${card.kind}_label`, text.label)}
                 description=${this.localize.termOrDefault(`aiCarbon_card_${card.kind}_description`, text.description)}
                 ?warning=${card.warning}

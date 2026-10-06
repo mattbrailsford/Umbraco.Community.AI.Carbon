@@ -43,7 +43,7 @@ AC1 — Tab appears after Dashboard
 AC2 — Total is a range in CO2e
   Given chat usage of a model known to EcoLogits exists in the last 7 days
   When  the AI admin opens the CO2 tab with "Last 7 days" selected
-  Then  the CO2e card shows a low-to-high range labelled "g CO2e" (or mg/kg as the size needs)
+  Then  the CO2e card leads with a rounded central figure ("≈ 60 g CO2e") and shows the low-to-high range in the same unit underneath
 
 AC3 — Energy card
   Given the same usage
@@ -399,3 +399,29 @@ AC4 — Forbidden message in UI
 - Per-connection electricity regions.
 - Estimates for embeddings and image generation, once a credible method exists.
 - Switch to Umbraco.AI's own analytics elements if they become public exports.
+
+### S10 — Relate the CO2e to something everyday (S, opt-in)
+
+As an **AI admin**,
+I want an optional everyday comparison for the estimated CO2e,
+so that the figure means something to people who don't think in grams.
+
+AC1 — Off by default
+  Given `AICarbon:ShowEquivalents` is not set
+  When  the tab loads
+  Then  no comparison is shown
+
+AC2 — Based on the top of the estimate
+  Given the setting is on and the estimate is 48–77 g CO2e
+  When  the tab loads
+  Then  the comparison uses 77 g and reads "Up to about 6 phone charges"
+
+AC3 — Scale-appropriate comparison
+  Given the setting is on
+  When  the top of the estimate is under 250 g / under 50 kg / 50 kg or more
+  Then  the comparison is phone charges / km by car / km flown respectively
+
+AC4 — Sources shown
+  Given the setting is on
+  When  the AI admin opens "How is this calculated?"
+  Then  the panel names each factor's source and year and says the comparison uses the top of the estimate

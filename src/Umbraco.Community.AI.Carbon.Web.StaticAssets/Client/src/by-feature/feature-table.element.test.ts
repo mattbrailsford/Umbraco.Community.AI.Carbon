@@ -25,7 +25,8 @@ describe("Feature: aicarbon-feature-table element", () => {
         const element = await render(available, true);
         const rows = [...element.shadowRoot!.querySelectorAll("uui-table-row")];
         expect(rows.map((r) => r.querySelector(".feature")!.textContent!.trim())).toEqual(["Agents", "Prompts", "brand-new"]);
-        expect(rows[0].textContent).toContain("1–2 g CO2e");
+        expect(rows[0].querySelector(".central")!.textContent).toBe("≈ 1.5 g CO2e");
+        expect(rows[0].querySelector(".range")!.textContent).toBe("1–2 g CO2e");
         element.remove();
     });
 

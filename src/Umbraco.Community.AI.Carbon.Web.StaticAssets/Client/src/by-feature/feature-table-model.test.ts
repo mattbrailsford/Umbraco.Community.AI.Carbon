@@ -11,10 +11,10 @@ const item = (featureType: string, requests: number, min: number, max: number): 
 describe("Feature: by-feature rows", () => {
     it("builds rows for agent, prompt and other with localized-name keys and formatted ranges, in API order", () => {
         const rows = buildFeatureRows([item("agent", 1200, 1.2, 8.4), item("prompt", 3, 0.5, 2), item("other", 1, 1, 1)]);
-        expect(rows.map((r) => [r.key, r.labelKey, r.requests, r.co2e])).toEqual([
-            ["agent", "aiCarbon_feature_agent", "1,200", "1.2–8.4 g CO2e"],
-            ["prompt", "aiCarbon_feature_prompt", "3", "0.5–2 g CO2e"],
-            ["other", "aiCarbon_feature_other", "1", "1 g CO2e"],
+        expect(rows.map((r) => [r.key, r.labelKey, r.requests, r.co2e, r.co2eRange])).toEqual([
+            ["agent", "aiCarbon_feature_agent", "1,200", "≈ 4.8 g CO2e", "1.2–8.4 g CO2e"],
+            ["prompt", "aiCarbon_feature_prompt", "3", "≈ 1.3 g CO2e", "0.5–2 g CO2e"],
+            ["other", "aiCarbon_feature_other", "1", "1 g CO2e", ""],
         ]);
     });
 

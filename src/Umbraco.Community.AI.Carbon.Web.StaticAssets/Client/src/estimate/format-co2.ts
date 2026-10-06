@@ -17,11 +17,15 @@ import { NO_VALUE } from "./no-value.js";
  * - If rounding lifts the max to the next unit's size, the next unit is used (999.96 g shows as
  *   "1 kg", never "1000 g").
  * - Numbers use the shared English style (thousands separators, e.g. "1,200 kg").
+ * - The central figure is the midpoint of the range, "≈ 60 g CO2e". It always uses the range's unit
+ *   (chosen from the max), so a headline and its range never disagree ("≈ 0.9 g" above "0.5–1.3 g").
+ *   It has no "≈" when the ends read the same (min === max), for zero, or for "—".
  * - Zero is "0 g CO2e" / "0 Wh". Non-finite input (NaN, Infinity) shows "—"; negative input is
  *   clamped to 0, since an estimate can't be below zero.
  */
 
 const RANGE_SEPARATOR = "–";
+const APPROXIMATELY = "≈";
 const MAX_DECIMALS = 6;
 
 interface Unit {
@@ -41,15 +45,72 @@ const ENERGY_UNITS: readonly Unit[] = [
     { label: "kWh", size: 1000 },
 ];
 
+/** What differs between CO2e and energy: units, the zero unit, and text appended to the unit label. */
+interface Kind {
+    units: readonly Unit[];
+    zeroUnit: string;
+    suffix: string;
+}
+
+const CO2E_KIND: Kind = { units: CO2E_UNITS, zeroUnit: "g", suffix: " CO2e" };
+const ENERGY_KIND: Kind = { units: ENERGY_UNITS, zeroUnit: "Wh", suffix: "" };
+
 /** A range as its number part and unit part, e.g. "1.2–8.4" and "g CO2e". `unit` is empty when there is no value ("—"). */
 export interface FormattedRange {
     value: string;
     unit: string;
 }
 
+/** A friendly headline figure plus its range, e.g. "≈ 60 g CO2e" and "48–77 g CO2e". */
+export interface Figure {
+    /** The central figure as number and unit, e.g. "≈ 60" and "g CO2e". */
+    central: FormattedRange;
+    /** The central figure as one string, e.g. "≈ 60 g CO2e". */
+    centralText: string;
+    /** The "min–max unit" text, or empty when the ends read the same (the central figure already says it all). */
+    range: string;
+}
+
+export function formatCo2eFigure(range: EstimateRangeModel): Figure {
+    return buildFigure(range, CO2E_KIND);
+}
+
+export function formatEnergyFigure(range: EstimateRangeModel): Figure {
+    return buildFigure(range, ENERGY_KIND);
+}
+
+/** The midpoint of a range as one rounded figure, e.g. "≈ 60" and "g CO2e", in the same unit as the range. */
+export function formatCentral(range: EstimateRangeModel, kind: "co2e" | "energy"): FormattedRange {
+    return buildFigure(range, kind === "co2e" ? CO2E_KIND : ENERGY_KIND).central;
+}
+
+function buildFigure(range: EstimateRangeModel, kind: Kind): Figure {
+    const parts = layoutRange(range, kind.units, kind.zeroUnit);
+    const central = layoutCentral(range, kind.units, kind.zeroUnit);
+    const withSuffix = (p: FormattedRange): FormattedRange => (p.unit ? { ...p, unit: `${p.unit}${kind.suffix}` } : p);
+    const centralParts = withSuffix(central);
+    return {
+        central: centralParts,
+        centralText: joinParts(centralParts),
+        range: parts.collapsed ? "" : joinParts(withSuffix(parts)),
+    };
+}
+
+function layoutCentral(range: EstimateRangeModel, units: readonly Unit[], zeroUnit: string): FormattedRange {
+    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return { value: NO_VALUE, unit: "" };
+
+    const min = Math.max(0, range.min);
+    const max = Math.max(0, range.max);
+    if (max === 0) return { value: "0", unit: zeroUnit };
+
+    const unit = pickUnit(max, units);
+    const value = formatNumber((min + max) / 2 / unit.size);
+    return { value: min === max ? value : `${APPROXIMATELY} ${value}`, unit: unit.label };
+}
+
 export function formatCo2eRangeParts(range: EstimateRangeModel): FormattedRange {
-    const { value, unit } = formatRangeParts(range, CO2E_UNITS, "g");
-    return unit ? { value, unit: `${unit} CO2e` } : { value, unit };
+    const { value, unit } = layoutRange(range, CO2E_UNITS, "g");
+    return unit ? { value, unit: `${unit}${CO2E_KIND.suffix}` } : { value, unit };
 }
 
 export function formatCo2eRange(range: EstimateRangeModel): string {
@@ -78,7 +139,8 @@ export function formatCo2eAxisValue(grams: number, unit: Co2eAxisUnit): string {
 }
 
 export function formatEnergyRangeParts(range: EstimateRangeModel): FormattedRange {
-    return formatRangeParts(range, ENERGY_UNITS, "Wh");
+    const { value, unit } = layoutRange(range, ENERGY_UNITS, "Wh");
+    return { value, unit };
 }
 
 export function formatEnergyRange(range: EstimateRangeModel): string {
@@ -89,17 +151,26 @@ function joinParts({ value, unit }: FormattedRange): string {
     return unit ? `${value} ${unit}` : value;
 }
 
-function formatRangeParts(range: EstimateRangeModel, units: readonly Unit[], zeroUnit: string): FormattedRange {
-    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return { value: NO_VALUE, unit: "" };
+/** A laid-out range; `collapsed` is true when both ends read the same, so `value` is a single number. */
+interface LaidOutRange extends FormattedRange {
+    collapsed: boolean;
+}
+
+function layoutRange(range: EstimateRangeModel, units: readonly Unit[], zeroUnit: string): LaidOutRange {
+    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return { value: NO_VALUE, unit: "", collapsed: true };
 
     const minValue = Math.max(0, range.min);
     const maxValue = Math.max(0, range.max);
-    if (maxValue === 0 && minValue === 0) return { value: "0", unit: zeroUnit };
+    if (maxValue === 0 && minValue === 0) return { value: "0", unit: zeroUnit, collapsed: true };
 
     const unit = pickUnit(maxValue, units);
     const min = formatNumber(minValue / unit.size);
     const max = formatNumber(maxValue / unit.size);
-    return { value: min === max ? max : `${min}${RANGE_SEPARATOR}${max}`, unit: unit.label };
+    return {
+        value: min === max ? max : `${min}${RANGE_SEPARATOR}${max}`,
+        unit: unit.label,
+        collapsed: min === max,
+    };
 }
 
 /**

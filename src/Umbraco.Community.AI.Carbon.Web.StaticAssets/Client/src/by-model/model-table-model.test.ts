@@ -32,21 +32,29 @@ describe("Feature: by-model rows", () => {
                 zone: "USA",
                 requests: "1,200",
                 outputTokens: "45,000",
-                co2e: "1.2–8.4 g CO2e",
+                co2e: "≈ 4.8 g CO2e",
+                co2eRange: "1.2–8.4 g CO2e",
                 status: "Estimated",
             });
         });
     });
 
+    describe("Scenario: a model whose ends read the same", () => {
+        it("has no range line", () => {
+            const row = buildModelRows([{ ...estimated, co2eGrams: { min: 3, max: 3 } }])[0];
+            expect([row.co2e, row.co2eRange]).toEqual(["3 g CO2e", ""]);
+        });
+    });
+
     describe("Scenario: an unknown model", () => {
         it("has no CO2e figure and keeps its status", () => {
-            expect(buildModelRows([unknown])[0]).toMatchObject({ co2e: "—", matchedAs: "—", zone: "—", status: "UnknownModel" });
+            expect(buildModelRows([unknown])[0]).toMatchObject({ co2e: "—", co2eRange: "", matchedAs: "—", zone: "—", status: "UnknownModel" });
         });
     });
 
     describe("Scenario: an unsupported capability", () => {
         it("keeps its status and shows no CO2e", () => {
-            expect(buildModelRows([unsupported])[0]).toMatchObject({ co2e: "—", status: "UnsupportedCapability" });
+            expect(buildModelRows([unsupported])[0]).toMatchObject({ co2e: "—", co2eRange: "", status: "UnsupportedCapability" });
         });
     });
 

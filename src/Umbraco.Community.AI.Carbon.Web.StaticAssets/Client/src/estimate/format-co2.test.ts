@@ -1,6 +1,6 @@
 // S1 (AC2, AC3) — Readable CO2e and energy ranges. Task: T14.
 import { describe, expect, it } from "vitest";
-import { formatCo2eRange, formatEnergyRange } from "./format-co2.js";
+import { formatCentral, formatCo2eFigure, formatCo2eRange, formatEnergyRange } from "./format-co2.js";
 
 describe("Feature: readable CO2e and energy ranges", () => {
     describe("Scenario: a range in grams", () => {
@@ -114,5 +114,79 @@ describe("Feature: invalid inputs", () => {
 describe("Feature: number style", () => {
     it("uses thousands separators for large values", () => {
         expect(formatCo2eRange({ min: 1_200_000, max: 8_400_000 })).toBe("1,200–8,400 kg CO2e");
+    });
+});
+
+describe("Feature: central figure", () => {
+    describe("Scenario: the midpoint of a range", () => {
+        it("rounds the midpoint and marks it approximate", () => {
+            expect(formatCentral({ min: 48, max: 72 }, "co2e")).toEqual({ value: "≈ 60", unit: "g CO2e" });
+        });
+    });
+
+    describe("Scenario: the unit follows the range's max, so headline and range agree", () => {
+        it("uses grams below 1 kg although the midpoint is under 1 g", () => {
+            expect(formatCentral({ min: 0.5, max: 1.3 }, "co2e")).toEqual({ value: "≈ 0.9", unit: "g CO2e" });
+        });
+
+        it("uses kilograms when the max reaches 1 kg", () => {
+            expect(formatCentral({ min: 100, max: 1500 }, "co2e")).toEqual({ value: "≈ 0.8", unit: "kg CO2e" });
+        });
+
+        it.each([
+            { min: 0.5, max: 1.3 },
+            { min: 100, max: 1500 },
+            { min: 0.0004, max: 2 },
+            { min: 0.5, max: 999.96 },
+        ])("always shows the same unit as the range for %o", (range) => {
+            const figure = formatCo2eFigure(range);
+            expect(figure.range.endsWith(figure.central.unit)).toBe(true);
+        });
+
+        it("does the same for energy", () => {
+            expect(formatCentral({ min: 100, max: 1500 }, "energy")).toEqual({ value: "≈ 0.8", unit: "kWh" });
+        });
+
+        it("uses milligrams for a small midpoint", () => {
+            expect(formatCentral({ min: 0.012, max: 0.084 }, "co2e")).toEqual({ value: "≈ 48", unit: "mg CO2e" });
+        });
+
+        it("uses kilograms from 1,000 g", () => {
+            expect(formatCentral({ min: 1200, max: 8400 }, "co2e")).toEqual({ value: "≈ 4.8", unit: "kg CO2e" });
+        });
+
+        it("uses kWh for energy from 1,000 Wh", () => {
+            expect(formatCentral({ min: 1400, max: 2400 }, "energy")).toEqual({ value: "≈ 1.9", unit: "kWh" });
+        });
+
+        it("uses Wh for small energy", () => {
+            expect(formatCentral({ min: 10, max: 30 }, "energy")).toEqual({ value: "≈ 20", unit: "Wh" });
+        });
+    });
+
+    describe("Scenario: no approximation", () => {
+        it("drops the sign when the ends are equal", () => {
+            expect(formatCentral({ min: 3, max: 3 }, "co2e")).toEqual({ value: "3", unit: "g CO2e" });
+        });
+
+        it("shows zero plainly", () => {
+            expect(formatCentral({ min: 0, max: 0 }, "co2e")).toEqual({ value: "0", unit: "g CO2e" });
+        });
+    });
+
+    describe("Scenario: invalid input", () => {
+        it.each([NaN, Infinity, -Infinity])("shows a dash with no unit for %s", (value) => {
+            expect(formatCentral({ min: 0, max: value }, "co2e")).toEqual({ value: "—", unit: "" });
+        });
+    });
+
+    describe("Scenario: the range line", () => {
+        it("gives the range text next to the central figure", () => {
+            expect(formatCo2eFigure({ min: 48, max: 72 }).range).toBe("48–72 g CO2e");
+        });
+
+        it("has no range line when the ends read the same", () => {
+            expect(formatCo2eFigure({ min: 3, max: 3 }).range).toBe("");
+        });
     });
 });

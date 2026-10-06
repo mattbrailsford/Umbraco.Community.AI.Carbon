@@ -26,7 +26,10 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
         return html`<uui-table-row>
             <uui-table-cell class="feature">${label}</uui-table-cell>
             <uui-table-cell class="number">${row.requests}</uui-table-cell>
-            <uui-table-cell class="number">${row.co2e}</uui-table-cell>
+            <uui-table-cell class="number">
+                <div class="central">${row.co2e}</div>
+                ${row.co2eRange ? html`<div class="range">${row.co2eRange}</div>` : nothing}
+            </uui-table-cell>
         </uui-table-row>`;
     }
 
@@ -96,6 +99,16 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
 
             .number {
                 text-align: right;
+            }
+
+            .central,
+            .range {
+                white-space: nowrap;
+            }
+
+            .range {
+                font-size: var(--uui-type-small-size);
+                color: var(--uui-color-text-alt);
             }
 
             uui-table-row:nth-child(even) {

@@ -28,7 +28,7 @@ describe("Feature: aicarbon-model-table element", () => {
         element.remove();
     });
 
-    it("renders one row per model with its status, in order", async () => {
+    it("renders one row per model, in order", async () => {
         const element = await render([
             row({ modelId: "a" }),
             row({ modelId: "b", status: "UnknownModel", co2eGrams: null }),
@@ -36,19 +36,43 @@ describe("Feature: aicarbon-model-table element", () => {
         ]);
         const rows = [...element.shadowRoot!.querySelectorAll("uui-table-row")];
         expect(rows.map((r) => r.querySelector(".model-id")!.textContent)).toEqual(["a", "b", "c"]);
-        expect(rows.map((r) => r.querySelector("uui-tag")!.textContent!.trim())).toEqual([
-            "Estimated",
-            "Unknown Model",
-            "Not Supported",
+        element.remove();
+    });
+
+    it("has no Status column", async () => {
+        const element = await render([row({})]);
+        const heads = [...element.shadowRoot!.querySelectorAll("uui-table-head-cell")].map((h) => h.textContent!.trim());
+        expect(heads).toEqual(["Model", "Matched As", "Zone", "Requests", "Output Tokens", "Estimated CO2e"]);
+        expect(element.shadowRoot!.querySelector("uui-tag")).toBeNull();
+        element.remove();
+    });
+
+    it("shows an estimated row's central figure with its range on a second line", async () => {
+        const element = await render([row({ co2eGrams: { min: 48, max: 72 } })]);
+        const cell = element.shadowRoot!.querySelector(".co2e")!;
+        expect([cell.querySelector(".central")!.textContent, cell.querySelector(".range")!.textContent]).toEqual([
+            "≈ 60 g CO2e",
+            "48–72 g CO2e",
         ]);
         element.remove();
     });
 
-    it("explains a not-estimated status in the tooltip and in text for assistive technology", async () => {
-        const element = await render([row({ status: "UnknownModel", co2eGrams: null })]);
-        const tag = element.shadowRoot!.querySelector("uui-tag")!;
-        expect(tag.getAttribute("title")).toBe("Not estimated: EcoLogits doesn't know this model.");
-        expect(element.shadowRoot!.querySelector(".sr-only")!.textContent).toBe(tag.getAttribute("title"));
+    it.each([
+        ["UnknownModel", "Unknown model \u2014 EcoLogits doesn't know this model."],
+        ["UnsupportedCapability", "Not supported \u2014 only chat (text generation) is estimated."],
+    ] as const)("shows %s rows as Not estimated with the reason as tooltip and assistive text", async (status, reason) => {
+        const element = await render([row({ status, co2eGrams: null })]);
+        const cell = element.shadowRoot!.querySelector(".co2e")!;
+        const label = cell.querySelector(".not-estimated")!;
+        expect(label.textContent!.trim()).toBe("Not estimated");
+        expect(label.getAttribute("title")).toBe(reason);
+        expect(cell.querySelector(".sr-only")!.textContent).toBe(reason);
+        element.remove();
+    });
+
+    it("puts the warning icon in the CO2e cell", async () => {
+        const element = await render([row({ warnings: ["model-arch-not-released"] })]);
+        expect(element.shadowRoot!.querySelector(".co2e .warnings")).not.toBeNull();
         element.remove();
     });
 

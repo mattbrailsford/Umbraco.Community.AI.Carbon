@@ -144,3 +144,29 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   Umbraco.AI ranges to `[17.0.0,17.999.999)`, `@umbraco-cms/backoffice` to `^17`, and confirm
   build, tests and a demo-site smoke on v17.
   story: — (release constraint from BRIEF) · depends-on: T20
+
+## Follow-up (user feedback after the v18 build)
+
+- [ ] **T22** — Friendlier figures and a slimmer table (frontend only). Cards and table cells lead
+  with a rounded central figure "≈ X unit" (midpoint of min and max, same unit rules as
+  format-co2) with the range "min–max unit" in small text underneath; the chart keeps its band.
+  Remove the by-model Status column: estimated rows show the figure; not-estimated rows show
+  "Not estimated" in the CO2e cell with the reason (Unknown model / Not supported) as tooltip +
+  sr-only text; the warning icon sits next to the CO2e figure. Tests updated.
+  story: S1, S2 · depends-on: —
+
+- [ ] **T23** — Everyday equivalent (backend + API). Opt-in `AICarbon:ShowEquivalents` (default
+  false). When on and the total max is above zero, the estimate carries one equivalent based on
+  the **max** CO2e: under 250 g → smartphone charges (12.4 g CO2 per charge, US EPA GHG
+  Equivalencies Calculator); under 50 kg → km by average car (0.16725 kg CO2e/km, UK DESNZ GHG
+  conversion factors 2025, "Average car, unknown fuel"); otherwise → km of short-haul flight per
+  passenger (0.12786 kg CO2e/passenger-km incl. radiative forcing, same DESNZ 2025 set). Factors,
+  sources and years live in one Core class. API adds `total.equivalent` (null when off) with kind,
+  amount (raw), source name, source year. Unit and integration tests; OpenAPI doc still generates.
+  story: new S10 · depends-on: —
+
+- [ ] **T24** — Show the equivalent (frontend). Regenerate the client; under the CO2e card show
+  "Up to about {rounded amount} {phone charges / km by car / km flown}" (2 significant figures,
+  localized), only when present; the method panel explains it uses the top of the estimate and
+  names each factor with its source and year. Tests.
+  story: new S10 · depends-on: T23
