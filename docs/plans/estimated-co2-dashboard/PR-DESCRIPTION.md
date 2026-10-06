@@ -16,6 +16,7 @@ Umbraco.AI's Analytics shows requests and tokens but nothing about environmental
 - The end-to-end check used 505 seeded hourly usage rows in the demo database, not real provider calls (your call). Covered in the browser: cards, chart, by-model rows (including the Bedrock id match and not-estimated rows), by-feature, method panel, range memory and the analytics-off state.
 - EcoLogits 0.11.2 data and two ported files (`EcoLogitsProviderConfigs.cs`, `CarbonFactorCalculator.cs`) are MPL-2.0. They carry headers, and `THIRD-PARTY-NOTICES.md` is packed into the Core nupkg. The rest is MIT.
 - README links to `THIRD-PARTY-NOTICES.md` and `LICENSE` point at `blob/v18/main`. They 404 until the first release. The pre-release banner also needs updating at release.
+- After a side-by-side check, the layout now mirrors Umbraco.AI's Usage dashboard: header on the page, compact cards, the chart and each table in their own box. By your choice it differs in four ways: edge-to-edge tables, an icon-only "How is this calculated?" button, blue card icons instead of Usage's pale pink, and short status tags. The method explanation now sits behind the info icon (accessible label and tooltip), so check that is visible enough for the "say how CO2 is calculated" rule.
 - The v17 line (T21) is a separate follow-up after this merges.
 - No database tables, migrations or Deploy concerns. Everything is computed on read.
 
@@ -83,7 +84,7 @@ The backoffice tab, a workspaceView on `UmbracoAI.Workspace.AnalyticsRoot` after
   <aicarbon-feature-table>         agents / prompts / inline / other
 ```
 
-Tests: 350 unit, 42 integration (real Umbraco host with Umbraco.AI), 157 Vitest. Calculator results match EcoLogits to 4.4e-16 across all 348 models.
+Tests: 350 unit, 42 integration (real Umbraco host with Umbraco.AI), 165 Vitest. Calculator results match EcoLogits to 4.4e-16 across all 348 models.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
