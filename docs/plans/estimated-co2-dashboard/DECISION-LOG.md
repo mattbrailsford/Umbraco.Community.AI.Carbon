@@ -126,3 +126,4 @@
   agent/prompt/inline-chat) instead of real provider calls. Checked in the browser: cards, chart,
   by-model (Bedrock match, not-estimated rows), by-feature, method panel, range memory and the
   analytics-off state. A run with real AI calls is left for the user to try.
+- 06-10-2026: (T20) README links to THIRD-PARTY-NOTICES and LICENSE point at blob/v18/main (404 until the first release). Release checklist: update the pre-release banner and confirm those links.

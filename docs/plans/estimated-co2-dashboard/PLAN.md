@@ -134,7 +134,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 
 ## Finish
 
-- [ ] **T20** — End-to-end check and docs. On the demo site with a real provider key: generate
+- [x] **T20** — End-to-end check and docs. On the demo site with a real provider key: generate
   chat usage via a prompt and an agent, confirm figures, model table, chart, feature split and
   panel; set `ElectricityZone` to `SWE` and confirm the drop. README gains install, configuration
   (`AICarbon` section) and method summary.
