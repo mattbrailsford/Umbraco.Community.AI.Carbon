@@ -52,3 +52,10 @@
   as not estimated rather than fail the whole estimate.
 - 06-10-2026: (T3 review) Each request adds a ttft cost even with zero output, so T5/T7 should use
   successful request counts, not totals including failures.
+- 06-10-2026: (T4) Exact dated ids match the dated EcoLogits model; spec and S3 AC2 updated.
+- 06-10-2026: (T4) ModelMappings keys may omit the `:N` suffix (config binding drops keys with `:`);
+  the resolver retries without it, then without the version suffix, then fully stripped.
+- 06-10-2026: (T4) The resolver collection catches per resolver (logs once per type) so a broken
+  custom resolver can't break the CO2 tab. Vendor hints use their own VendorAliases map.
+- 06-10-2026: (T4) Fallbacks after all exact attempts: digit dots to hyphens (OpenRouter Claude ids)
+  and a trailing -Turbo (Together). Mapping changes need an app restart (IOptions on singletons).

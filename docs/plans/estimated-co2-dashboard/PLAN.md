@@ -40,7 +40,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   EcoLogits reference outputs within 1% and that min ≤ max.
   story: S1 (AC5, AC6, AC8) · depends-on: T1 · parallel-group: B
 
-- [ ] **T4** — Model resolver chain. Public `IAICarbonModelResolver`, collection builder
+- [x] **T4** — Model resolver chain. Public `IAICarbonModelResolver`, collection builder
   (`builder.AICarbonModelResolvers()`), and three resolvers in order: `ConfiguredMappingResolver`,
   `DirectProviderResolver` (provider id → EcoLogits provider from `ProviderMappings`, then exact
   name/alias), `NormalizedNameResolver` (any provider; vendor prefix/suffix and date-stamp
