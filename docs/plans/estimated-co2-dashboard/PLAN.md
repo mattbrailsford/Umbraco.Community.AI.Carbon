@@ -147,7 +147,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
 
 ## Follow-up (user feedback after the v18 build)
 
-- [ ] **T22** — Friendlier figures and a slimmer table (frontend only). Cards and table cells lead
+- [x] **T22** — Friendlier figures and a slimmer table (frontend only). Cards and table cells lead
   with a rounded central figure "≈ X unit" (midpoint of min and max, same unit rules as
   format-co2) with the range "min–max unit" in small text underneath; the chart keeps its band.
   Remove the by-model Status column: estimated rows show the figure; not-estimated rows show
