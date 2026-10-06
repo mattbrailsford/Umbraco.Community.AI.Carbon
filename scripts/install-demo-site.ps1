@@ -62,6 +62,11 @@ Pop-Location
 New-Item -ItemType Directory -Force -Path "$demoSiteDir/Properties" | Out-Null
 Copy-Item "$ScriptDir/templates/launchSettings.json" "$demoSiteDir/Properties/launchSettings.json"
 
+Write-Host "Adding Umbraco.Community.WorktreeDevPort for a stable per-worktree dev port..."
+Push-Location $demoSiteDir
+dotnet add package Umbraco.Community.WorktreeDevPort
+Pop-Location
+
 Push-Location $demoSiteDir
 if ($cleanVersion) {
     Write-Host "Installing Clean starter kit ($cleanVersion)..."

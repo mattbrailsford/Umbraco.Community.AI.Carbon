@@ -82,9 +82,15 @@ dotnet new umbraco --force -n "Umbraco.Community.AI.Carbon.DemoSite" \
     --development-database-type SQLite
 popd > /dev/null
 
-# Step 3.1: Fixed dev port
+# Step 3.1: Launch profile (port comes from Umbraco.Community.WorktreeDevPort)
 mkdir -p "$DEMO_SITE_DIR/Properties"
 cp "$SCRIPT_DIR/templates/launchSettings.json" "$DEMO_SITE_DIR/Properties/launchSettings.json"
+
+# Step 3.1.1: Stable per-worktree dev port (no fixed port in launchSettings.json)
+echo "Adding Umbraco.Community.WorktreeDevPort for a stable per-worktree dev port..."
+pushd "$DEMO_SITE_DIR" > /dev/null
+dotnet add package Umbraco.Community.WorktreeDevPort
+popd > /dev/null
 
 # Step 3.2: Clean starter kit
 pushd "$DEMO_SITE_DIR" > /dev/null

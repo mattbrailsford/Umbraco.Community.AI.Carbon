@@ -32,7 +32,7 @@ dotnet test Umbraco.Community.AI.Carbon.slnx
 npm install          # from the repo root (npm workspaces), never inside Client/
 npm run build        # frontend → wwwroot/
 npm run watch
-npm run generate-client   # needs the demo site running on https://localhost:44378
+npm run generate-client   # needs the demo site running (port per worktree: `git wdp-port`)
 ```
 
 Demo site (gitignored, under `demos/vN/`): `scripts/install-demo-site.sh` / `.ps1`. It installs Umbraco.AI from NuGet and project-references the local meta-package. Login: admin@example.com / password1234. A provider package plus an API key is needed to generate real usage data.
