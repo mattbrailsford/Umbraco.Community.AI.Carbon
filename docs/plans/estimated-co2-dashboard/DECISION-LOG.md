@@ -127,3 +127,4 @@
   by-model (Bedrock match, not-estimated rows), by-feature, method panel, range memory and the
   analytics-off state. A run with real AI calls is left for the user to try.
 - 06-10-2026: (T20) README links to THIRD-PARTY-NOTICES and LICENSE point at blob/v18/main (404 until the first release). Release checklist: update the pre-release banner and confirm those links.
+- 06-10-2026: (T21, user decision) Open the v18 PR first; after it merges, create v17/dev from v18/dev and port on its own branch with its own review (CMS 17 uses Swashbuckle, older Umbraco.AI/backoffice APIs; check InlineAgent in the 17.0.0 floor).
