@@ -16,6 +16,8 @@
     <PackageReference Include="NUnit.Analyzers" />
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Umbraco.Cms.Tests.Integration" />
+    <!-- Umbraco.AI's own registration (AddUmbracoAI); the package under test only references Umbraco.AI.Core. -->
+    <PackageReference Include="Umbraco.AI.Startup" />
     <!-- Aligns Roslyn to the version Umbraco.Cms.Tests.Integration requires (see Directory.Packages.props) -->
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
   </ItemGroup>
