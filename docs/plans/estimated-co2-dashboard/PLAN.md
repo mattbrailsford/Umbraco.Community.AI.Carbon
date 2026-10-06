@@ -108,7 +108,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   after "Dashboard" and loads data from `/estimate` (network request visible).
   story: S1 (AC1) · depends-on: T12
 
-- [ ] **T14** — Header and summary cards. Date-range `uui-select` (24h / 7d / 30d), CO2e,
+- [x] **T14** — Header and summary cards. Date-range `uui-select` (24h / 7d / 30d), CO2e,
   energy, requests and not-estimated cards, unit scaling (mg/g/kg, Wh/kWh) with "CO2e" label.
   story: S1 (AC2–AC4, AC7), S2 (AC6) · depends-on: T13 · parallel-group: C
 
