@@ -1,4 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.DependencyInjection;
+using Umbraco.Cms.Core.Notifications;
+using Umbraco.Community.AI.Carbon.Core.Configuration;
+using Umbraco.Community.AI.Carbon.Core.EcoLogits;
 
 namespace Umbraco.Community.AI.Carbon.Extensions;
 
@@ -11,10 +15,16 @@ public static class AICarbonBuilderExtensions
     /// Registers Umbraco AI Carbon's services.
     /// </summary>
     /// <param name="builder">The Umbraco builder.</param>
-    /// <returns>The Umbraco builder.</returns>
+    /// <returns>The same builder, for chaining.</returns>
     public static IUmbracoBuilder AddAICarbon(this IUmbracoBuilder builder)
     {
-        // Services are registered here as features are built.
+        builder.Services.AddOptions<AICarbonOptions>().Bind(builder.Config.GetSection(AICarbonOptions.SectionName));
+
+        builder.Services.AddSingleton<IEcoLogitsDataRepository>(_ => EcoLogitsDataRepository.LoadEmbedded());
+
+        builder.Services.AddSingleton<AICarbonOptionsValidator>();
+        builder.AddNotificationHandler<UmbracoApplicationStartingNotification, AICarbonOptionsValidationHandler>();
+
         return builder;
     }
 }

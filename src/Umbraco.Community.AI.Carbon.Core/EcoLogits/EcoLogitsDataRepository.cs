@@ -68,7 +68,9 @@ internal sealed class EcoLogitsDataRepository : IEcoLogitsDataRepository
 
     /// <inheritdoc />
     public EcoLogitsModel? GetModel(string provider, string name)
-        => _byKey.GetValueOrDefault((provider, name));
+        => string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(name)
+            ? null
+            : _byKey.GetValueOrDefault((provider, name));
 
     /// <inheritdoc />
     public IReadOnlyList<EcoLogitsModel> FindModelsByName(string name)
@@ -81,14 +83,16 @@ internal sealed class EcoLogitsDataRepository : IEcoLogitsDataRepository
             .AsReadOnly();
 
     /// <inheritdoc />
-    public ElectricityMix? GetElectricityMix(string zone) => _mixes.GetValueOrDefault(zone);
+    public ElectricityMix? GetElectricityMix(string zone)
+        => string.IsNullOrWhiteSpace(zone) ? null : _mixes.GetValueOrDefault(zone);
 
     /// <inheritdoc />
     public EcoLogitsProviderConfig? GetProviderConfig(string ecoLogitsProvider)
-        => EcoLogitsProviderConfigs.All.GetValueOrDefault(ecoLogitsProvider);
+        => string.IsNullOrWhiteSpace(ecoLogitsProvider) ? null : EcoLogitsProviderConfigs.All.GetValueOrDefault(ecoLogitsProvider);
 
     /// <inheritdoc />
-    public bool ProviderExists(string ecoLogitsProvider) => EcoLogitsProviderConfigs.All.ContainsKey(ecoLogitsProvider);
+    public bool ProviderExists(string ecoLogitsProvider)
+        => !string.IsNullOrWhiteSpace(ecoLogitsProvider) && EcoLogitsProviderConfigs.All.ContainsKey(ecoLogitsProvider);
 
     private static string LastSegment(string name)
     {
