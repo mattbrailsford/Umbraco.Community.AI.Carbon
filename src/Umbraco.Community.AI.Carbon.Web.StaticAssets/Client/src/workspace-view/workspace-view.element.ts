@@ -8,6 +8,7 @@ import {
     type AICarbonEstimateError,
     type EstimateRange,
 } from "../estimate/index.js";
+import "../by-model/index.js";
 import "../header/index.js";
 import "../summary/index.js";
 
@@ -87,7 +88,9 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 ${this._loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                 <section id="summary">${this.#renderSummary()}</section>
                 <section id="trend"></section>
-                <section id="by-model"></section>
+                <section id="by-model">
+                    <aicarbon-model-table .rows=${this._estimate?.byModel}></aicarbon-model-table>
+                </section>
                 <section id="by-feature"></section>
             </uui-box>
         `;

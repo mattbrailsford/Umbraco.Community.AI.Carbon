@@ -110,3 +110,7 @@
 - 06-10-2026: (T14) Card grid matches Umbraco.AI's Usage cards (auto-fit minmax(250px)), so 3+1 wrapping at
   ~900px is accepted. Number style for all components: English formatting with thousands separators
   (Intl.NumberFormat "en"), matching the en dictionary; backoffice-culture formatting is a later idea.
+- 06-10-2026: (T15) The by-model table shows each row's electricity zone. Zones differ per provider
+  (T9), so the table is the only place a mixed-zone estimate is visible row by row; the method panel
+  (T18) still summarises the zones used. Missing values show an em dash; warnings use `title` +
+  aria-label on a focusable icon (the backoffice has no tooltip component).

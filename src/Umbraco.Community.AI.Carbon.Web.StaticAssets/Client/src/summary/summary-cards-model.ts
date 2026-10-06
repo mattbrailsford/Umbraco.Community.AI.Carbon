@@ -1,5 +1,6 @@
 import type { EstimateResponseModel } from "../api/types.gen.js";
 import { formatCo2eRange, formatEnergyRange } from "../estimate/format-co2.js";
+import { formatCount } from "../estimate/format-count.js";
 
 export type SummaryCardKind = "co2e" | "energy" | "requests" | "notEstimated";
 
@@ -17,7 +18,7 @@ export function buildSummaryCards(estimate: EstimateResponseModel): SummaryCardM
     return [
         { kind: "co2e", icon: "icon-cloud", value: formatCo2eRange(estimate.total.co2eGrams), warning: false },
         { kind: "energy", icon: "icon-flash", value: formatEnergyRange(estimate.total.energyWh), warning: false },
-        { kind: "requests", icon: "icon-activity", value: estimate.total.requests.toLocaleString("en"), warning: false },
-        { kind: "notEstimated", icon: "icon-alert", value: notEstimatedModels.toLocaleString("en"), warning: notEstimatedModels > 0 },
+        { kind: "requests", icon: "icon-activity", value: formatCount(estimate.total.requests), warning: false },
+        { kind: "notEstimated", icon: "icon-alert", value: formatCount(notEstimatedModels), warning: notEstimatedModels > 0 },
     ];
 }
