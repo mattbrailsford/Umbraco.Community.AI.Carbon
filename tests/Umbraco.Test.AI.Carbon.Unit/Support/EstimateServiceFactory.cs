@@ -57,6 +57,6 @@ internal static class EstimateServiceFactory
             new CarbonFactorCalculator(),
             NullLogger<ModelFactorResolver>.Instance);
 
-        return new AICarbonEstimateService(usage, analyticsOptions, data, factors);
+        return new AICarbonEstimateService(usage, analyticsOptions, data, factors, new AICarbonFeatureSplitter(usage));
     }
 }

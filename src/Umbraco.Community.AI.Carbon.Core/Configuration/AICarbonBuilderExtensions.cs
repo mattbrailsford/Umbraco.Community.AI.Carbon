@@ -39,6 +39,7 @@ public static class AICarbonBuilderExtensions
         // IAIUsageAnalyticsService as a singleton too, so nothing scoped is captured.
         builder.Services.AddSingleton<ICarbonFactorCalculator, CarbonFactorCalculator>();
         builder.Services.AddSingleton<ModelFactorResolver>();
+        builder.Services.AddSingleton<AICarbonFeatureSplitter>();
 
         // TryAdd: a developer's own IAICarbonEstimateService wins whichever composer runs first.
         builder.Services.TryAddSingleton<IAICarbonEstimateService, AICarbonEstimateService>();

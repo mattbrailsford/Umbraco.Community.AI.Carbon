@@ -39,12 +39,27 @@ internal sealed class FakeUsageAnalyticsService : IAIUsageAnalyticsService
 {
     private readonly List<UsageRow> _rows = new();
     private readonly List<CancellationToken> _receivedTokens = new();
+    private readonly List<AIUsageFilter?> _receivedFilters = new();
+    private readonly List<(int AfterCalls, UsageRow Row)> _lateRows = new();
 
     /// <summary>Whether Umbraco.AI's feature type dimension is on; when off, rows lose their FeatureType.</summary>
     public bool IncludeFeatureTypeDimension { get; set; } = true;
 
     /// <summary>The cancellation token of every call made, in order.</summary>
     public IReadOnlyList<CancellationToken> ReceivedTokens => _receivedTokens;
+
+    /// <summary>The filter of every call made, in order (null where the call had none or takes none).</summary>
+    public IReadOnlyList<AIUsageFilter?> ReceivedFilters => _receivedFilters;
+
+    /// <summary>
+    /// Adds a row that only becomes visible once <paramref name="afterCalls"/> calls have been made, to model
+    /// usage recorded between the reads of one estimate.
+    /// </summary>
+    public FakeUsageAnalyticsService AddAfterCalls(int afterCalls, UsageRow row)
+    {
+        _lateRows.Add((afterCalls, row));
+        return this;
+    }
 
     public FakeUsageAnalyticsService Add(UsageRow row)
     {
@@ -132,7 +147,10 @@ internal sealed class FakeUsageAnalyticsService : IAIUsageAnalyticsService
     private List<UsageRow> Query(DateTime from, DateTime to, AIUsagePeriod? requestedGranularity, AIUsageFilter? filter, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+        _rows.AddRange(_lateRows.Where(late => late.AfterCalls <= _receivedTokens.Count).Select(late => late.Row));
+        _lateRows.RemoveAll(late => late.AfterCalls <= _receivedTokens.Count);
         _receivedTokens.Add(ct);
+        _receivedFilters.Add(filter);
 
         var granularity = DetermineGranularity(from, to, requestedGranularity);
         var rows = _rows.Select(r => IncludeFeatureTypeDimension ? r : r with { FeatureType = null }).Where(r =>

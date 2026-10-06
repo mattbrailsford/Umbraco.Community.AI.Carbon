@@ -80,3 +80,10 @@
   the summary and series reads is accepted as transient.
 - 06-10-2026: (T7 review) T11 must reject dates that would overflow bucket arithmetic (e.g. `to` near
   DateTime.MaxValue) before calling the service.
+- 06-10-2026: (T8) byFeature is unavailable when analytics are disabled as well as when the feature
+  dimension is off. Frontend: check method.analyticsEnabled first (whole-view message, S8 AC6); show
+  the "switched off" note (S5 AC4) only when analytics are on and byFeature.available is false.
+- 06-10-2026: (T8 review) Known chat feature types verified against all producers: agent (also
+  Copilot, Workspace, Automate), inline-agent, prompt, inline-chat (also guardrail/judge/chat API).
+  Agent selector calls carry no feature type and land in Other. v17 port: check InlineAgent exists
+  in the 17.0.0 floor package.

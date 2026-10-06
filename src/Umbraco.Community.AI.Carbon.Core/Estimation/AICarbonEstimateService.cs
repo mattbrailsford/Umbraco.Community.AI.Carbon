@@ -9,13 +9,11 @@ namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 /// <inheritdoc />
 internal sealed class AICarbonEstimateService : IAICarbonEstimateService
 {
-    // The factor is in kg and kWh; the API reports grams and Wh.
-    private const double UnitsPerKilo = 1000;
-
     private readonly IAIUsageAnalyticsService _usage;
     private readonly IOptionsMonitor<AIAnalyticsOptions> _analyticsOptions;
     private readonly IEcoLogitsDataRepository _data;
     private readonly ModelFactorResolver _factors;
+    private readonly AICarbonFeatureSplitter _featureSplitter;
 
     // A by-model row plus what the public row does not carry: its energy, the factor lookup (so later
     // per-feature work can reuse it without resolving the model again) and its emissions per bucket.
@@ -30,16 +28,19 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
     /// <param name="analyticsOptions">Umbraco.AI's analytics options.</param>
     /// <param name="data">The EcoLogits reference data.</param>
     /// <param name="factors">Finds the carbon factor for a model.</param>
+    /// <param name="featureSplitter">Builds the split by feature type.</param>
     public AICarbonEstimateService(
         IAIUsageAnalyticsService usage,
         IOptionsMonitor<AIAnalyticsOptions> analyticsOptions,
         IEcoLogitsDataRepository data,
-        ModelFactorResolver factors)
+        ModelFactorResolver factors,
+        AICarbonFeatureSplitter featureSplitter)
     {
         _usage = usage;
         _analyticsOptions = analyticsOptions;
         _data = data;
         _factors = factors;
+        _featureSplitter = featureSplitter;
     }
 
     /// <inheritdoc />
@@ -72,7 +73,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             ? await GetModelRowsAsync(from, to, bucket, cancellationToken).ConfigureAwait(false)
             : [];
 
-        return BuildEstimate(from, to, bucket, analyticsEnabled, rows);
+        return await BuildEstimateAsync(from, to, bucket, analyticsEnabled, rows, cancellationToken).ConfigureAwait(false);
     }
 
     // Same rule as Umbraco.AI's UtcDateTimeJsonConverter: local times convert, unspecified ones are taken as UTC.
@@ -268,8 +269,8 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             ? new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hour, 0, 0, DateTimeKind.Utc)
             : new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, 0, 0, 0, DateTimeKind.Utc);
 
-    private AICarbonEstimate BuildEstimate(
-        DateTime from, DateTime to, AIUsagePeriod bucket, bool analyticsEnabled, IReadOnlyList<ModelRow> rows)
+    private async Task<AICarbonEstimate> BuildEstimateAsync(
+        DateTime from, DateTime to, AIUsagePeriod bucket, bool analyticsEnabled, IReadOnlyList<ModelRow> rows, CancellationToken ct)
     {
         var estimated = rows.Where(row => row.Estimate.Status == AICarbonEstimateStatus.Estimated).ToList();
         var notEstimated = rows.Where(row => row.Estimate.Status != AICarbonEstimateStatus.Estimated).Select(row => row.Estimate).ToList();
@@ -281,13 +282,15 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             Requests: estimated.Sum(row => row.Estimate.Requests),
             OutputTokens: estimated.Sum(row => row.Estimate.OutputTokens));
 
+        var byFeature = await BuildFeatureBreakdownAsync(from, to, bucket, analyticsEnabled, estimated, ct).ConfigureAwait(false);
+
         return new AICarbonEstimate(
             from,
             to,
             bucket,
             total,
             rows.Select(row => row.Estimate).ToList().AsReadOnly(),
-            ByFeature: new AICarbonFeatureBreakdown(Available: false, Items: []), // T8 fills this
+            ByFeature: byFeature,
             TimeSeries: BuildTimeSeries(from, to, bucket, estimated),
             NotEstimated: new AICarbonNotEstimated(
                 notEstimated.Sum(row => row.Requests), notEstimated.Sum(row => row.OutputTokens), notEstimated.Count),
@@ -299,5 +302,32 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
                 analyticsEnabled));
     }
 
-    private static RangeValue Scale(RangeValue kilo) => new(kilo.Min * UnitsPerKilo, kilo.Max * UnitsPerKilo);
+    // The split needs Umbraco.AI to record feature types, and has nothing to split when analytics are off.
+    private Task<AICarbonFeatureBreakdown> BuildFeatureBreakdownAsync(
+        DateTime from,
+        DateTime to,
+        AIUsagePeriod bucket,
+        bool analyticsEnabled,
+        IReadOnlyList<ModelRow> estimated,
+        CancellationToken ct)
+    {
+        if (!analyticsEnabled || !_analyticsOptions.CurrentValue.IncludeUsageFeatureTypeDimension)
+        {
+            return Task.FromResult(AICarbonFeatureSplitter.Unavailable);
+        }
+
+        var models = new List<AICarbonFeatureSplitter.EstimatedModel>(estimated.Count);
+        foreach (var row in estimated)
+        {
+            if (row.Lookup?.Factor is { } factor)
+            {
+                models.Add(new AICarbonFeatureSplitter.EstimatedModel(
+                    row.Estimate.ProviderId, row.Estimate.ModelId, factor, row.Estimate.Requests, row.Estimate.OutputTokens));
+            }
+        }
+
+        return _featureSplitter.SplitAsync(from, to, bucket, models, ct);
+    }
+
+    private static RangeValue Scale(RangeValue kilo) => new(kilo.Min * MetricUnits.PerKilo, kilo.Max * MetricUnits.PerKilo);
 }
