@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using Umbraco.AI.Core.Analytics;
+using Umbraco.AI.Core.Analytics.Usage;
+using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Community.AI.Carbon.Core.Configuration;
@@ -104,6 +107,23 @@ public class ModelResolverRegistrationTests
             using var provider = Compose(beforeAddAICarbon: b => b.Services.AddSingleton<IAICarbonEstimateService, HouseEstimateService>());
 
             Assert.That(provider.GetRequiredService<IAICarbonEstimateService>(), Is.TypeOf<HouseEstimateService>());
+        }
+    }
+
+    [TestFixture]
+    public class GivenNoDeveloperEstimateService
+    {
+        [Test]
+        public void TheEstimateServiceIsTheCachedDecorator()
+        {
+            using var provider = Compose(b =>
+            {
+                b.Services.AddSingleton(new AppCaches(NoAppCache.Instance, NoAppCache.Instance, new IsolatedCaches(_ => NoAppCache.Instance)));
+                b.Services.AddSingleton(Mock.Of<IAIUsageAnalyticsService>());
+                b.Services.AddSingleton(Mock.Of<IOptionsMonitor<AIAnalyticsOptions>>());
+            });
+
+            Assert.That(provider.GetRequiredService<IAICarbonEstimateService>(), Is.TypeOf<CachedAICarbonEstimateService>());
         }
     }
 

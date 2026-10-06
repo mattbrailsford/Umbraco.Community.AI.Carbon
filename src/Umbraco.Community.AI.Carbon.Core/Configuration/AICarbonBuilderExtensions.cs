@@ -1,5 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using Umbraco.AI.Core.Analytics;
+using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Community.AI.Carbon.Core.Configuration;
@@ -41,8 +44,15 @@ public static class AICarbonBuilderExtensions
         builder.Services.AddSingleton<ModelFactorResolver>();
         builder.Services.AddSingleton<AICarbonFeatureSplitter>();
 
-        // TryAdd: a developer's own IAICarbonEstimateService wins whichever composer runs first.
-        builder.Services.TryAddSingleton<IAICarbonEstimateService, AICarbonEstimateService>();
+        // The calculating service is registered as its own type; the public interface is the cached decorator over it.
+        // TryAdd: a developer's own IAICarbonEstimateService wins whichever composer runs first, and replaces both.
+        builder.Services.AddSingleton<AICarbonEstimateService>();
+        builder.Services.TryAddSingleton<IAICarbonEstimateService>(provider => new CachedAICarbonEstimateService(
+            provider.GetRequiredService<AICarbonEstimateService>(),
+            provider.GetRequiredService<AppCaches>().RuntimeCache,
+            provider.GetRequiredService<IOptionsMonitor<AIAnalyticsOptions>>(),
+            provider.GetRequiredService<ModelFactorResolver>(),
+            CachedAICarbonEstimateService.Duration));
 
         builder.AICarbonModelResolvers()
             .Append<ConfiguredMappingResolver>()

@@ -50,14 +50,14 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         AIUsagePeriod? granularity,
         CancellationToken cancellationToken = default)
     {
-        from = ToUtc(from);
-        to = ToUtc(to);
+        from = AICarbonEstimateWindow.ToUtc(from);
+        to = AICarbonEstimateWindow.ToUtc(to);
         if (from >= to)
         {
             throw new ArgumentException("The start of the period must be before its end.", nameof(from));
         }
 
-        var bucket = granularity ?? ChooseGranularity(from, to);
+        var bucket = AICarbonEstimateWindow.ResolveGranularity(granularity, from, to);
         var maxDays = bucket == AIUsagePeriod.Hourly
             ? AICarbonEstimateLimits.MaxHourlyWindowDays
             : AICarbonEstimateLimits.MaxDailyWindowDays;
@@ -78,18 +78,6 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
 
         return await BuildEstimateAsync(from, to, bucket, analyticsEnabled, zoneOverride, rows, cancellationToken).ConfigureAwait(false);
     }
-
-    // Same rule as Umbraco.AI's UtcDateTimeJsonConverter: local times convert, unspecified ones are taken as UTC.
-    private static DateTime ToUtc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Local => value.ToUniversalTime(),
-        DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-        _ => value,
-    };
-
-    // Umbraco.AI chooses the same way when it is given no granularity (AIUsageAnalyticsService.DetermineGranularity).
-    private static AIUsagePeriod ChooseGranularity(DateTime from, DateTime to)
-        => (to - from).TotalDays <= 7 ? AIUsagePeriod.Hourly : AIUsagePeriod.Daily;
 
     private async Task<List<ModelRow>> GetModelRowsAsync(
         DateTime from, DateTime to, AIUsagePeriod bucket, string? zoneOverride, CancellationToken ct)
