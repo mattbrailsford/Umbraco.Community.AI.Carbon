@@ -10,12 +10,12 @@ export type EquivalentTerm = (key: string, fallback: string) => string;
 const ENGLISH: EquivalentTerm = (_key, fallback) => fallback;
 
 /**
- * Formats the everyday equivalent, e.g. "Up to about 6 phone charges". "Up to" because the amount is worked
+ * Formats the everyday equivalent, e.g. "Up to about the same as charging a phone 6 times". "Up to" because the amount is worked
  * out from the top of the estimated range.
  *
  * - The amount is rounded UP to two significant figures (6.21 gives "6.3", 12,345 gives "13,000"), so an "up to"
  *   figure is never understated. English thousands separators.
- * - Phone charges below 1 read "Less than one phone charge"; the singular is used when the shown amount is exactly 1.
+ * - Phone charges below 1 read "Less than charging a phone once"; the singular is used when the shown amount is exactly 1.
  * - Returns null when there is no equivalent (the setting is off) or the amount isn't a positive number.
  */
 export function formatEquivalent(
@@ -26,7 +26,7 @@ export function formatEquivalent(
 
     const { kind, amount } = equivalent;
     if (kind === "PhoneCharges" && amount < 1) {
-        return term("aiCarbon_equivalent_phoneChargesLessThanOne", "Less than one phone charge");
+        return term("aiCarbon_equivalent_phoneChargesLessThanOne", "Less than charging a phone once");
     }
 
     const rounded = roundUpToTwoSignificantFigures(amount);
@@ -35,12 +35,12 @@ export function formatEquivalent(
     switch (kind) {
         case "PhoneCharges":
             return rounded === 1
-                ? fill(term("aiCarbon_equivalent_phoneChargeOne", "Up to about {amount} phone charge"))
-                : fill(term("aiCarbon_equivalent_phoneChargeMany", "Up to about {amount} phone charges"));
+                ? fill(term("aiCarbon_equivalent_phoneChargeOne", "Up to about the same as charging a phone once"))
+                : fill(term("aiCarbon_equivalent_phoneChargeMany", "Up to about the same as charging a phone {amount} times"));
         case "CarKm":
-            return fill(term("aiCarbon_equivalent_carKm", "Up to about {amount} km by car"));
+            return fill(term("aiCarbon_equivalent_carKm", "Up to about the same as driving {amount} km in an average car"));
         case "FlightKm":
-            return fill(term("aiCarbon_equivalent_flightKm", "Up to about {amount} km flown (short-haul, per passenger)"));
+            return fill(term("aiCarbon_equivalent_flightKm", "Up to about the same as flying {amount} km (short-haul, per passenger)"));
         default:
             return null;
     }

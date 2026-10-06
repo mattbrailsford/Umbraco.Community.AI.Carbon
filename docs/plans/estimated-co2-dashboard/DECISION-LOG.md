@@ -150,3 +150,7 @@
   (the only one the API returns). The comparison sits in its own thin full-width strip below the
   cards (user request), not inside the CO2e card. DESNZ source string shortened to the publication
   title so the panel reads naturally.
+- 06-10-2026: (user feedback) The comparison now reads as an activity, which is more exact:
+  "Up to about the same as charging a phone {amount} times", "...driving {amount} km in an average
+  car", "...flying {amount} km (short-haul, per passenger)". Under one charge it reads "Less than
+  charging a phone once". Supersedes the "phone charges / km by car / km flown" wording in T24.

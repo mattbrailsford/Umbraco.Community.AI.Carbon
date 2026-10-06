@@ -8,9 +8,9 @@ function equivalent(kind: EstimateEquivalentModel["kind"], amount: number): Esti
 
 describe("Feature: formatting the everyday equivalent", () => {
     describe("Scenario: each kind", () => {
-        it("words phone charges", () => expect(formatEquivalent(equivalent("PhoneCharges", 6.21))).toBe("Up to about 6.3 phone charges"));
-        it("words km by car", () => expect(formatEquivalent(equivalent("CarKm", 120))).toBe("Up to about 120 km by car"));
-        it("words km flown", () => expect(formatEquivalent(equivalent("FlightKm", 450))).toBe("Up to about 450 km flown (short-haul, per passenger)"));
+        it("words phone charges", () => expect(formatEquivalent(equivalent("PhoneCharges", 6.21))).toBe("Up to about the same as charging a phone 6.3 times"));
+        it("words km by car", () => expect(formatEquivalent(equivalent("CarKm", 120))).toBe("Up to about the same as driving 120 km in an average car"));
+        it("words km flown", () => expect(formatEquivalent(equivalent("FlightKm", 450))).toBe("Up to about the same as flying 450 km (short-haul, per passenger)"));
     });
 
     describe("Scenario: rounding never understates", () => {
@@ -25,16 +25,16 @@ describe("Feature: formatting the everyday equivalent", () => {
             [1.2, "1.2"],
             [0.3, "0.3"],
         ])("shows %s km by car as %s", (amount, shown) =>
-            expect(formatEquivalent(equivalent("CarKm", amount))).toBe(`Up to about ${shown} km by car`));
+            expect(formatEquivalent(equivalent("CarKm", amount))).toBe(`Up to about the same as driving ${shown} km in an average car`));
     });
 
     describe("Scenario: phone charges around one", () => {
         it("uses the singular when the shown amount is exactly 1", () =>
-            expect(formatEquivalent(equivalent("PhoneCharges", 1))).toBe("Up to about 1 phone charge"));
+            expect(formatEquivalent(equivalent("PhoneCharges", 1))).toBe("Up to about the same as charging a phone once"));
         it("uses the plural when the shown amount is 1.1", () =>
-            expect(formatEquivalent(equivalent("PhoneCharges", 1.04))).toBe("Up to about 1.1 phone charges"));
+            expect(formatEquivalent(equivalent("PhoneCharges", 1.04))).toBe("Up to about the same as charging a phone 1.1 times"));
         it("says less than one below 1", () =>
-            expect(formatEquivalent(equivalent("PhoneCharges", 0.6))).toBe("Less than one phone charge"));
+            expect(formatEquivalent(equivalent("PhoneCharges", 0.6))).toBe("Less than charging a phone once"));
     });
 
     describe("Scenario: nothing to show", () => {
