@@ -120,3 +120,4 @@
   "GenAI Impact" are historical. The zone hint must say to set the zone only to where models really
   run, so the setting can't be used to lower figures. Panel copy needs a human read before release
   (external-facing text).
+- 06-10-2026: (T19) A failed reload replaces the old figures with the error box (they belong to the previous range). Vitest runs with --no-experimental-webstorage because Node 25+ ships a localStorage global that shadows happy-dom's.

@@ -127,7 +127,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   unofficial notice.
   story: S7 · depends-on: T13 · parallel-group: C
 
-- [ ] **T19** — Compose the view and its states. Slot T14–T18 into the workspace view; loader
+- [x] **T19** — Compose the view and its states. Slot T14–T18 into the workspace view; loader
   bar, dimmed reload, empty state, analytics-disabled state, error box with Retry, 403 message,
   remembered date range in `localStorage` (try/catch, default 7 days).
   story: S8, S9 (AC4) · depends-on: T14, T15, T16, T17, T18
