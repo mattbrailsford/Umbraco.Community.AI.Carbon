@@ -1,6 +1,7 @@
 import { css, customElement, html, nothing, repeat } from "@umbraco-cms/backoffice/external/lit";
 import { UmbModalBaseElement } from "@umbraco-cms/backoffice/modal";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
+import { formatCo2eRange } from "../estimate/format-co2.js";
 import { buildMethodPanelModel, type MethodZoneView } from "./method-panel-model.js";
 import type { AICarbonMethodPanelModalData } from "./method-panel-modal.token.js";
 
@@ -35,6 +36,16 @@ export class AICarbonMethodPanelModalElement extends UmbModalBaseElement<AICarbo
         }
     }
 
+    #renderEquivalent() {
+        const equivalent = this.data?.equivalent;
+        if (!equivalent) return nothing;
+        const basis = formatCo2eRange({ min: equivalent.basisCo2eGrams, max: equivalent.basisCo2eGrams });
+        return html`<uui-box headline=${this.#t("aiCarbon_method_equivalent_headline", "Everyday comparison")}>
+            <p>${this.#t("aiCarbon_method_equivalent", "The comparison uses the top of the estimate ({basis}), so it reads \"up to about\". Based on the {source} ({year}).", { basis, source: equivalent.source, year: String(equivalent.sourceYear) })}</p>
+            ${equivalent.kind === "PhoneCharges" ? html`<p>${this.#t("aiCarbon_method_equivalentCo2Only", "The phone-charge figure counts CO2 only.")}</p>` : nothing}
+        </uui-box>`;
+    }
+
     override render() {
         const method = this.data?.method;
         const model = method ? buildMethodPanelModel(method) : undefined;
@@ -58,6 +69,7 @@ export class AICarbonMethodPanelModalElement extends UmbModalBaseElement<AICarbo
                     <uui-box headline=${this.#t("aiCarbon_method_ranges_headline", "Why the ranges are wide")}>
                         <p>${this.#t("aiCarbon_method_ranges", "Ranges are widest for closed models, whose sizes are not published, so their size is estimated.")}</p>
                     </uui-box>
+                    ${this.#renderEquivalent()}
                     <uui-box headline=${this.#t("aiCarbon_method_credit_headline", "Credit")}>
                         <p>${this.#t("aiCarbon_method_credit", "Figures use EcoLogits (data version {dataVersion}), licensed under MPL-2.0. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact.", { dataVersion: model?.dataVersion ?? "" })}</p>
                         <ul class="links">

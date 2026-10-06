@@ -140,7 +140,7 @@ describe("Feature: central figure", () => {
             { min: 0.5, max: 999.96 },
         ])("always shows the same unit as the range for %o", (range) => {
             const figure = formatCo2eFigure(range);
-            expect(figure.range.endsWith(figure.central.unit)).toBe(true);
+            expect(figure.range.endsWith(` ${figure.central.unit}`)).toBe(true);
         });
 
         it("does the same for energy", () => {

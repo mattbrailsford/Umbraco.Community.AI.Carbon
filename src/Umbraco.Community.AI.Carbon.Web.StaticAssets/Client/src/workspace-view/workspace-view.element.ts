@@ -106,8 +106,9 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     async #onMethodOpen() {
         const method = this._estimate?.method;
         if (!method) return;
+        const equivalent = this._estimate?.total.equivalent;
         const modalManager = await this.getContext(UMB_MODAL_MANAGER_CONTEXT);
-        modalManager?.open(this, AICARBON_METHOD_PANEL_MODAL, { data: { method } });
+        modalManager?.open(this, AICARBON_METHOD_PANEL_MODAL, { data: { method, equivalent } });
     }
 
     #t(key: string, fallback: string) {
@@ -120,6 +121,11 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 <section id="summary">
                     <aicarbon-summary-cards .estimate=${estimate}></aicarbon-summary-cards>
                 </section>
+                ${estimate.total.equivalent
+                    ? html`<section id="equivalent">
+                          <aicarbon-equivalent-strip .equivalent=${estimate.total.equivalent}></aicarbon-equivalent-strip>
+                      </section>`
+                    : nothing}
                 <section id="trend">
                     <aicarbon-trend-chart
                         .points=${estimate.timeSeries}

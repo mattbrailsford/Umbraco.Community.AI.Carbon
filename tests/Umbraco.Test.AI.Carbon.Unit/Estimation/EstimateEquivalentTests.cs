@@ -98,8 +98,8 @@ public class EstimateEquivalentTests
     public class GivenEachKindsSource
     {
         [TestCase(77.0, "US EPA Greenhouse Gas Equivalencies Calculator")]
-        [TestCase(1000.0, "UK Government GHG Conversion Factors for Company Reporting (condensed set)")]
-        [TestCase(60_000.0, "UK Government GHG Conversion Factors for Company Reporting (condensed set)")]
+        [TestCase(1000.0, "UK Government GHG Conversion Factors for Company Reporting")]
+        [TestCase(60_000.0, "UK Government GHG Conversion Factors for Company Reporting")]
         public void NamesThePublisher(double grams, string expected)
             => Assert.That(AICarbonEquivalents.Create(grams)!.Source, Is.EqualTo(expected));
 

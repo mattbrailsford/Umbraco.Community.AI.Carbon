@@ -38,8 +38,8 @@ internal static class AICarbonEquivalents
     /// <summary>The edition of <see cref="PhoneChargeGrams"/>.</summary>
     public const int PhoneChargeSourceYear = 2024;
 
-    /// <summary>The publisher of <see cref="CarKmGrams"/> and <see cref="FlightKmGrams"/>.</summary>
-    public const string DesnzSource = "UK Government GHG Conversion Factors for Company Reporting (condensed set)";
+    /// <summary>The publisher of <see cref="CarKmGrams"/> and <see cref="FlightKmGrams"/> (the condensed set of the conversion factors).</summary>
+    public const string DesnzSource = "UK Government GHG Conversion Factors for Company Reporting";
 
     /// <summary>The edition of <see cref="CarKmGrams"/> and <see cref="FlightKmGrams"/>.</summary>
     public const int DesnzSourceYear = 2025;

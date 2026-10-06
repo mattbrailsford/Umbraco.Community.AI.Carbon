@@ -56,6 +56,15 @@ export default {
         trend_daily: "daily",
         trend_summary:
             "Estimated CO2e over time, {bucket} from {from} to {to}. The highest period is up to {high}.",
+        equivalent_phoneChargesLessThanOne: "Less than one phone charge",
+        equivalent_phoneChargeOne: "Up to about {amount} phone charge",
+        equivalent_phoneChargeMany: "Up to about {amount} phone charges",
+        equivalent_carKm: "Up to about {amount} km by car",
+        equivalent_flightKm: "Up to about {amount} km flown (short-haul, per passenger)",
+        method_equivalent_headline: "Everyday comparison",
+        method_equivalent:
+            "The comparison uses the top of the estimate ({basis}), so it reads \"up to about\". Based on the {source} ({year}).",
+        method_equivalentCo2Only: "The phone-charge figure counts CO2 only.",
         method_button: "How is this calculated?",
         method_headline: "How is this calculated?",
         method_counted_headline: "What is counted",

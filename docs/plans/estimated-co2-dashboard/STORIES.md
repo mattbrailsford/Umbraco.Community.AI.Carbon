@@ -414,7 +414,7 @@ AC1 — Off by default
 AC2 — Based on the top of the estimate
   Given the setting is on and the estimate is 48–77 g CO2e
   When  the tab loads
-  Then  the comparison uses 77 g and reads "Up to about 6 phone charges"
+  Then  the comparison uses 77 g and reads "Up to about 6.3 phone charges" (rounded up, never down)
 
 AC3 — Scale-appropriate comparison
   Given the setting is on
@@ -424,4 +424,4 @@ AC3 — Scale-appropriate comparison
 AC4 — Sources shown
   Given the setting is on
   When  the AI admin opens "How is this calculated?"
-  Then  the panel names each factor's source and year and says the comparison uses the top of the estimate
+  Then  the panel names the source and year of the factor used and says the comparison uses the top of the estimate

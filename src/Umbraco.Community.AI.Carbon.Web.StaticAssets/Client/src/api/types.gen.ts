@@ -4,9 +4,19 @@ export type ClientOptions = {
     baseUrl: 'https://127.0.0.1:44355/' | (string & {});
 };
 
+export type AiCarbonEquivalentKind = 'PhoneCharges' | 'CarKm' | 'FlightKm';
+
 export type AiCarbonEstimateStatus = 'Estimated' | 'UnknownModel' | 'UnsupportedCapability';
 
 export type AiUsagePeriod = 'Hourly' | 'Daily';
+
+export type EstimateEquivalentModel = {
+    kind: AiCarbonEquivalentKind;
+    amount: number;
+    basisCo2eGrams: number;
+    source: string;
+    sourceYear: number;
+};
 
 export type EstimateFeatureBreakdownModel = {
     available: boolean;
@@ -73,6 +83,7 @@ export type EstimateTotalModel = {
     energyWh: EstimateRangeModel;
     requests: number;
     outputTokens: number;
+    equivalent?: null | EstimateEquivalentModel;
 };
 
 export type ValidationProblemDetails = {

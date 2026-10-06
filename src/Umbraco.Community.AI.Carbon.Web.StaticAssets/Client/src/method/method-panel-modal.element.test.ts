@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { EstimateMethodModel } from "../api/types.gen.js";
+import type { EstimateEquivalentModel, EstimateMethodModel } from "../api/types.gen.js";
 import { AICarbonMethodPanelModalElement } from "./method-panel-modal.element.js";
 
 // happy-dom has no ElementInternals, which uui-button's form mixin needs on construction.
@@ -19,9 +19,17 @@ const method: EstimateMethodModel = {
     analyticsEnabled: true,
 };
 
-async function render(data: EstimateMethodModel = method) {
+const equivalent: EstimateEquivalentModel = {
+    kind: "PhoneCharges",
+    amount: 6.2,
+    basisCo2eGrams: 77,
+    source: "Test Calculator",
+    sourceYear: 2031,
+};
+
+async function render(data: EstimateMethodModel = method, eq?: EstimateEquivalentModel | null) {
     const element = new AICarbonMethodPanelModalElement();
-    element.data = { method: data };
+    element.data = { method: data, equivalent: eq };
     document.body.appendChild(element);
     await element.updateComplete;
     return element;
@@ -69,5 +77,33 @@ describe("Feature: aicarbon-method-panel element", () => {
         const element = await render({ ...method, electricityZone: null, zoneIsOverride: false, electricityZones: ["SWE", "USA"] });
         expect([...element.shadowRoot!.querySelectorAll(".zones li")].map((li) => li.textContent)).toEqual(["SWE", "USA"]);
         element.remove();
+    });
+
+    describe("Scenario: the everyday comparison", () => {
+        it("names the source and year from the data and the top of the estimate", async () => {
+            const element = await render(method, equivalent);
+            const box = [...element.shadowRoot!.querySelectorAll("uui-box")].find((b) => b.getAttribute("headline") === "Everyday comparison")!;
+            expect(box.textContent).toContain("top of the estimate (77 g CO2e)");
+            expect(box.textContent).toContain("Based on the Test Calculator (2031).");
+            element.remove();
+        });
+
+        it("says the phone-charge figure counts CO2 only", async () => {
+            const element = await render(method, equivalent);
+            expect(element.shadowRoot!.textContent).toContain("The phone-charge figure counts CO2 only.");
+            element.remove();
+        });
+
+        it("leaves out the CO2-only line for a car comparison", async () => {
+            const element = await render(method, { ...equivalent, kind: "CarKm" });
+            expect(element.shadowRoot!.textContent).not.toContain("counts CO2 only");
+            element.remove();
+        });
+
+        it("hides the box when there is no equivalent", async () => {
+            const element = await render(method, null);
+            expect(element.shadowRoot!.textContent).not.toContain("Everyday comparison");
+            element.remove();
+        });
     });
 });
