@@ -11,6 +11,7 @@ import {
 import "../by-model/index.js";
 import "../header/index.js";
 import "../summary/index.js";
+import "../trend/index.js";
 
 /**
  * The "CO2" tab of Umbraco.AI's Analytics workspace. Owns loading and the estimate/error/loading
@@ -76,6 +77,16 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         return html`<aicarbon-summary-cards .estimate=${this._estimate}></aicarbon-summary-cards>`;
     }
 
+    #renderTrend() {
+        // Without an estimate, leave granularity unset so the element keeps its own default.
+        return this._estimate
+            ? html`<aicarbon-trend-chart
+                  .points=${this._estimate.timeSeries}
+                  .granularity=${this._estimate.granularity}
+              ></aicarbon-trend-chart>`
+            : html`<aicarbon-trend-chart></aicarbon-trend-chart>`;
+    }
+
     override render() {
         return html`
             <uui-box>
@@ -87,7 +98,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 ></aicarbon-header>
                 ${this._loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                 <section id="summary">${this.#renderSummary()}</section>
-                <section id="trend"></section>
+                <section id="trend">${this.#renderTrend()}</section>
                 <section id="by-model">
                     <aicarbon-model-table .rows=${this._estimate?.byModel}></aicarbon-model-table>
                 </section>

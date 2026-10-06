@@ -1,9 +1,7 @@
 import type { AiCarbonEstimateStatus, EstimateModelRowModel } from "../api/types.gen.js";
 import { formatCo2eRange } from "../estimate/format-co2.js";
 import { formatCount } from "../estimate/format-count.js";
-
-/** Shown in a cell that has no value (no CO2e figure, no match, no zone). */
-export const EMPTY_CELL = "—";
+import { NO_VALUE } from "../estimate/no-value.js";
 
 export interface ModelRowViewModel {
     /** providerId + modelId + status: one pair can give an estimated row and an unsupported one. */
@@ -26,11 +24,11 @@ export function buildModelRows(rows: readonly EstimateModelRowModel[]): ModelRow
         key: `${row.providerId}|${row.modelId}|${row.status}`,
         providerId: row.providerId,
         modelId: row.modelId,
-        matchedAs: row.matchedAs || EMPTY_CELL,
-        zone: row.electricityZone || EMPTY_CELL,
+        matchedAs: row.matchedAs || NO_VALUE,
+        zone: row.electricityZone || NO_VALUE,
         requests: formatCount(row.requests),
         outputTokens: formatCount(row.outputTokens),
-        co2e: row.co2eGrams ? formatCo2eRange(row.co2eGrams) : EMPTY_CELL,
+        co2e: row.co2eGrams ? formatCo2eRange(row.co2eGrams) : NO_VALUE,
         status: row.status,
         warnings: row.warnings ?? [],
     }));

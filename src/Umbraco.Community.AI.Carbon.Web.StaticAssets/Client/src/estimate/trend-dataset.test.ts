@@ -21,4 +21,17 @@ describe("Feature: trend chart band", () => {
             expect(toTrendBand(points).upper).toEqual([3, 0]);
         });
     });
+
+    describe("Scenario: no buckets", () => {
+        it("gives empty lines", () => {
+            expect(toTrendBand([])).toEqual({ labels: [], lower: [], upper: [] });
+        });
+    });
+
+    describe("Scenario: buckets out of time order", () => {
+        it("keeps the order it was given", () => {
+            const reversed = [...points].reverse();
+            expect(toTrendBand(reversed).labels).toEqual([points[1].timestamp, points[0].timestamp]);
+        });
+    });
 });

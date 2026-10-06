@@ -1,5 +1,6 @@
 import type { EstimateRangeModel } from "../api/types.gen.js";
 import { ENGLISH_NUMBER_FORMAT } from "./format-count.js";
+import { NO_VALUE } from "./no-value.js";
 
 /**
  * Formats estimate ranges for display, e.g. "1.2–8.4 g CO2e" or "1.4–2.4 kWh".
@@ -16,12 +17,11 @@ import { ENGLISH_NUMBER_FORMAT } from "./format-count.js";
  * - If rounding lifts the max to the next unit's size, the next unit is used (999.96 g shows as
  *   "1 kg", never "1000 g").
  * - Numbers use the shared English style (thousands separators, e.g. "1,200 kg").
- * - Zero is "0 g CO2e" / "0 Wh". Non-finite input (NaN, Infinity) shows "–"; negative input is
+ * - Zero is "0 g CO2e" / "0 Wh". Non-finite input (NaN, Infinity) shows "—"; negative input is
  *   clamped to 0, since an estimate can't be below zero.
  */
 
 const RANGE_SEPARATOR = "–";
-const NOT_A_NUMBER = "–";
 const MAX_DECIMALS = 6;
 
 interface Unit {
@@ -43,7 +43,28 @@ const ENERGY_UNITS: readonly Unit[] = [
 
 export function formatCo2eRange(range: EstimateRangeModel): string {
     const formatted = formatRange(range, CO2E_UNITS, "g");
-    return formatted === NOT_A_NUMBER ? formatted : `${formatted} CO2e`;
+    return formatted === NO_VALUE ? formatted : `${formatted} CO2e`;
+}
+
+/** A CO2e unit shared by a whole chart axis, so every tick reads in the same unit. */
+export interface Co2eAxisUnit {
+    label: string;
+    /** How many grams make one of this unit. */
+    size: number;
+}
+
+/** The unit for a series: the one `formatCo2eRange` would pick for the series' largest value. */
+export function co2eAxisUnit(maxGrams: number): Co2eAxisUnit {
+    const max = Number.isFinite(maxGrams) ? Math.max(0, maxGrams) : 0;
+    const { label, size } = pickUnit(max, CO2E_UNITS);
+    return { label, size };
+}
+
+/** A CO2e value in grams as a plain number in the given axis unit (no unit label), e.g. 1,200 g in kg is "1.2". */
+export function formatCo2eAxisValue(grams: number, unit: Co2eAxisUnit): string {
+    if (!Number.isFinite(grams)) return NO_VALUE;
+    // toPrecision removes floating-point noise from chart tick values (0.30000000000000004).
+    return ENGLISH_NUMBER_FORMAT.format(Number((Math.max(0, grams) / unit.size).toPrecision(6)));
 }
 
 export function formatEnergyRange(range: EstimateRangeModel): string {
@@ -51,7 +72,7 @@ export function formatEnergyRange(range: EstimateRangeModel): string {
 }
 
 function formatRange(range: EstimateRangeModel, units: readonly Unit[], zeroUnit: string): string {
-    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return NOT_A_NUMBER;
+    if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return NO_VALUE;
 
     const minValue = Math.max(0, range.min);
     const maxValue = Math.max(0, range.max);

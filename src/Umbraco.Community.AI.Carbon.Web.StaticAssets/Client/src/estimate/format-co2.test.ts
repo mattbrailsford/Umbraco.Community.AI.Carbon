@@ -100,9 +100,9 @@ describe("Feature: rounding that reaches the next unit", () => {
 
 describe("Feature: invalid inputs", () => {
     it.each([NaN, Infinity, -Infinity])("shows a dash for %s", (value) => {
-        expect(formatCo2eRange({ min: 0, max: value })).toBe("–");
-        expect(formatCo2eRange({ min: value, max: 1 })).toBe("–");
-        expect(formatEnergyRange({ min: 0, max: value })).toBe("–");
+        expect(formatCo2eRange({ min: 0, max: value })).toBe("—");
+        expect(formatCo2eRange({ min: value, max: 1 })).toBe("—");
+        expect(formatEnergyRange({ min: 0, max: value })).toBe("—");
     });
 
     it("clamps negative values to zero", () => {

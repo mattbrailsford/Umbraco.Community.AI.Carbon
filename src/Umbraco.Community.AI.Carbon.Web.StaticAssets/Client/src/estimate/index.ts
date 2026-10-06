@@ -4,4 +4,6 @@ export * from "./estimate.repository.js";
 export * from "./estimate.server.data-source.js";
 export * from "./format-co2.js";
 export * from "./format-count.js";
+export * from "./no-value.js";
+export * from "./trend-dataset.js";
 export * from "./warning-text.js";
