@@ -12,3 +12,4 @@
 - 06-10-2026 T10 4421ce8: cache decorator; demo site (scope validation on) resolved the decorator, second call 0.02 ms vs 167 ms; all key/expiry mutations caught; Unit 350, Integration 2. Passed first review.
 - 06-10-2026 T11 c576a06: endpoint; demo site with real tokens: 401 signed out, 200 admin (24h/7d/30d), real 403 for an Editors user, ~15 bad-input cases 400; OpenAPI document served with typed numbers/enums; Unit 350, Integration 39. 1 fix round (mapper tests with populated data, client-facing schema fixes).
 - 06-10-2026 T12 397a2ee: client generated against the demo site; OpenAPI guard test proven to fail on a broken document; npm 24 tests, Unit 350, Integration 42. 2 fix rounds (duplicate test registration, abort signal not reaching fetch).
+- 06-10-2026 T13 9aa6dc1: CO2 tab; orchestrator Playwright smoke as admin: tab after Dashboard, aligned GET /estimate 200, 0 console errors from the package; npm 24. Passed first review.

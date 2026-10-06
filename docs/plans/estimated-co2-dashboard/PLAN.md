@@ -102,7 +102,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   auth in `app.ts` `onInit` (mirroring Content Checks).
   story: S1 · depends-on: T11
 
-- [ ] **T13** — wire: CO2 tab into the Analytics workspace. `workspaceView` manifest conditioned
+- [x] **T13** — wire: CO2 tab into the Analytics workspace. `workspaceView` manifest conditioned
   on `UmbracoAI.Workspace.AnalyticsRoot`, weight below 1000, `aicarbon-workspace-view` element
   shell, `en` localization dictionary. Acceptance: in the demo backoffice the "CO2" tab appears
   after "Dashboard" and loads data from `/estimate` (network request visible).
