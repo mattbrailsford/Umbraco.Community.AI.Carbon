@@ -26,6 +26,7 @@ Response `200`:
                  "requests": 0, "outputTokens": 0 },
   "byModel":   [ { "providerId": "openai", "modelId": "gpt-4o-2024-08-06",
                    "matchedAs": "openai/gpt-4o",          // null when not estimated
+                   "electricityZone": "USA",               // zone used for this row; null when not estimated
                    "status": "Estimated",                  // Estimated | UnknownModel | UnsupportedCapability
                    "co2eGrams": { "min": 0, "max": 0 },    // null when not estimated
                    "requests": 0, "outputTokens": 0,
@@ -35,7 +36,9 @@ Response `200`:
   "timeSeries":[ { "timestamp": "...", "co2eGrams": { "min": 0, "max": 0 } } ],
   "notEstimated": { "requests": 0, "outputTokens": 0, "models": 0 },
   "method": { "source": "EcoLogits", "dataVersion": "vX.Y.Z",
-              "electricityZone": "USA", "zoneIsOverride": false,
+              "electricityZone": "USA",                // override, else the one zone all rows share, else null (mixed)
+              "electricityZones": [ "USA" ],           // distinct zones actually used, sorted
+              "zoneIsOverride": false,
               "analyticsEnabled": true }
 }
 ```

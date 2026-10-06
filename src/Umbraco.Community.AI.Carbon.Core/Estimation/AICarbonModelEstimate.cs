@@ -6,6 +6,9 @@ namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 /// <param name="ProviderId">The Umbraco.AI provider id.</param>
 /// <param name="ModelId">The model id the provider reported.</param>
 /// <param name="MatchedAs">The EcoLogits model used, as <c>provider/name</c>; <c>null</c> when not estimated.</param>
+/// <param name="ElectricityZone">
+/// The electricity zone whose mix was used (the override, or the matched model's provider default); <c>null</c> when not estimated.
+/// </param>
 /// <param name="Status">Whether the usage was estimated.</param>
 /// <param name="Co2eGrams">Estimated emissions in grams CO2e; <c>null</c> when not estimated.</param>
 /// <param name="Requests">The successful requests counted.</param>
@@ -15,6 +18,7 @@ public sealed record AICarbonModelEstimate(
     string ProviderId,
     string ModelId,
     string? MatchedAs,
+    string? ElectricityZone,
     AICarbonEstimateStatus Status,
     RangeValue? Co2eGrams,
     long Requests,

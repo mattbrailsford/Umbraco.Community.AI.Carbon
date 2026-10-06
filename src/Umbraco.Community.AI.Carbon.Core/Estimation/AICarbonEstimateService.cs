@@ -69,11 +69,14 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
 
         var analyticsEnabled = _analyticsOptions.CurrentValue.Enabled;
 
+        // Read once so a configuration reload mid-estimate cannot mix zones within one result.
+        var zoneOverride = _factors.GetZoneOverride();
+
         var rows = analyticsEnabled
-            ? await GetModelRowsAsync(from, to, bucket, cancellationToken).ConfigureAwait(false)
+            ? await GetModelRowsAsync(from, to, bucket, zoneOverride, cancellationToken).ConfigureAwait(false)
             : [];
 
-        return await BuildEstimateAsync(from, to, bucket, analyticsEnabled, rows, cancellationToken).ConfigureAwait(false);
+        return await BuildEstimateAsync(from, to, bucket, analyticsEnabled, zoneOverride, rows, cancellationToken).ConfigureAwait(false);
     }
 
     // Same rule as Umbraco.AI's UtcDateTimeJsonConverter: local times convert, unspecified ones are taken as UTC.
@@ -89,7 +92,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         => (to - from).TotalDays <= 7 ? AIUsagePeriod.Hourly : AIUsagePeriod.Daily;
 
     private async Task<List<ModelRow>> GetModelRowsAsync(
-        DateTime from, DateTime to, AIUsagePeriod bucket, CancellationToken ct)
+        DateTime from, DateTime to, AIUsagePeriod bucket, string? zoneOverride, CancellationToken ct)
     {
         // Umbraco.AI's analytics service runs on EF scopes that are not safe for concurrent use, so every
         // call below is awaited one after another.
@@ -106,7 +109,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         {
             foreach (var modelId in models)
             {
-                rows.AddRange(await EstimatePairAsync(providerId, modelId, from, to, bucket, factorCache, ct).ConfigureAwait(false));
+                rows.AddRange(await EstimatePairAsync(providerId, modelId, from, to, bucket, zoneOverride, factorCache, ct).ConfigureAwait(false));
             }
         }
 
@@ -123,6 +126,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         DateTime from,
         DateTime to,
         AIUsagePeriod bucket,
+        string? zoneOverride,
         Dictionary<string, ModelFactorLookup> factorCache,
         CancellationToken ct)
     {
@@ -144,7 +148,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         var rows = new List<ModelRow>(2);
         if (chatSuccesses > 0)
         {
-            rows.Add(EstimateChat(providerId, modelId, chatBuckets, chatSuccesses, chatOutputTokens, factorCache));
+            rows.Add(EstimateChat(providerId, modelId, chatBuckets, chatSuccesses, chatOutputTokens, zoneOverride, factorCache));
         }
 
         var otherRequests = all.SuccessCount - chatSuccesses;
@@ -154,6 +158,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
                 new AICarbonModelEstimate(
                     providerId,
                     modelId,
+                    null,
                     null,
                     AICarbonEstimateStatus.UnsupportedCapability,
                     null,
@@ -174,9 +179,10 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         IReadOnlyList<AIUsageTimeSeriesPoint> buckets,
         long successes,
         long outputTokens,
+        string? zoneOverride,
         Dictionary<string, ModelFactorLookup> factorCache)
     {
-        var lookup = _factors.Resolve(providerId, modelId, factorCache);
+        var lookup = _factors.Resolve(providerId, modelId, zoneOverride, factorCache);
 
         if (lookup.Factor is null)
         {
@@ -184,6 +190,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
                 new AICarbonModelEstimate(
                     providerId,
                     modelId,
+                    null,
                     null,
                     AICarbonEstimateStatus.UnknownModel,
                     null,
@@ -217,6 +224,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
                 providerId,
                 modelId,
                 lookup.MatchedAs,
+                lookup.Zone,
                 AICarbonEstimateStatus.Estimated,
                 co2e,
                 successes,
@@ -270,7 +278,13 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             : new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, 0, 0, 0, DateTimeKind.Utc);
 
     private async Task<AICarbonEstimate> BuildEstimateAsync(
-        DateTime from, DateTime to, AIUsagePeriod bucket, bool analyticsEnabled, IReadOnlyList<ModelRow> rows, CancellationToken ct)
+        DateTime from,
+        DateTime to,
+        AIUsagePeriod bucket,
+        bool analyticsEnabled,
+        string? zoneOverride,
+        IReadOnlyList<ModelRow> rows,
+        CancellationToken ct)
     {
         var estimated = rows.Where(row => row.Estimate.Status == AICarbonEstimateStatus.Estimated).ToList();
         var notEstimated = rows.Where(row => row.Estimate.Status != AICarbonEstimateStatus.Estimated).Select(row => row.Estimate).ToList();
@@ -283,6 +297,14 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             OutputTokens: estimated.Sum(row => row.Estimate.OutputTokens));
 
         var byFeature = await BuildFeatureBreakdownAsync(from, to, bucket, analyticsEnabled, estimated, ct).ConfigureAwait(false);
+
+        var zones = estimated
+            .Select(row => row.Estimate.ElectricityZone)
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList()
+            .AsReadOnly();
 
         return new AICarbonEstimate(
             from,
@@ -297,8 +319,9 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             Method: new AICarbonMethod(
                 AICarbonMethod.EcoLogitsSource,
                 _data.DataVersion,
-                ElectricityZone: null, // T9 reports the zone in use; until then each provider's own default applies
-                ZoneIsOverride: false,
+                ElectricityZone: zoneOverride ?? (zones.Count == 1 ? zones[0] : null),
+                ElectricityZones: zones,
+                ZoneIsOverride: zoneOverride is not null,
                 analyticsEnabled));
     }
 

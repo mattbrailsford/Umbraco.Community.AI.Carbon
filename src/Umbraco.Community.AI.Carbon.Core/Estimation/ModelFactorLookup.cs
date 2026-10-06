@@ -8,7 +8,8 @@ namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 /// <param name="Model">The matched EcoLogits model, or <c>null</c> when none matched.</param>
 /// <param name="Factor">The factor, or <c>null</c> when the model is unknown or its data cannot be used.</param>
 /// <param name="Warnings">Warning codes to report with the model.</param>
-internal sealed record ModelFactorLookup(EcoLogitsModel? Model, CarbonFactor? Factor, IReadOnlyList<string> Warnings)
+/// <param name="Zone">The canonical electricity zone the factor was calculated with, or <c>null</c> when there is no factor.</param>
+internal sealed record ModelFactorLookup(EcoLogitsModel? Model, CarbonFactor? Factor, IReadOnlyList<string> Warnings, string? Zone)
 {
     /// <summary>Warning code for a matched model whose reference data the calculator rejected.</summary>
     public const string InvalidModelDataWarning = "invalid-model-data";
@@ -17,7 +18,7 @@ internal sealed record ModelFactorLookup(EcoLogitsModel? Model, CarbonFactor? Fa
     public const string MissingProviderDataWarning = "missing-provider-data";
 
     /// <summary>The lookup for a model no resolver recognised.</summary>
-    public static ModelFactorLookup Unknown { get; } = new(null, null, []);
+    public static ModelFactorLookup Unknown { get; } = new(null, null, [], null);
 
     /// <summary>Gets the matched model as <c>provider/name</c>, or <c>null</c> when none matched.</summary>
     public string? MatchedAs => Model is null ? null : $"{Model.Provider}/{Model.Name}";

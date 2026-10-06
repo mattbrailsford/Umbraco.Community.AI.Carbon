@@ -1,4 +1,5 @@
 // Test support: builds the real estimate service with real collaborators except usage analytics.
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -13,7 +14,7 @@ namespace Umbraco.Community.AI.Carbon.Tests.Unit.Support;
 
 internal static class EstimateServiceFactory
 {
-    // T9 adds the behaviour behind electricityZone; T5 only feeds it into the options.
+    // Pass zoneOptions to change the options between estimates (it then replaces electricityZone for the zone choice).
     public static IAICarbonEstimateService Create(
         IAIUsageAnalyticsService usage,
         bool analyticsEnabled = true,
@@ -21,7 +22,9 @@ internal static class EstimateServiceFactory
         string? electricityZone = null,
         IDictionary<string, string>? modelMappings = null,
         IEcoLogitsDataRepository? data = null,
-        IAICarbonModelResolver? extraResolver = null)
+        IAICarbonModelResolver? extraResolver = null,
+        IOptionsMonitor<AICarbonOptions>? zoneOptions = null,
+        ILogger<ModelFactorResolver>? factorLogger = null)
     {
         if (usage is FakeUsageAnalyticsService fake)
         {
@@ -55,7 +58,8 @@ internal static class EstimateServiceFactory
             new AICarbonModelResolverCollection(() => resolvers),
             data,
             new CarbonFactorCalculator(),
-            NullLogger<ModelFactorResolver>.Instance);
+            zoneOptions ?? Mock.Of<IOptionsMonitor<AICarbonOptions>>(monitor => monitor.CurrentValue == carbonOptions.Value),
+            factorLogger ?? NullLogger<ModelFactorResolver>.Instance);
 
         return new AICarbonEstimateService(usage, analyticsOptions, data, factors, new AICarbonFeatureSplitter(usage));
     }

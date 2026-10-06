@@ -88,3 +88,9 @@
   Agent selector calls carry no feature type and land in Other. v17 port: check InlineAgent exists
   in the 17.0.0 floor package.
 - 06-10-2026: (T8) Other = per-model integer residual (chat successes/tokens minus known types), then one Apply per model, so floating-point drift between bucket and summary sums can never create an Other row.
+- 06-10-2026: (T9) Zones can differ per provider (mistralai SWE, most USA), so each estimated row
+  carries electricityZone, method.electricityZones lists the zones used, and method.electricityZone is
+  the override, else the single shared zone, else null. Override read once per estimate via
+  IOptionsMonitor; factor cache keyed on model + zone. Untrimmed override values count as unknown.
+- 06-10-2026: (T9 review) For T10: include the resolved zone override in the result cache key, so a
+  config change isn't hidden for 5 minutes. Unknown zones log once at startup and once at first use.
