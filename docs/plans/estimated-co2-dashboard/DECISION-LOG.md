@@ -121,3 +121,8 @@
   run, so the setting can't be used to lower figures. Panel copy needs a human read before release
   (external-facing text).
 - 06-10-2026: (T19) A failed reload replaces the old figures with the error box (they belong to the previous range). Vitest runs with --no-experimental-webstorage because Node 25+ ships a localStorage global that shadows happy-dom's.
+- 06-10-2026: (T20, user decision) The end-to-end check uses seeded hourly usage in the demo DB
+  (505 rows: dated Claude id, gpt-4o-mini, Bedrock Claude id, unknown fine-tune, embeddings across
+  agent/prompt/inline-chat) instead of real provider calls. Checked in the browser: cards, chart,
+  by-model (Bedrock match, not-estimated rows), by-feature, method panel, range memory and the
+  analytics-off state. A run with real AI calls is left for the user to try.
