@@ -44,14 +44,14 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
 
     private static readonly string DefaultQuery = $"from={From:O}&to={From.AddDays(7):O}";
 
-    // The test host skips composers, so register what a site gets from its composers: Umbraco.AI (core and
-    // web, which provides the SectionAccessAI policy), this package, and this package's Management API.
+    // The test host runs composers (ManagementApiTest calls AddComposers), so this package's Core and Web
+    // composers register themselves. Calling AddAICarbonWeb() here too would register its OpenAPI document twice.
+    // Umbraco.AI (core and web, which provides the SectionAccessAI policy) is registered explicitly.
     protected override void CustomTestSetup(IUmbracoBuilder builder)
     {
         base.CustomTestSetup(builder);
         builder.AddUmbracoAI();
         builder.AddAICarbon();
-        builder.AddAICarbonWeb();
     }
 
     // The controllers live in this package's Web assembly, which the test host doesn't scan on its own.
