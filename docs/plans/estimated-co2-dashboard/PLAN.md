@@ -60,7 +60,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   `NotEstimated`. Reports `analyticsEnabled` from `AIAnalyticsOptions`.
   story: S1, S2 · depends-on: T3, T4
 
-- [ ] **T6** — wire: estimate services into `AICarbonComposer`. Register data repository,
+- [x] **T6** — wire: estimate services into `AICarbonComposer`. Register data repository,
   calculator, resolvers, options and estimate service in `AddAICarbon()`. Acceptance: demo site
   starts cleanly and `IAICarbonEstimateService` resolves from the container (an integration test
   resolves it from a booted Umbraco instance; re-checked through T11's endpoint).

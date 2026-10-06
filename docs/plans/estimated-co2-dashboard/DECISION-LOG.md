@@ -69,3 +69,6 @@
   explicitly to every call. GetEstimateAsync throws ArgumentException when from >= to (T11 returns 400 first).
 - 06-10-2026: (T5) One (provider, model) pair can give two rows (chat estimated + unsupported non-chat);
   the frontend row key is ProviderId + ModelId + Status. ByFeature reports Available=false until T8.
+- 06-10-2026: (T6) All services singletons (Umbraco.AI's analytics service is a singleton). No
+  ComposeAfter needed (resolution is lazy). Integration tests reference Umbraco.AI.Startup (test
+  project only) for AddUmbracoAI() and run Umbraco.AI's migration handler in SetUp.
