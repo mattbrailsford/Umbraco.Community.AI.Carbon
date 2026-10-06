@@ -59,3 +59,9 @@
   custom resolver can't break the CO2 tab. Vendor hints use their own VendorAliases map.
 - 06-10-2026: (T4) Fallbacks after all exact attempts: digit dots to hyphens (OpenRouter Claude ids)
   and a trailing -Turbo (Together). Mapping changes need an app restart (IOptions on singletons).
+- 06-10-2026: (T5 review) Known upstream behaviour inherited from Umbraco.AI: with Daily granularity,
+  today's already-aggregated hours are missing until the daily rollup runs (raw records are deleted
+  after hourly aggregation). The CO2 tab matches the Usage dashboard; T7/T20 should expect it.
+- 06-10-2026: (T5 review) Requests count successes only; output tokens include failed requests'
+  tokens (generated tokens used energy anyway). Model ids differing only by case may double count on
+  SQL Server (case-insensitive filters vs ordinal breakdown grouping); accepted as rare.
