@@ -114,3 +114,4 @@
   (T9), so the table is the only place a mixed-zone estimate is visible row by row; the method panel
   (T18) still summarises the zones used. Missing values show an em dash; warnings use `title` +
   aria-label on a focusable icon (the backoffice has no tooltip component).
+- 06-10-2026: (T16) Chart is a min/max band with no mid line (a midpoint is not an estimate), UTC labels, single y unit from the series max. Colour from --uui-color-default; dark contrast is 2.53:1, so T17 switches to --uui-color-default-emphasis (passes 3:1 in both themes).
