@@ -20,6 +20,9 @@ import "../trend/index.js";
 import { loadDateRange, saveDateRange } from "./date-range-store.js";
 import { selectViewState, type ViewState } from "./view-state.js";
 
+const SCOPE_FALLBACK =
+    "Covers the AI provider's servers and data centres for your chat requests. Your own servers, database and hosting are not included.";
+
 /** Loads one estimate. The default goes to the server; tests inject their own. */
 export type AICarbonEstimateLoader = (
     request: AICarbonEstimateRequest,
@@ -208,7 +211,10 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         return html`
             <div class="layout">
                 <div class="page-header">
-                    <h3>${this.#t("aiCarbon_headline", "Estimated CO2 Emissions")}</h3>
+                    <div class="page-title">
+                        <h3>${this.#t("aiCarbon_headline", "Estimated CO2e from AI Inference")}</h3>
+                        <p class="scope">${this.#t("aiCarbon_scope", SCOPE_FALLBACK)}</p>
+                    </div>
                     <aicarbon-header
                         .range=${this._range}
                         .method=${this._estimate?.method}
@@ -253,8 +259,19 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 margin-bottom: var(--uui-size-space-3);
             }
 
+            .page-title {
+                flex: 1 1 20rem;
+                min-width: 0;
+            }
+
             .page-header h3 {
+                margin: 0 0 var(--uui-size-space-1);
+            }
+
+            .scope {
                 margin: 0;
+                color: var(--uui-color-text-alt);
+                font-size: var(--uui-type-small-size);
             }
 
             .sections {

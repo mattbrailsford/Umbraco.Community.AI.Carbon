@@ -64,6 +64,15 @@ describe("Feature: CO2 tab states", () => {
         });
     });
 
+    describe("Scenario: the header explains what the estimate covers", () => {
+        it("shows the scope subtitle", async () => {
+            const element = await render(() => new Promise(() => {}));
+            expect(element.shadowRoot!.querySelector(".scope")!.textContent).toContain(
+                "Covers the AI provider's servers and data centres for your chat requests.",
+            );
+        });
+    });
+
     describe("Scenario: usage was estimated", () => {
         it("shows the figures sections", async () => {
             const element = await render(async () => ({ data: estimate(5) }));

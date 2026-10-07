@@ -55,7 +55,7 @@ Using [EcoLogits](https://ecologits.ai)' method, the GPU and server energy is wo
 
 **Counted:** the output tokens of text generation (chat) and the number of successful chat requests.
 
-**Not counted:** input tokens, embeddings, image generation, speech, model training, the network and your own devices. Models EcoLogits does not know are listed as "not estimated".
+**Not counted:** input tokens, embeddings, image generation, speech, model training, the network, your own devices, and your own servers, database and hosting. Models EcoLogits does not know are listed as "not estimated".
 
 Things to know:
 

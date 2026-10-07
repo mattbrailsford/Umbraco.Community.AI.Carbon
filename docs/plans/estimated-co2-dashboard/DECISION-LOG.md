@@ -154,3 +154,8 @@
   "Up to about the same as charging a phone {amount} times", "...driving {amount} km in an average
   car", "...flying {amount} km (short-haul, per passenger)". Under one charge it reads "Less than
   charging a phone once". Supersedes the "phone charges / km by car / km flown" wording in T24.
+- 07-10-2026: (CTO feedback) Header now reads "Estimated CO2e from AI Inference" with a scope line:
+  "Covers the AI provider's servers and data centres for your chat requests. Your own servers,
+  database and hosting are not included." Review rejected an earlier "the AI models running your
+  requests" draft: it implied all request types and undersold the data-centre and hardware share.
+  Method panel and README "not counted" lists now name your own servers, database and hosting.

@@ -5,7 +5,8 @@ import type { UmbLocalizationDictionary } from "@umbraco-cms/backoffice/localiza
 export default {
     aiCarbon: {
         tabLabel: "CO2",
-        headline: "Estimated CO2 Emissions",
+        headline: "Estimated CO2e from AI Inference",
+        scope: "Covers the AI provider's servers and data centres for your chat requests. Your own servers, database and hosting are not included.",
         range_label: "Time Range",
         range_last24h: "Last 24 Hours",
         range_last7d: "Last 7 Days",
@@ -73,7 +74,7 @@ export default {
             "The output tokens of text generation (chat), and the number of successful chat requests.",
         method_notCounted_headline: "What is not counted",
         method_notCounted:
-            "Input tokens, embeddings, image generation, speech, model training, the network and your own devices. Models EcoLogits doesn't know are listed as not estimated.",
+            "Input tokens, embeddings, image generation, speech, model training, the network, your own devices, and your own servers, database and hosting. Models EcoLogits doesn't know are listed as not estimated.",
         method_how_headline: "How the estimate is made",
         method_how:
             "Using EcoLogits' method, the GPU and server energy is worked out for each model based on its size (number of parameters). That is multiplied by the data centre's overhead (PUE) and the CO2e per kWh of the electricity mix, and a share of the hardware's manufacturing footprint is added.",
