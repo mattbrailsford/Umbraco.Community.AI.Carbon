@@ -37,7 +37,7 @@ Open the **AI** section, then **Analytics**, then the **CO2** tab. Anyone who ca
 
 - **Header:** says the figures cover the AI provider side of chat requests only, not your own servers, database or hosting. The info icon opens the "How is this calculated?" panel.
 - **Cards:** estimated CO2e, estimated energy, requests estimated, and how many models could not be estimated.
-- **Everyday comparison** (optional, see `ShowEquivalents`): the top of the estimate as something familiar, for example "Up to about the same as charging a phone 13 times".
+- **Everyday comparison** (on by default, see `ShowEquivalents`): the top of the estimate as something familiar, for example "Up to about the same as charging a phone 13 times".
 - **CO2e over time:** a bar for each hour or day showing the likely range, with a line for the middle estimate. Hover a point to see its figures.
 - **By model:** each model Umbraco.AI used, the EcoLogits model it was matched to, the electricity zone, requests, output tokens and estimated CO2e. Models that can't be estimated say so, with the reason.
 - **By feature:** the same estimate split by agents, prompts, inline chat and other uses.
@@ -65,7 +65,7 @@ Everything is optional. Settings live in the `AICarbon` section of `appsettings.
 ```
 
 - **`ElectricityZone`**: an [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code, such as `SWE`, or `WOR` for the world average. It is used for every estimate. When left out, each model uses its provider's default data centre location. Only set it to where your models really run, because it changes the result.
-- **`ShowEquivalents`**: `true` or `false`, off by default. When on, the dashboard also shows the top of the estimate as an everyday comparison: phone charges for small amounts, then kilometres in an average car, then kilometres flown (short-haul, per passenger). The sources are named in the "How is this calculated?" panel.
+- **`ShowEquivalents`**: `true` or `false`, on by default. Set `"ShowEquivalents": false` to hide it. When on, the dashboard also shows the top of the estimate as an everyday comparison: phone charges for small amounts, then kilometres in an average car, then kilometres flown (short-haul, per passenger). The sources are named in the "How is this calculated?" panel.
 - **`ProviderMappings`**: maps an Umbraco.AI provider id to an EcoLogits provider key, for example `mistralai`. The keys are `openai`, `anthropic`, `google_genai`, `mistralai`, `huggingface_hub` and `cohere`. The package already maps `openai`, `anthropic`, `google`, `mistral` and `huggingface`. Your entries add to these or replace them.
 - **`ModelMappings`**: maps an Umbraco.AI model id to `ecologitsProvider/modelName`, where the provider is an EcoLogits provider key (the same list as above). Use it for custom deployment names and fine-tunes. Keys are not case sensitive. Leave the `:N` suffix off a key (`...-v1`, not `...-v1:0`), because .NET configuration treats `:` as a section separator and silently drops such keys. Lookups retry without the suffix, so the mapping still matches.
 

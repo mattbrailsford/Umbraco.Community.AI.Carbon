@@ -171,3 +171,7 @@
   dark theme): #ffe8e6 made translucent on light surfaces, rgba(255, 140, 150, 0.3) on dark ones.
   Chart text, grid and tooltip colours come from theme variables and re-resolve live when the
   backoffice theme changes (per-frame settle window plus a stylesheet load watcher).
+- 07-10-2026: (user) The everyday comparison (`AICarbon:ShowEquivalents`) is now ON by default; sites
+  that object set it to `false`. It was opt-in before because of the claim-like wording, the mixed
+  sources (EPA CO2-only phone figure vs DESNZ CO2e for car and flight) and the pending wording review.
+  Those reasons are noted and accepted by the user. Supersedes the opt-in default in T23 and S10.

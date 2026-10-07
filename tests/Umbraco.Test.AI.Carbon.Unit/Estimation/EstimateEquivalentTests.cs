@@ -11,7 +11,7 @@ public class EstimateEquivalentTests
 {
     private static readonly DateTime From = new(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    private static Task<AICarbonEstimate> EstimateAsync(bool showEquivalents, bool withUsage = true)
+    private static Task<AICarbonEstimate> EstimateAsync(bool? showEquivalents, bool withUsage = true)
     {
         var usage = new FakeUsageAnalyticsService();
         if (withUsage)
@@ -23,7 +23,19 @@ public class EstimateEquivalentTests
     }
 
     [TestFixture]
-    public class GivenTheDefaultSettings
+    public class GivenNoShowEquivalentsConfiguration
+    {
+        private AICarbonEstimate _estimate = null!;
+
+        [SetUp]
+        public async Task SetUp() => _estimate = await EstimateAsync(showEquivalents: null);
+
+        [Test]
+        public void HasAnEquivalent() => Assert.That(_estimate.Total.Equivalent, Is.Not.Null);
+    }
+
+    [TestFixture]
+    public class GivenEquivalentsSwitchedOff
     {
         private AICarbonEstimate _estimate = null!;
 
