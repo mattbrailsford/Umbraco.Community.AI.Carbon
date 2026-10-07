@@ -2,7 +2,7 @@
 
 > 🧪 **Pre-release.** In active development. The dashboard works, but the package is not yet published, and settings and wording may still change.
 
-Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. Every energy and CO2e figure is shown as a low-to-high range.
+Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. Each energy and CO2e figure leads with a rounded middle estimate (≈) and shows the low-to-high range under it.
 
 ![The CO2 tab in Umbraco.AI Analytics: estimated CO2e and energy cards, an everyday comparison, an hourly chart with likely-range bars and a middle-estimate line, and tables by model and by feature](docs/images/co2-dashboard.png)
 
@@ -16,7 +16,14 @@ Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbra
 - Umbraco.AI 18 (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `18.x`)
 - Umbraco.AI usage analytics switched on. They are on by default (`Umbraco:AI:Analytics:Enabled`). The "By feature" split also needs `Umbraco:AI:Analytics:IncludeUsageFeatureTypeDimension`, which is on by default too.
 
-A version for Umbraco CMS 17 is planned. There is no date yet.
+Each Umbraco major has its own version line of this package, which depends on the matching Umbraco CMS and Umbraco.AI major:
+
+| Umbraco CMS | Umbraco.AI | Branch |
+|-------------|------------|--------|
+| 18 | 18.x | `v18/dev` |
+| 17 (17.4.0 or later) | 17.x | `v17/dev` |
+
+This is the Umbraco CMS 18 line.
 
 ## Install
 
@@ -25,6 +32,17 @@ dotnet add package Umbraco.Community.AI.Carbon
 ```
 
 Open the **AI** section, then **Analytics**, then the **CO2** tab. Anyone who can open the AI section can see it. The dashboard offers the last 24 hours, 7 days or 30 days.
+
+## What the dashboard shows
+
+- **Header:** says the figures cover the AI provider side of chat requests only, not your own servers, database or hosting. The info icon opens the "How is this calculated?" panel.
+- **Cards:** estimated CO2e, estimated energy, requests estimated, and how many models could not be estimated.
+- **Everyday comparison** (optional, see `ShowEquivalents`): the top of the estimate as something familiar, for example "Up to about the same as charging a phone 13 times".
+- **CO2e over time:** a bar for each hour or day showing the likely range, with a line for the middle estimate. Hover a point to see its figures.
+- **By model:** each model Umbraco.AI used, the EcoLogits model it was matched to, the electricity zone, requests, output tokens and estimated CO2e. Models that can't be estimated say so, with the reason.
+- **By feature:** the same estimate split by agents, prompts, inline chat and other uses.
+
+The dashboard follows the backoffice light and dark themes.
 
 ## Configuration
 
@@ -47,7 +65,7 @@ Everything is optional. Settings live in the `AICarbon` section of `appsettings.
 ```
 
 - **`ElectricityZone`**: an [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code, such as `SWE`, or `WOR` for the world average. It is used for every estimate. When left out, each model uses its provider's default data centre location. Only set it to where your models really run, because it changes the result.
-- **`ShowEquivalents`**: `true` or `false`, off by default. When on, the dashboard also shows the top of the estimate as an everyday equivalent (smartphone charges, kilometres by car or kilometres flown). The sources are named in the "How is this calculated?" panel.
+- **`ShowEquivalents`**: `true` or `false`, off by default. When on, the dashboard also shows the top of the estimate as an everyday comparison: phone charges for small amounts, then kilometres in an average car, then kilometres flown (short-haul, per passenger). The sources are named in the "How is this calculated?" panel.
 - **`ProviderMappings`**: maps an Umbraco.AI provider id to an EcoLogits provider key, for example `mistralai`. The keys are `openai`, `anthropic`, `google_genai`, `mistralai`, `huggingface_hub` and `cohere`. The package already maps `openai`, `anthropic`, `google`, `mistral` and `huggingface`. Your entries add to these or replace them.
 - **`ModelMappings`**: maps an Umbraco.AI model id to `ecologitsProvider/modelName`, where the provider is an EcoLogits provider key (the same list as above). Use it for custom deployment names and fine-tunes. Keys are not case sensitive. Leave the `:N` suffix off a key (`...-v1`, not `...-v1:0`), because .NET configuration treats `:` as a section separator and silently drops such keys. Lookups retry without the suffix, so the mapping still matches.
 
