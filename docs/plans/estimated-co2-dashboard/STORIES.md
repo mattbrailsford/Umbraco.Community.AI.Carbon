@@ -400,16 +400,16 @@ AC4 — Forbidden message in UI
 - Estimates for embeddings and image generation, once a credible method exists.
 - Switch to Umbraco.AI's own analytics elements if they become public exports.
 
-### S10 — Relate the CO2e to something everyday (S, opt-in)
+### S10 — Relate the CO2e to something everyday (S, on by default)
 
 As an **AI admin**,
-I want an optional everyday comparison for the estimated CO2e,
+I want an everyday comparison (on by default, can be turned off) for the estimated CO2e,
 so that the figure means something to people who don't think in grams.
 
-AC1 — Off by default
+AC1 — On by default
   Given `AICarbon:ShowEquivalents` is not set
   When  the tab loads
-  Then  no comparison is shown
+  Then  the comparison is shown (set it to false to hide it)
 
 AC2 — Based on the top of the estimate
   Given the setting is on and the estimate is 48–77 g CO2e

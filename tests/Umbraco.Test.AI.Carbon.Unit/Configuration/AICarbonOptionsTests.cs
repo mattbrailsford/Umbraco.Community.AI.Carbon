@@ -27,7 +27,7 @@ public class AICarbonOptionsTests
         public void ElectricityZone_Is_Null() => Assert.That(_options.ElectricityZone, Is.Null);
 
         [Test]
-        public void ShowEquivalents_Is_Off() => Assert.That(_options.ShowEquivalents, Is.False);
+        public void ShowEquivalents_Is_On() => Assert.That(_options.ShowEquivalents, Is.True);
 
         [Test]
         public void ModelMappings_Are_Empty() => Assert.That(_options.ModelMappings, Is.Empty);
@@ -98,16 +98,24 @@ public class AICarbonOptionsTests
     public class GivenShowEquivalentsInJsonConfiguration
     {
         [Test]
-        public void ShowEquivalents_Is_Bound()
+        public void ShowEquivalents_False_Is_Bound()
         {
-            using var json = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("""{"AICarbon":{"ShowEquivalents":true}}"""));
+            using var json = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("""{"AICarbon":{"ShowEquivalents":false}}"""));
             var configuration = new ConfigurationBuilder().AddJsonStream(json).Build();
             var options = new AICarbonOptions();
 
             configuration.GetSection(AICarbonOptions.SectionName).Bind(options);
 
-            Assert.That(options.ShowEquivalents, Is.True);
+            Assert.That(options.ShowEquivalents, Is.False);
         }
+    }
+
+    [TestFixture]
+    public class GivenOtherConfigurationWithoutShowEquivalents
+    {
+        [Test]
+        public void ShowEquivalents_Stays_On()
+            => Assert.That(Bind(new Dictionary<string, string?> { ["AICarbon:ElectricityZone"] = "SWE" }).ShowEquivalents, Is.True);
     }
 
     [TestFixture]

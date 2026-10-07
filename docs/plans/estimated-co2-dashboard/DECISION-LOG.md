@@ -200,3 +200,7 @@
   The v18 host does not show this. A real site is unaffected (the connection string is in config at build).
 - 07-10-2026: (T21) `version.json` unchanged (`0.1.0-alpha`, same scheme as the v18 line and Content
   Checks' v17 line; `publicReleaseRefSpec` already matches `vN/` branches).
+- 07-10-2026: (user) The everyday comparison (`AICarbon:ShowEquivalents`) is now ON by default; sites
+  that object set it to `false`. It was opt-in before because of the claim-like wording, the mixed
+  sources (EPA CO2-only phone figure vs DESNZ CO2e for car and flight) and the pending wording review.
+  Those reasons are noted and accepted by the user. Supersedes the opt-in default in T23 and S10.
