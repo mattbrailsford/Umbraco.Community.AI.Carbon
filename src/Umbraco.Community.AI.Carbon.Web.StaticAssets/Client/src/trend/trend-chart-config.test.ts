@@ -1,9 +1,9 @@
 import type { TooltipItem } from "chart.js";
 import { describe, expect, it } from "vitest";
 import { color } from "chart.js/helpers";
-import { translucentEquivalent, buildTrendChartConfig } from "./trend-chart-config.js";
+import { translucentEquivalent, buildTrendChartConfig, isDarkColor, rangeFillFor, resolveTrendColors } from "./trend-chart-config.js";
 
-const colors = { line: "#283a97", fill: "rgba(0,0,0,0.25)", text: "#000", grid: "#ccc" };
+const colors = { line: "#283a97", fill: "rgba(0,0,0,0.25)", text: "#000", strongText: "#111", surface: "#fff", grid: "#ccc" };
 const yScale = (max: number) =>
     buildTrendChartConfig([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max } }], "Daily", colors).options!
         .scales!.y as { suggestedMax?: number };
@@ -138,5 +138,73 @@ describe("Feature: trend chart tooltip", () => {
     it("reads 0 g CO2e for a bucket with no emissions", () => {
         const zero = buildTrendChartConfig([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max: 0 } }], "Daily", colors);
         expect((zero.options!.plugins!.tooltip!.callbacks as { label: Function }).label(itemAt(0))).toBe("0 g CO2e");
+    });
+});
+
+describe("Feature: theme-aware range fill", () => {
+    it("treats a dark surface as dark", () => {
+        expect(isDarkColor("#1b1c20")).toBe(true);
+    });
+
+    it("treats a white surface as light", () => {
+        expect(isDarkColor("#ffffff")).toBe(false);
+    });
+
+    it("treats an unparseable surface as light", () => {
+        expect(isDarkColor("not-a-colour")).toBe(false);
+    });
+
+    it("uses the pale pink, made translucent, on a light surface", () => {
+        expect(rangeFillFor("#ffffff")).toBe("rgba(255, 189, 184, 0.35)");
+    });
+
+    it("uses a lighter pink at low alpha on a dark surface", () => {
+        expect(rangeFillFor("#1b1c20")).toBe("rgba(255, 140, 150, 0.3)");
+    });
+});
+
+describe("Feature: resolving chart colours from theme variables", () => {
+    const vars: Record<string, string> = {
+        "--uui-color-text": " #eee ",
+        "--uui-color-text-alt": "#aaa",
+        "--uui-color-border": "#444",
+        "--uui-color-surface": "#1b1c20",
+        "--uui-color-default-emphasis": "#99f",
+        "--uui-color-current": "#2d42ab",
+    };
+    const resolved = () => resolveTrendColors((name) => vars[name] ?? "");
+
+    it("reads the strong text from --uui-color-text, trimmed", () => {
+        expect(resolved().strongText).toBe("#eee");
+    });
+
+    it("reads the tick text from --uui-color-text-alt", () => {
+        expect(resolved().text).toBe("#aaa");
+    });
+
+    it("reads the grid from --uui-color-border", () => {
+        expect(resolved().grid).toBe("#444");
+    });
+
+    it("keeps the bars pink even though --uui-color-current is blue", () => {
+        expect(resolved().fill).toBe("rgba(255, 140, 150, 0.3)");
+    });
+
+    it("falls back to light defaults when no variables are set", () => {
+        expect(resolveTrendColors(() => "").fill).toBe("rgba(255, 189, 184, 0.35)");
+    });
+});
+
+describe("Feature: explicit chart text colours", () => {
+    it("colours the legend labels from the strong text", () => {
+        expect(config().options!.plugins!.legend!.labels!.color).toBe("#111");
+    });
+
+    it("colours the tooltip text from the strong text", () => {
+        expect(tooltip().bodyColor).toBe("#111");
+    });
+
+    it("colours the tooltip background from the surface", () => {
+        expect(tooltip().backgroundColor).toBe("#fff");
     });
 });

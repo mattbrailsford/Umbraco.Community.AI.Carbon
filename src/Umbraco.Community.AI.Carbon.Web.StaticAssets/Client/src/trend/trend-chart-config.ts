@@ -13,8 +13,12 @@ export interface TrendChartColors {
     line: string;
     /** The range bars (already translucent, so gridlines show through). */
     fill: string;
-    /** Axis text. */
+    /** Axis tick text. */
     text: string;
+    /** Stronger text: legend, axis title and tooltip text. */
+    strongText: string;
+    /** The card surface, used as the tooltip background. */
+    surface: string;
     /** Grid lines. */
     grid: string;
 }
@@ -43,6 +47,42 @@ export function translucentEquivalent(colorValue: string, background: string, al
     const { r, g, b } = target.rgb;
     const { r: bgR, g: bgG, b: bgB } = backdrop.rgb;
     return `rgba(${channel(r, bgR)}, ${channel(g, bgG)}, ${channel(b, bgB)}, ${alpha})`;
+}
+
+/** Umbraco's light pink; the range bars' base colour in every theme. */
+const LIGHT_PINK = "#ffe8e6";
+/** On a dark surface the pale pink can't be reproduced by a translucent fill, so use a lighter pink at low alpha. */
+const DARK_SURFACE_FILL = "rgba(255, 140, 150, 0.3)";
+
+/** True when the colour's relative luminance is below 0.5 (an unparseable colour is treated as light). */
+export function isDarkColor(colorValue: string): boolean {
+    const parsed = color(colorValue);
+    if (!parsed.valid) return false;
+    const linear = (c: number) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    const { r, g, b } = parsed.rgb;
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b) < 0.5;
+}
+
+/** The subtle pink for the range bars: the pale pink on a light surface, a lighter low-alpha pink on a dark one. */
+export function rangeFillFor(surface: string): string {
+    return isDarkColor(surface) ? DARK_SURFACE_FILL : translucentEquivalent(LIGHT_PINK, surface);
+}
+
+/** Resolves the chart colours from UUI theme variables via `readVariable` (which returns "" when unset). */
+export function resolveTrendColors(readVariable: (name: string) => string): TrendChartColors {
+    const read = (name: string, fallback: string) => readVariable(name).trim() || fallback;
+    const surface = read("--uui-color-surface", "#ffffff");
+    return {
+        line: read("--uui-color-default-emphasis", "#2d42ab"),
+        fill: rangeFillFor(surface),
+        text: read("--uui-color-text-alt", "#68676b"),
+        strongText: read("--uui-color-text", "#060606"),
+        surface,
+        grid: read("--uui-color-border", "#d8d7d9"),
+    };
 }
 
 /**
@@ -102,8 +142,13 @@ export function buildTrendChartConfig(
             interaction: { mode: "index", intersect: false },
             plugins: {
                 // The legend is only a key: hiding "Likely range" would leave the tooltip (which reads from it) empty.
-                legend: { display: true, position: "bottom", onClick: () => {}, labels: { color: colors.text, boxWidth: 12, boxHeight: 12 } },
+                legend: { display: true, position: "bottom", onClick: () => {}, labels: { color: colors.strongText, boxWidth: 12, boxHeight: 12 } },
                 tooltip: {
+                    backgroundColor: colors.surface,
+                    titleColor: colors.strongText,
+                    bodyColor: colors.strongText,
+                    borderColor: colors.grid,
+                    borderWidth: 1,
                     // Both datasets describe one bucket, so show one line (from the bar dataset).
                     // The unit is picked per bucket here (as on the summary cards, so a tiny bucket reads "4 mg"),
                     // while the axis uses one unit for the whole series. The difference is on purpose.
@@ -133,7 +178,7 @@ export function buildTrendChartConfig(
                     // An all-zero series would otherwise get an axis of 0 to 1,000 of the unit.
                     suggestedMax: Math.max(...band.upper, 0) === 0 ? unit.size : undefined,
                     grid: { color: colors.grid },
-                    title: { display: true, text: yAxisTitle(unit.label), color: colors.text },
+                    title: { display: true, text: yAxisTitle(unit.label), color: colors.strongText },
                     ticks: { color: colors.text, callback: (value) => formatCo2eAxisValue(Number(value), unit) },
                 },
             },

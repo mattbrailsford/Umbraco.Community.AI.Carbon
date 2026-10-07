@@ -167,3 +167,7 @@
   the CTO couldn't read the band, and the cards already lead with the midpoint "≈" figure. The legend
   is a key only (click-to-hide is off, since the tooltip reads from the range dataset). The tooltip
   picks its unit per bucket, like the cards; the axis uses one unit for the series.
+- 07-10-2026: (user, dark mode) Range bars use a fixed pink, not --uui-color-current (blue in the
+  dark theme): #ffe8e6 made translucent on light surfaces, rgba(255, 140, 150, 0.3) on dark ones.
+  Chart text, grid and tooltip colours come from theme variables and re-resolve live when the
+  backoffice theme changes (per-frame settle window plus a stylesheet load watcher).
