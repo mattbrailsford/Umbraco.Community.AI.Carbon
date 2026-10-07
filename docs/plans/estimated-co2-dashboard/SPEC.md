@@ -14,7 +14,7 @@ Every endpoint requires a signed-in backoffice user who passes Umbraco.AI's
 Query: `from` (ISO 8601, required), `to` (ISO 8601, required), `granularity`
 (`Hourly` | `Daily`, optional; when omitted the same automatic choice Umbraco.AI makes).
 
-Validation: `from` must be before `to`, else `400` problem details naming the field. A range
+Validation: `from` must be before `to`, else `400` problem details naming the field. The window may be at most 93 days for `Hourly` and 1,830 days for `Daily` (after the automatic choice), else `400` naming the field; this keeps the zero-filled series bounded. Inputs without an offset are treated as UTC. A range
 older than Umbraco.AI's retention returns whatever data exists (possibly empty), not an error.
 
 Response `200`:
@@ -26,6 +26,7 @@ Response `200`:
                  "requests": 0, "outputTokens": 0 },
   "byModel":   [ { "providerId": "openai", "modelId": "gpt-4o-2024-08-06",
                    "matchedAs": "openai/gpt-4o",          // null when not estimated
+                   "electricityZone": "USA",               // zone used for this row; null when not estimated
                    "status": "Estimated",                  // Estimated | UnknownModel | UnsupportedCapability
                    "co2eGrams": { "min": 0, "max": 0 },    // null when not estimated
                    "requests": 0, "outputTokens": 0,
@@ -35,7 +36,9 @@ Response `200`:
   "timeSeries":[ { "timestamp": "...", "co2eGrams": { "min": 0, "max": 0 } } ],
   "notEstimated": { "requests": 0, "outputTokens": 0, "models": 0 },
   "method": { "source": "EcoLogits", "dataVersion": "vX.Y.Z",
-              "electricityZone": "USA", "zoneIsOverride": false,
+              "electricityZone": "USA",                // override, else the one zone all rows share, else null (mixed)
+              "electricityZones": [ "USA" ],           // distinct zones actually used, sorted
+              "zoneIsOverride": false,
               "analyticsEnabled": true }
 }
 ```
@@ -57,13 +60,13 @@ All in `Umbraco.Community.AI.Carbon.Web.StaticAssets/Client`, Lit + UUI, strings
 
 **`aicarbon-workspace-view` (the "CO2" tab)** — `workspaceView` on
 `UmbracoAI.Workspace.AnalyticsRoot`, shown after "Dashboard".
-- Header row: title, a date-range selector (`Last 24 hours` / `Last 7 days` / `Last 30 days`,
+- Header row: title, a date-range selector (`Last 24 Hours` / `Last 7 Days` / `Last 30 Days`,
   same options as the Usage dashboard; a short static list, so a `uui-select` is a deliberate
   choice, not a missing picker), and a "How is this calculated?" button.
 - Four summary cards: estimated CO2e (shown as a range, e.g. "1.2–8.4 g CO2e"), estimated energy
   (Wh range), requests estimated, and models not estimated (count, warning colour when > 0).
-- Trend chart: a shaded band between min and max over time, using the bucket timestamps.
-- "By model" table: model id, matched as, requests, output tokens, CO2e range, status badge;
+- Trend chart: a floating bar per bucket from min to max (the likely range) with a smoothed line through the middle estimate, using the bucket timestamps.
+- "By model" table: model id, matched as, electricity zone, requests, output tokens, CO2e range, status badge;
   rows with warnings show an info icon with the plain-English warning on hover.
 - "By feature" table: agents, prompts, inline types, other. When unavailable, a short note
   instead: "Feature breakdown is switched off in Umbraco.AI analytics settings."

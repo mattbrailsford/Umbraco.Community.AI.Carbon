@@ -14,6 +14,11 @@
     <!-- Umbraco.AI — an ordinary NuGet dependency (version range on the same v18 line),
          never a project reference across repos. -->
     <PackageVersion Include="Umbraco.AI.Core" Version="[18.0.0,18.999.999)" />
+    <!-- The Web project reuses its SectionAccessAI policy. Always present when Umbraco.AI is installed
+         (the Umbraco.AI meta-package depends on Umbraco.AI.Startup, which depends on Umbraco.AI.Web). -->
+    <PackageVersion Include="Umbraco.AI.Web" Version="[18.0.0,18.999.999)" />
+    <!-- Integration tests only: Umbraco.AI.Startup's AddUmbracoAI() boots Umbraco.AI's real services. -->
+    <PackageVersion Include="Umbraco.AI.Startup" Version="[18.0.0,18.999.999)" />
     <!-- Test -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
