@@ -1,0 +1,200 @@
+name: EcoLogits sync
+
+# Watches upstream EcoLogits (mlco2/ecologits) for new releases and opens one PR per version line
+# when a newer release than the pinned one exists. See README, "Keeping EcoLogits data current".
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC (off the hour on purpose)
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Upstream EcoLogits tag to sync to (default: latest release)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ecologits-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync ${{ matrix.base }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        base: [v18/dev, v17/dev]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UPSTREAM: mlco2/ecologits
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.base }}
+
+      - name: Decide whether an update is needed
+        id: check
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          BASE: ${{ matrix.base }}
+        run: |
+          set -euo pipefail
+          # Single source of truth for the pinned version: DataVersion in the data repository.
+          current="$(sed -n 's/.*DataVersion => "\([^"]*\)".*/\1/p' src/Umbraco.Community.AI.Carbon.Core/EcoLogits/EcoLogitsDataRepository.cs)"
+          [[ -n "$current" ]] || { echo "::error::Could not read DataVersion"; exit 1; }
+
+          if [[ -n "${INPUT_TAG:-}" ]]; then
+            latest="$INPUT_TAG"
+          else
+            latest="$(gh release view --repo "$UPSTREAM" --json tagName --jq .tagName)"
+          fi
+          if ! [[ "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::notice::Upstream tag '$latest' is not a plain x.y.z release; skipping."
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Pinned: $current, upstream: $latest"
+          newest="$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n1)"
+          if [[ "$latest" == "$current" || "$newest" != "$latest" ]]; then
+            echo "::notice::$BASE is up to date (pinned $current, upstream $latest)."
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "update=true" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "tag=$latest" >> "$GITHUB_OUTPUT"
+          echo "branch=${BASE%%/*}/chore/ecologits-$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Bump pinned version and download data
+        if: steps.check.outputs.update == 'true'
+        run: ./scripts/bump-ecologits-version.sh "${{ steps.check.outputs.tag }}"
+
+      - name: Diff ported upstream sources
+        if: steps.check.outputs.update == 'true'
+        env:
+          OLD: ${{ steps.check.outputs.current }}
+          NEW: ${{ steps.check.outputs.tag }}
+        run: |
+          set -euo pipefail
+          files=(ecologits/tracers/utils.py ecologits/impacts/llm.py ecologits/utils/range_value.py)
+          out="$RUNNER_TEMP/ported.diff"
+          missing="$RUNNER_TEMP/ported-missing.md"
+          mkdir -p "$RUNNER_TEMP/old" "$RUNNER_TEMP/new"
+          : > "$out"
+          : > "$missing"
+
+          # Download one file at one tag. Returns 0 on success, 1 if upstream answers 404 (file
+          # missing or renamed at that tag). Any other failure aborts the step.
+          fetch() {
+            local tag="$1" path="$2" dest="$3" code
+            code="$(curl -sSL -w '%{http_code}' -o "$dest" "https://raw.githubusercontent.com/$UPSTREAM/$tag/$path")"
+            if [[ "$code" == "200" ]]; then return 0; fi
+            if [[ "$code" == "404" ]]; then return 1; fi
+            echo "::error::Unexpected HTTP $code fetching $path at $tag"; exit 1
+          }
+
+          for f in "${files[@]}"; do
+            name="$(basename "$f")"
+            old_ok=1; new_ok=1
+            fetch "$OLD" "$f" "$RUNNER_TEMP/old/$name" || old_ok=0
+            fetch "$NEW" "$f" "$RUNNER_TEMP/new/$name" || new_ok=0
+            if [[ $old_ok -eq 0 ]]; then echo "- \`$f\`: missing upstream at $OLD — check for a rename" >> "$missing"; fi
+            if [[ $new_ok -eq 0 ]]; then echo "- \`$f\`: missing upstream at $NEW — check for a rename" >> "$missing"; fi
+            if [[ $old_ok -eq 1 && $new_ok -eq 1 ]]; then
+              diff -u --label "$f@$OLD" --label "$f@$NEW" "$RUNNER_TEMP/old/$name" "$RUNNER_TEMP/new/$name" >> "$out" || true
+            fi
+          done
+
+          # Truncate by lines and bytes in one tool, then say which cut(s) applied.
+          python3 -I - "$out" "$RUNNER_TEMP/ported-truncated.diff" "$RUNNER_TEMP/ported-truncated.note" <<'PY'
+          import sys
+          src, dst, note = sys.argv[1:4]
+          max_lines, max_bytes = 400, 40000
+          data = open(src, "rb").read()
+          lines = data.splitlines(keepends=True)
+          cuts = []
+          if len(lines) > max_lines:
+              data = b"".join(lines[:max_lines])
+              cuts.append(f"{max_lines} lines")
+          if len(data) > max_bytes:
+              data = data[:max_bytes].decode("utf-8", "ignore").encode("utf-8")
+              cuts.append(f"{max_bytes} bytes")
+          open(dst, "wb").write(data)
+          open(note, "w").write(f"_Diff truncated to {' and '.join(cuts)}; see the comparison link above._\n" if cuts else "")
+          PY
+
+          compare="https://github.com/$UPSTREAM/compare/$OLD...$NEW"
+          {
+            echo "Upstream release: https://github.com/$UPSTREAM/releases/tag/$NEW"
+            echo
+            echo "## Ported code"
+            echo
+            if [[ -s "$out" || -s "$missing" ]]; then
+              echo "**Ported code changed - manual port needed.** The hand-ported files are \`EcoLogitsProviderConfigs.cs\` (from \`tracers/utils.py\`) and \`CarbonFactorCalculator.cs\` (from \`impacts/llm.py\` and \`utils/range_value.py\`). Re-port, then update their header tags."
+              echo
+              echo "Full upstream comparison: $compare"
+              if [[ -s "$missing" ]]; then
+                echo
+                cat "$missing"
+              fi
+              if [[ -s "$out" ]]; then
+                echo
+                # Four tildes so a fence inside the diff cannot close this block early.
+                echo '~~~~diff'
+                cat "$RUNNER_TEMP/ported-truncated.diff"
+                echo
+                echo '~~~~'
+                cat "$RUNNER_TEMP/ported-truncated.note"
+              fi
+            else
+              echo "Ported code unchanged (\`utils.py\`, \`llm.py\`, \`range_value.py\` are identical between $OLD and $NEW). The C# file headers still name $OLD; that is accurate."
+              echo
+              echo "Full upstream comparison: $compare"
+            fi
+          } > "$RUNNER_TEMP/ported-section.md"
+
+          {
+            echo "## Summary"
+            echo
+            echo "Moves the embedded EcoLogits data (\`models.json\`, \`electricity_mixes.json\`) and every reference to the pinned version from $OLD to $NEW. Generated by \`.github/workflows/ecologits-sync.yml\` via \`scripts/bump-ecologits-version.sh\`."
+            echo
+            cat "$RUNNER_TEMP/ported-section.md"
+            echo
+            echo "## Checklist"
+            echo
+            echo "- [ ] Review the model and electricity mix changes in the data files"
+            echo "- [ ] If flagged above, port the upstream code changes and update the headers in the ported C# files"
+            echo "- [ ] If the reference values in \`CarbonFactorCalculatorTests.cs\` depend on changed upstream code, regenerate them"
+            echo "- [ ] Check the method panel wording (\`Client/src/lang/en.ts\`) still matches the method"
+            echo "- [ ] CI is green (see the README note if CI did not start on this PR)"
+          } > "$RUNNER_TEMP/pr-body.md"
+
+      - name: Open or update pull request
+        if: steps.check.outputs.update == 'true'
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          # ECOLOGITS_SYNC_TOKEN (fine-grained PAT, contents and pull requests write on this repo) is
+          # needed for this step to open PRs, because this repo has "Allow GitHub Actions to create
+          # and approve pull requests" turned off. It also makes CI run on the PRs (PRs opened with
+          # GITHUB_TOKEN do not trigger other workflows). Fine-grained tokens expire: renew it.
+          # Alternative: enable that setting (Settings > Actions > General); PRs then open, but CI
+          # will not run on them.
+          token: ${{ secrets.ECOLOGITS_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          base: ${{ matrix.base }}
+          branch: ${{ steps.check.outputs.branch }}
+          title: "chore: Update EcoLogits data to ${{ steps.check.outputs.tag }} (${{ matrix.base }})"
+          commit-message: |
+            chore: Update EcoLogits data to ${{ steps.check.outputs.tag }}
+
+            Bump the pinned EcoLogits version from ${{ steps.check.outputs.current }} to ${{ steps.check.outputs.tag }}.
+          body-path: ${{ runner.temp }}/pr-body.md
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          delete-branch: true

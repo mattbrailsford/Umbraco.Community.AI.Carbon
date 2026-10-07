@@ -148,6 +148,14 @@ One-time setup:
 - When creating the policy, make sure its scope allows pushing new packages (see "Select Scopes" in the [NuGet Trusted Publishing docs](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)). Otherwise, push the first version of each of the four package ids by hand (`Umbraco.Community.AI.Carbon`, `.Core`, `.Web` and `.Web.StaticAssets`), for example with an API key from your own machine.
 - A new policy may start as "temporarily active" for 7 days, until its first successful publish. Run the first release within that window.
 
+### Keeping EcoLogits data current
+
+`.github/workflows/ecologits-sync.yml` runs every Monday (and on demand from the Actions tab, optionally with a `tag` input) and checks the latest [EcoLogits release](https://github.com/mlco2/ecologits/releases). If it is newer than the pinned version (`DataVersion` in `EcoLogitsDataRepository.cs`), it opens one PR per version line (`v18/dev` and `v17/dev`) on a branch like `v18/chore/ecologits-x.y.z`. The PR updates the embedded data files and every reference to the version, using `scripts/bump-ecologits-version.sh <tag>`, which you can also run by hand. The PR body says whether the upstream files we hand-ported to C# changed (with a diff). Those ports and their header tags are never updated automatically.
+
+- The workflow needs an `ECOLOGITS_SYNC_TOKEN` repo secret to open PRs: a fine-grained personal access token for this repo with Contents and Pull requests set to read and write. This repo has "Allow GitHub Actions to create and approve pull requests" turned off, so the default `GITHUB_TOKEN` cannot open them. PRs opened with this token also get CI. Fine-grained tokens expire, so renew the token before it does, or the weekly run will start failing.
+- Alternative without a token: tick Settings > Actions > General > Workflow permissions > "Allow GitHub Actions to create and approve pull requests". PRs then open, but CI does not run on them (PRs from `GITHUB_TOKEN` do not start other workflows). Push an empty commit or close and reopen the PR to trigger CI.
+- GitHub disables scheduled workflows in public repos after 60 days without repo activity. If the weekly run stops, re-enable it from the Actions tab.
+
 ## Credits and licence
 
 The estimates use data and formulas from [EcoLogits](https://ecologits.ai) ([source](https://github.com/mlco2/ecologits)), data version 0.11.2. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact. It is licensed under MPL-2.0. See [THIRD-PARTY-NOTICES.md](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v18/main/THIRD-PARTY-NOTICES.md) for which files come from it.
