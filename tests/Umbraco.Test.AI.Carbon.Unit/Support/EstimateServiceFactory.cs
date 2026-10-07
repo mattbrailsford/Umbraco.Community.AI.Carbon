@@ -25,7 +25,7 @@ internal static class EstimateServiceFactory
         IAICarbonModelResolver? extraResolver = null,
         IOptionsMonitor<AICarbonOptions>? zoneOptions = null,
         ILogger<ModelFactorResolver>? factorLogger = null,
-        bool showEquivalents = false)
+        bool? showEquivalents = null)
     {
         if (usage is FakeUsageAnalyticsService fake)
         {
@@ -36,9 +36,13 @@ internal static class EstimateServiceFactory
         var carbonOptions = Options.Create(new AICarbonOptions
         {
             ElectricityZone = electricityZone,
-            ShowEquivalents = showEquivalents,
             ModelMappings = new Dictionary<string, string>(modelMappings ?? new Dictionary<string, string>()),
         });
+        if (showEquivalents is { } explicitShowEquivalents)
+        {
+            carbonOptions.Value.ShowEquivalents = explicitShowEquivalents;
+        }
+
         var analyticsOptions = Mock.Of<IOptionsMonitor<AIAnalyticsOptions>>(monitor => monitor.CurrentValue == new AIAnalyticsOptions
         {
             Enabled = analyticsEnabled,

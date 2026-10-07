@@ -189,7 +189,7 @@ public class EstimateCacheTests
         [Test]
         public async Task TheEquivalentsSwitchComputesAgain()
         {
-            _harness.ShowEquivalents = true;
+            _harness.ShowEquivalents = false;
 
             await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), null);
 

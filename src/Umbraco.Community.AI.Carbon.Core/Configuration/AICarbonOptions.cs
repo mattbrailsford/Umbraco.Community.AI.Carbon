@@ -35,9 +35,10 @@ public sealed class AICarbonOptions
 
     /// <summary>
     /// Gets or sets whether the estimate includes an everyday equivalent (smartphone charges, car or flight
-    /// kilometres) of the top of the range. Off by default. Read on every estimate, so changes apply without a restart.
+    /// kilometres) of the top of the range. On by default; set to <c>false</c> to hide it. Read on every estimate,
+    /// so changes apply without a restart.
     /// </summary>
-    public bool ShowEquivalents { get; set; }
+    public bool ShowEquivalents { get; set; } = true;
 
     /// <summary>
     /// Gets or sets explicit model mappings: an Umbraco.AI model id to <c>ecologitsProvider/modelName</c>
