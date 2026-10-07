@@ -27,9 +27,9 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          dotnet tool install -g nbgv --version 3.7.115 # keep in step with Directory.Build.props
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          package_version="$(nbgv get-version -v NuGetPackageVersion)"
+          # Install into a local folder: runner images ship a newer global nbgv, and a global install refuses to downgrade.
+          dotnet tool install nbgv --tool-path "$RUNNER_TEMP/nbgv" --version 3.7.115 # keep in step with Directory.Build.props
+          package_version="$("$RUNNER_TEMP/nbgv/nbgv" get-version -v NuGetPackageVersion)"
           cms_major="$(grep -oP '<PackageVersion Include="Umbraco\.Cms" Version="\[\K\d+' Directory.Packages.props)"
           tag_version="${RELEASE_TAG#v}"
           echo "Tag: $RELEASE_TAG | package version: $package_version | CMS major: $cms_major"
