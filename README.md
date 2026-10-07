@@ -1,6 +1,6 @@
 # Umbraco.Community.AI.Carbon
 
-> 🧪 **Pre-release.** In active development. The dashboard works, but the package is not yet published, and settings and wording may still change.
+> 🧪 **Beta.** Available on [NuGet](https://www.nuget.org/packages/Umbraco.Community.AI.Carbon) as a prerelease. Settings, wording and public types may still change before 1.0. Feedback is welcome in [GitHub issues](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/issues).
 
 Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. Each energy and CO2e figure leads with a rounded middle estimate (≈) and shows the low-to-high range under it.
 
@@ -28,8 +28,10 @@ This is the Umbraco CMS 17 line.
 ## Install
 
 ```bash
-dotnet add package Umbraco.Community.AI.Carbon
+dotnet add package Umbraco.Community.AI.Carbon --prerelease
 ```
+
+NuGet picks the version line that matches your Umbraco CMS major (`18.x` for CMS 18, `17.x` for CMS 17).
 
 Open the **AI** section, then **Analytics**, then the **CO2** tab. Anyone who can open the AI section can see it. The dashboard offers the last 24 hours, 7 days or 30 days.
 
