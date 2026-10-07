@@ -4,6 +4,10 @@
 
 Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. Every energy and CO2e figure is shown as a low-to-high range.
 
+![The CO2 tab in Umbraco.AI Analytics: estimated CO2e and energy cards, an everyday comparison, an hourly chart with likely-range bars and a middle-estimate line, and tables by model and by feature](docs/images/co2-dashboard.png)
+
+*Screenshot uses sample data.*
+
 **Unofficial community package.** This is a personal project. It is not made, endorsed or supported by Umbraco HQ, and its figures are estimates, not Umbraco's own claims.
 
 ## Requirements
