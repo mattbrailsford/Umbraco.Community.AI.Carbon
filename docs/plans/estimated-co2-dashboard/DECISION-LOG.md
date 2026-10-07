@@ -161,3 +161,9 @@
   Method panel and README "not counted" lists now name your own servers, database and hosting.
 - 07-10-2026: (user) Scope line shortened to "AI provider side of chat requests only. Excludes your
   own servers, database and hosting." Keeps "chat" (no image/speech overclaim) and the exclusions.
+- 07-10-2026: (CTO feedback) The T16 "min/max band with no mid line" choice is replaced by floating
+  range bars (pale pink, translucent so gridlines show through) plus a smoothed (monotone) midpoint
+  line labelled "Middle estimate", with a legend and a single-line tooltip "≈ X (min–max)". Reason:
+  the CTO couldn't read the band, and the cards already lead with the midpoint "≈" figure. The legend
+  is a key only (click-to-hide is off, since the tooltip reads from the range dataset). The tooltip
+  picks its unit per bucket, like the cards; the axis uses one unit for the series.

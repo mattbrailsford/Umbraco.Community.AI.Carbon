@@ -32,14 +32,14 @@ describe("Feature: aicarbon-trend-chart element", () => {
         element.remove();
     });
 
-    it("gives the chart a lower and an upper dataset filled between", async () => {
+    it("gives the chart range bars and a middle line", async () => {
         const { element, factory } = setup();
         element.points = points;
         await mount(element);
-        const datasets = (factory.mock.calls[0] as unknown as [HTMLCanvasElement, { data: { datasets: { data: number[]; fill: unknown }[] } }])[1].data.datasets;
-        expect(datasets.map((d) => [d.data, d.fill])).toEqual([
-            [[1, 0], false],
-            [[3, 0], "-1"],
+        const datasets = (factory.mock.calls[0] as unknown as [HTMLCanvasElement, { data: { datasets: { type: string; data: unknown }[] } }])[1].data.datasets;
+        expect(datasets.map((d) => [d.type, d.data])).toEqual([
+            ["bar", [[1, 3], [0, 0]]],
+            ["line", [2, 0]],
         ]);
         element.remove();
     });

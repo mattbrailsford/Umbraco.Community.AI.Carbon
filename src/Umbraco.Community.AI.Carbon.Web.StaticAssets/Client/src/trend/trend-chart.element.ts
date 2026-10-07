@@ -3,21 +3,23 @@ import type { PropertyValues } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
 import {
+    BarController,
+    BarElement,
     CategoryScale,
     Chart,
-    Filler,
     LinearScale,
+    Legend,
     LineController,
     LineElement,
     PointElement,
     Tooltip,
 } from "chart.js";
 import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
-import { bandFillColor, buildTrendChartConfig, type TrendChartColors, type TrendChartConfiguration } from "./trend-chart-config.js";
+import { buildTrendChartConfig, translucentEquivalent, type TrendChartColors, type TrendChartConfiguration } from "./trend-chart-config.js";
 import { describeTrend } from "./trend-format.js";
 
-// Only what a line chart with a filled band uses, so the rest of Chart.js stays out of the bundle.
-Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement, Filler, Tooltip);
+// Only what a bar chart with a line on top uses, so the rest of Chart.js stays out of the bundle.
+Chart.register(CategoryScale, LinearScale, BarController, BarElement, LineController, LineElement, PointElement, Legend, Tooltip);
 
 /** The part of a Chart.js chart this element uses; lets tests swap in a stand-in (a canvas is not always available). */
 export interface TrendChart {
@@ -35,7 +37,7 @@ const createChart: TrendChartFactory = (canvas, config) => {
 };
 
 /**
- * The estimated CO2e trend: a shaded band between each bucket's min and max. Renders from the
+ * The estimated CO2e trend: floating bars for each bucket's likely range (min to max) with a line through the middle estimate. Renders from the
  * `points` and `granularity` properties; it never fetches. Does nothing without points (the empty
  * page state belongs to the view). Times are shown in UTC, matching the API's buckets.
  */
@@ -84,7 +86,11 @@ export class AICarbonTrendChartElement extends UmbLitElement {
 
     #buildConfig(points: EstimateTimeSeriesPointModel[]): TrendChartConfiguration {
         return buildTrendChartConfig(points, this.granularity, this.#resolveColors(), (unit) =>
-            this.localize.termOrDefault("aiCarbon_trend_axis", "{unit} CO2e").replace("{unit}", unit),
+                this.localize.termOrDefault("aiCarbon_trend_axis", "{unit} CO2e").replace("{unit}", unit),
+            {
+                range: this.localize.termOrDefault("aiCarbon_trend_legendRange", "Likely range"),
+                middle: this.localize.termOrDefault("aiCarbon_trend_legendMiddle", "Middle estimate"),
+            },
         );
     }
 
@@ -95,7 +101,8 @@ export class AICarbonTrendChartElement extends UmbLitElement {
         const line = read("--uui-color-default-emphasis", "#2d42ab");
         return {
             line,
-            fill: bandFillColor(line),
+            // Same look as the solid pale pink over the card, but see-through so gridlines show.
+            fill: translucentEquivalent(read("--uui-color-current", "#f5c1bc"), read("--uui-color-surface", "#ffffff")),
             text: read("--uui-color-text-alt", "#68676b"),
             grid: read("--uui-color-border", "#d8d7d9"),
         };

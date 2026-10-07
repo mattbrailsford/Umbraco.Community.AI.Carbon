@@ -65,7 +65,7 @@ All in `Umbraco.Community.AI.Carbon.Web.StaticAssets/Client`, Lit + UUI, strings
   choice, not a missing picker), and a "How is this calculated?" button.
 - Four summary cards: estimated CO2e (shown as a range, e.g. "1.2–8.4 g CO2e"), estimated energy
   (Wh range), requests estimated, and models not estimated (count, warning colour when > 0).
-- Trend chart: a shaded band between min and max over time, using the bucket timestamps.
+- Trend chart: a floating bar per bucket from min to max (the likely range) with a smoothed line through the middle estimate, using the bucket timestamps.
 - "By model" table: model id, matched as, electricity zone, requests, output tokens, CO2e range, status badge;
   rows with warnings show an info icon with the plain-English warning on hover.
 - "By feature" table: agents, prompts, inline types, other. When unavailable, a short note

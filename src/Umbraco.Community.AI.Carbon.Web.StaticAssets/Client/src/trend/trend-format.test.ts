@@ -62,7 +62,7 @@ describe("Feature: trend chart formatting", () => {
 
         it("names the period, the bucket size and the highest value", () => {
             expect(describeTrend(points, "Daily")).toBe(
-                "Estimated CO2e over time, daily from 1 Oct 2026 to 2 Oct 2026. The highest period is up to 8.4 g CO2e.",
+                "Estimated CO2e over time, daily from 1 Oct 2026 to 2 Oct 2026, shown as range bars with a middle line. The highest period is up to 8.4 g CO2e.",
             );
         });
 

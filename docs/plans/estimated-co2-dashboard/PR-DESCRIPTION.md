@@ -16,7 +16,7 @@ Umbraco.AI's Analytics shows requests and tokens but nothing about environmental
 - The end-to-end check used 505 seeded hourly usage rows in the demo database, not real provider calls (your call). Covered in the browser: cards, chart, by-model rows (including the Bedrock id match and not-estimated rows), by-feature, method panel, range memory and the analytics-off state.
 - EcoLogits 0.11.2 data and two ported files (`EcoLogitsProviderConfigs.cs`, `CarbonFactorCalculator.cs`) are MPL-2.0. They carry headers, and `THIRD-PARTY-NOTICES.md` is packed into the Core nupkg. The rest is MIT.
 - README links to `THIRD-PARTY-NOTICES.md` and `LICENSE` point at `blob/v18/main`. They 404 until the first release. The pre-release banner also needs updating at release.
-- After a side-by-side check, the layout now mirrors Umbraco.AI's Usage dashboard: header on the page, compact cards, the chart and each table in their own box. The header title says "Estimated CO2e from AI Inference" with a scope line saying only the provider side of chat requests is counted, not your own servers, database or hosting (CTO feedback). By your choice it differs in four ways: edge-to-edge tables, an icon-only "How is this calculated?" button, blue card icons instead of Usage's pale pink, and short status tags. The method explanation now sits behind the info icon (accessible label and tooltip), so check that is visible enough for the "say how CO2 is calculated" rule.
+- After a side-by-side check, the layout now mirrors Umbraco.AI's Usage dashboard: header on the page, compact cards, the chart and each table in their own box. The trend chart shows floating "Likely range" bars with a smoothed "Middle estimate" line, replacing the band the CTO found hard to read. The header title says "Estimated CO2e from AI Inference" with a scope line saying only the provider side of chat requests is counted, not your own servers, database or hosting (CTO feedback). By your choice it differs in four ways: edge-to-edge tables, an icon-only "How is this calculated?" button, blue card icons instead of Usage's pale pink, and short status tags. The method explanation now sits behind the info icon (accessible label and tooltip), so check that is visible enough for the "say how CO2 is calculated" rule.
 - Follow-up from your feedback (T22–T24): cards and cells lead with a rounded "≈" central figure, with the range in the same unit underneath. The Status column is gone, and not-estimated rows say so in the CO2e cell. An opt-in `AICarbon:ShowEquivalents` adds a thin strip like "Up to about the same as charging a phone 6.1 times". It is based on the top of the estimate and rounded up, using US EPA (Oct 2024, CO2 only) and UK DESNZ 2025 factors read from the primary sources.
 - **Needs a decision:** the comparison and its panel text are new public-facing environmental wording. They need a human read with the rest of the copy.
 - The v17 line (T21) is a separate follow-up after this merges.
@@ -40,7 +40,7 @@ New projects and folders. Core holds the estimation, Web the API, StaticAssets t
  └── Umbraco.Community.AI.Carbon.Web.StaticAssets/Client/src/
 +    ├── api/                                        # generated hey-api client
 +    ├── estimate/                                   # repository, alignedWindow, formatting, warnings
-+    ├── workspace-view/ header/ summary/ trend/     # CO2 tab, range select, cards, Chart.js band
++    ├── workspace-view/ header/ summary/ trend/     # CO2 tab, range select, cards, Chart.js range bars + middle line
 +    ├── by-model/ by-feature/ method/               # tables + "How is this calculated?" sidebar
 +    └── lang/en.ts
 ```
@@ -81,12 +81,12 @@ The backoffice tab, a workspaceView on `UmbracoAI.Workspace.AnalyticsRoot` after
 <aicarbon-workspace-view>          view-state switch: loading / content (dimmed reload) / empty / analyticsDisabled / error+Retry / forbidden
   <aicarbon-header>                range select (remembered in localStorage) + "How is this calculated?" → sidebar modal
   <aicarbon-summary-cards>         CO2e range, energy range, requests, models not estimated
-  <aicarbon-trend-chart>           Chart.js min/max band, UTC buckets, one y unit
+  <aicarbon-trend-chart>           Chart.js range bars + smoothed middle line, UTC buckets, one y unit
   <aicarbon-model-table>           matched model, zone, requests, tokens, CO2e, status + warning tooltips
   <aicarbon-feature-table>         agents / prompts / inline / other
 ```
 
-Tests: 373 unit, 49 integration (real Umbraco host with Umbraco.AI), 222 Vitest. Calculator results match EcoLogits to 4.4e-16 across all 348 models.
+Tests: 373 unit, 49 integration (real Umbraco host with Umbraco.AI), 244 Vitest. Calculator results match EcoLogits to 4.4e-16 across all 348 models.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 

@@ -43,7 +43,7 @@ export function describeTrend(
         : localize("aiCarbon_trend_daily", "daily");
     return localize(
         "aiCarbon_trend_summary",
-        "Estimated CO2e over time, {bucket} from {from} to {to}. The highest period is up to {high}.",
+        "Estimated CO2e over time, {bucket} from {from} to {to}, shown as range bars with a middle line. The highest period is up to {high}.",
     )
         .replace("{bucket}", bucket)
         .replace("{from}", formatBucketTitle(first.timestamp, granularity))

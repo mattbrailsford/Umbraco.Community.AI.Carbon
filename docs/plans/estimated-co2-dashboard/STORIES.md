@@ -204,10 +204,10 @@ so that I can spot when usage spikes.
 
 **Happy path**
 
-AC1 — Band chart
+AC1 — Range chart
   Given usage across several days in "Last 7 days"
   When  the tab loads
-  Then  the chart shows a shaded band between min and max for each bucket
+  Then  the chart shows a floating bar from min to max for each bucket, with a line through the middle estimate
 
 AC2 — Buckets sum to total
   Given any estimate
