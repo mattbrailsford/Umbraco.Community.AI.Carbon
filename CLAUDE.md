@@ -4,7 +4,8 @@ Umbraco.Community.AI.Carbon: an unofficial community package that adds an estima
 
 ## Stack
 
-- Umbraco CMS: 18.x on this line (`Umbraco.Cms*` range `[18.0.0,18.999.999)` in `Directory.Packages.props`), .NET 10 (`net10.0`)
+- Umbraco CMS: 17.x on this line (`Umbraco.Cms*` range `[17.4.0,17.999.999)` in `Directory.Packages.props`; 17.4.0 is the floor Umbraco.AI 17.0.0 itself requires), .NET 10 (`net10.0`). The v18 line is `v18/dev`; lines are maintained independently (no forward-merge).
+- OpenAPI: CMS 17 uses Swashbuckle (a `SwaggerGenOptions` document, served at `/umbraco/swagger/<name>/swagger.json`); CMS 18 uses `Microsoft.AspNetCore.OpenApi`. Do not copy the OpenAPI registration across lines.
 - Umbraco.AI: `Umbraco.AI.Core` as a NuGet package reference on the same major range. Never a project reference across repos.
 - Database: TODO (no persistence yet; decide during `umb-design` whether the package needs any)
 - Frontend: Lit + UUI + Vite, in `src/Umbraco.Community.AI.Carbon.Web.StaticAssets/Client/` → `wwwroot/` (served at `App_Plugins/AICarbon`)
@@ -47,13 +48,13 @@ Each phase owns its own file in the feature's plan folder (`BRIEF.md`, `ARCHITEC
 `SPEC.md`, `STORIES.md` + `PLAN.md`, `BUILD-LOG.md`) — see the playbook's README for the
 file-ownership table.
 
-**Branch/worktree per feature:** new features start from `v18/dev` (branch-per-major model:
+**Branch/worktree per feature:** new features on this line start from `v17/dev` (branch-per-major model:
 `vN/dev`, `vN/main`, `vN/feature/<name>`, matching ContentChecks and Umbraco.AI). Plan-folder
 files stay uncommitted through `umb-explore`/`umb-design`/`umb-plan`. `umb-build-loop` commits
 the plan folder to trunk and cuts the feature's branch/worktree — named after the plan folder —
 the moment building actually starts, not before (see `git-workflow`'s "Branch/worktree per
 feature" section). No `WorktreeCreate` hook is configured for this project, so `umb-build-loop`
-falls back to a plain `git checkout -b v18/feature/<feature-slug>` off trunk.
+falls back to a plain `git checkout -b v17/feature/<feature-slug>` off trunk.
 
 **Finding the current feature's plan folder:** once a branch/worktree exists for a feature,
 its name already carries the feature slug — strip a leading `vN/` and/or `<type>/` prefix (see

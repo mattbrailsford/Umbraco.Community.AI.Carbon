@@ -25,11 +25,25 @@
       <_Parameter1>Umbraco.Test.AI.Carbon.Unit</_Parameter1>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Umbraco.Community.AI.Carbon.Web</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Umbraco.Test.AI.Carbon.Integration</_Parameter1>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
     </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- EcoLogits 0.11.2 reference data (MPL-2.0, unmodified; see Data/EcoLogits/NOTICE.md). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Data\EcoLogits\models.json" LogicalName="Umbraco.Community.AI.Carbon.Core.Data.EcoLogits.models.json" />
+    <EmbeddedResource Include="Data\EcoLogits\electricity_mixes.json" LogicalName="Umbraco.Community.AI.Carbon.Core.Data.EcoLogits.electricity_mixes.json" />
+  </ItemGroup>
+
+  <!-- MPL-2.0 section 3.2: ship the notice alongside the binary distribution. -->
+  <ItemGroup>
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" Link="THIRD-PARTY-NOTICES.md" />
   </ItemGroup>
 
 </Project>

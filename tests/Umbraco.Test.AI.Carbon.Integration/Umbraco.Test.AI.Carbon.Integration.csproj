@@ -16,6 +16,8 @@
     <PackageReference Include="NUnit.Analyzers" />
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Umbraco.Cms.Tests.Integration" />
+    <!-- Umbraco.AI's own registration (AddUmbracoAI); the package under test only references Umbraco.AI.Core. -->
+    <PackageReference Include="Umbraco.AI.Startup" />
     <!-- Aligns Roslyn to the version Umbraco.Cms.Tests.Integration requires (see Directory.Packages.props) -->
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
   </ItemGroup>
@@ -31,5 +33,12 @@
     <Compile Remove="**/*.pending.cs" />
     <None Include="**/*.pending.cs" />
   </ItemGroup>
+
+  <!-- Management API tests boot a WebApplicationFactory<UmbracoTestServerTestBase>, which needs that assembly's
+       .deps.json beside the tests. The NuGet package doesn't ship one (Umbraco's own repo builds it), so give it
+       this project's, under the name the factory looks for. -->
+  <Target Name="CopyDepsFileForUmbracoTestServer" AfterTargets="Build">
+    <Copy SourceFiles="$(OutDir)$(AssemblyName).deps.json" DestinationFiles="$(OutDir)Umbraco.Tests.Integration.deps.json" />
+  </Target>
 
 </Project>

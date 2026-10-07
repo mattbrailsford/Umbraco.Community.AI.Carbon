@@ -12,5 +12,6 @@ Umbraco.AI and Content Checks.
 **Why:** Umbraco.AI is actively supported on both v17 (LTS) and v18, and the user chose to
 match that from day one.
 **How to apply:** every feature or fix lands on one line and is ported to the other. The v17 line
-does not exist yet; create it from `v18/dev` (adjusting version ranges and the demo-site
-mapping) before the first release.
+was cut from `v18/dev` (07-10-2026) and differs in the Umbraco ranges, the OpenAPI registration
+(Swashbuckle on CMS 17), the generated client's enum type names (`...Model` suffix) and the
+integration-test host setup. See the T21 entry in `docs/plans/estimated-co2-dashboard/DECISION-LOG.md`.

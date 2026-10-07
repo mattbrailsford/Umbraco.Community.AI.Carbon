@@ -4,16 +4,22 @@
     <NoWarn>NU1507</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Umbraco CMS — this line (v18/dev) tracks the v18 major only. -->
-    <PackageVersion Include="Umbraco.Cms" Version="[18.0.0,18.999.999)" />
-    <PackageVersion Include="Umbraco.Cms.Api.Common" Version="[18.0.0,18.999.999)" />
-    <PackageVersion Include="Umbraco.Cms.Api.Management" Version="[18.0.0,18.999.999)" />
-    <PackageVersion Include="Umbraco.Cms.Infrastructure" Version="[18.0.0,18.999.999)" />
-    <PackageVersion Include="Umbraco.Cms.Web.Common" Version="[18.0.0,18.999.999)" />
-    <PackageVersion Include="Umbraco.Cms.Tests.Integration" Version="[18.0.0,18.999.999)" />
-    <!-- Umbraco.AI — an ordinary NuGet dependency (version range on the same v18 line),
+    <!-- Umbraco CMS — this line (v17/dev) tracks the v17 major only. The 17.4.0 floor is what Umbraco.AI 17.0.0
+         itself requires (NU1605 downgrade otherwise). -->
+    <PackageVersion Include="Umbraco.Cms" Version="[17.4.0,17.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Api.Common" Version="[17.4.0,17.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Api.Management" Version="[17.4.0,17.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Infrastructure" Version="[17.4.0,17.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Web.Common" Version="[17.4.0,17.999.999)" />
+    <PackageVersion Include="Umbraco.Cms.Tests.Integration" Version="[17.4.0,17.999.999)" />
+    <!-- Umbraco.AI — an ordinary NuGet dependency (version range on the same v17 line),
          never a project reference across repos. -->
-    <PackageVersion Include="Umbraco.AI.Core" Version="[18.0.0,18.999.999)" />
+    <PackageVersion Include="Umbraco.AI.Core" Version="[17.0.0,17.999.999)" />
+    <!-- The Web project reuses its SectionAccessAI policy. Always present when Umbraco.AI is installed
+         (the Umbraco.AI meta-package depends on Umbraco.AI.Startup, which depends on Umbraco.AI.Web). -->
+    <PackageVersion Include="Umbraco.AI.Web" Version="[17.0.0,17.999.999)" />
+    <!-- Integration tests only: Umbraco.AI.Startup's AddUmbracoAI() boots Umbraco.AI's real services. -->
+    <PackageVersion Include="Umbraco.AI.Startup" Version="[17.0.0,17.999.999)" />
     <!-- Test -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />

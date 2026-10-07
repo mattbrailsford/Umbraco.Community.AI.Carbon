@@ -17,6 +17,6 @@
         "test": "npm run test -w @umbraco-community/ai-carbon"
     },
     "devDependencies": {
-        "@umbraco-cms/backoffice": "^18.0.0"
+        "@umbraco-cms/backoffice": "^17.4.0"
     }
 }
