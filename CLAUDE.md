@@ -65,7 +65,8 @@ doesn't correspond to any plan folder).
 
 ## Conventions
 
-- Versioning: Nerdbank.GitVersioning (`version.json`); release refs are `(vN/)?main`, `hotfix/`, `release/`.
+- Versioning: Nerdbank.GitVersioning (`version.json`); release refs are `(vN/)?main`, `hotfix/`, `release/` and `vN.x.y` tags. Package versions track the Umbraco CMS major (v18 line ships `18.x`, v17 line `17.x`, same package ids). Dotted prerelease identifiers only (`-beta.1`).
+- Releasing: bump `version.json` on `vN/dev`, merge to `vN/main`, publish a GitHub Release tagged `vN.x.y` on `vN/main` with hand-written notes. `.github/workflows/release.yml` tests, packs and pushes via NuGet trusted publishing, and fails if the tag does not match the package version or the branch's CMS major, or if the tagged commit is not on `vN/main`. See the README "Releasing" section.
 - Central Package Management: versions only in `Directory.Packages.props`; ranges for Umbraco and Umbraco.AI.
 - Public wording: figures are always "estimated". Any CO2 claim must say how it is calculated. The README must keep the "unofficial, not Umbraco HQ" notice.
 - TODO — more filled in as umb-explore/umb-design surface real decisions.
