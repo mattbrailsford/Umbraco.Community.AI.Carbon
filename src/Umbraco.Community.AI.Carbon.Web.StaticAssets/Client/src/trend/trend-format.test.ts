@@ -1,19 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { co2eAxisUnit, formatCo2eAxisValue } from "../estimate/format-co2.js";
 import { describeTrend, formatBucketLabel, formatBucketTitle } from "./trend-format.js";
 
+// The app tsconfig has no Node types; the tests run under Node, where Intl follows process.env.TZ at call time.
+const env = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env;
+
 describe("Feature: trend chart formatting", () => {
-    describe("Scenario: x-axis labels follow the granularity, in UTC", () => {
+    const originalTz = env.TZ;
+    beforeEach(() => {
+        env.TZ = "UTC";
+    });
+    afterEach(() => {
+        if (originalTz === undefined) delete env.TZ;
+        else env.TZ = originalTz;
+    });
+
+    describe("Scenario: x-axis labels follow the granularity", () => {
         it("shows day and month for Daily buckets", () => {
             expect(formatBucketLabel("2026-10-01T00:00:00Z", "Daily")).toBe("1 Oct");
         });
 
-        it("adds the UTC hour for Hourly buckets", () => {
+        it("adds the hour for Hourly buckets", () => {
             expect(formatBucketLabel("2026-10-01T14:00:00Z", "Hourly")).toBe("1 Oct 14:00");
         });
 
         it("shows midnight as 00:00, not 24:00", () => {
             expect(formatBucketLabel("2026-10-01T00:00:00Z", "Hourly")).toBe("1 Oct 00:00");
+        });
+
+        it("shows the hour in the viewer's local zone for Hourly buckets", () => {
+            env.TZ = "Europe/Copenhagen";
+            expect(formatBucketLabel("2026-10-07T12:00:00Z", "Hourly")).toBe("7 Oct 14:00");
+        });
+
+        it("keeps the UTC date for Daily buckets west of UTC", () => {
+            env.TZ = "America/New_York";
+            expect(formatBucketLabel("2026-10-07T00:00:00Z", "Daily")).toBe("7 Oct");
         });
 
         it("hands back text it cannot read as a date", () => {
@@ -26,8 +48,13 @@ describe("Feature: trend chart formatting", () => {
             expect(formatBucketTitle("2026-10-01T00:00:00Z", "Daily")).toBe("1 Oct 2026");
         });
 
-        it("shows the full date and the hour with UTC for Hourly buckets", () => {
-            expect(formatBucketTitle("2026-10-01T14:00:00Z", "Hourly")).toBe("1 Oct 2026, 14:00 UTC");
+        it("shows the full date and the hour for Hourly buckets", () => {
+            expect(formatBucketTitle("2026-10-01T14:00:00Z", "Hourly")).toBe("1 Oct 2026, 14:00");
+        });
+
+        it("has no UTC suffix for Hourly buckets in a local zone", () => {
+            env.TZ = "Europe/Copenhagen";
+            expect(formatBucketTitle("2026-10-07T12:00:00Z", "Hourly")).toBe("7 Oct 2026, 14:00");
         });
     });
 

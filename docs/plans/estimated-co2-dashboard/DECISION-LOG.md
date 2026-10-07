@@ -175,3 +175,7 @@
   that object set it to `false`. It was opt-in before because of the claim-like wording, the mixed
   sources (EPA CO2-only phone figure vs DESNZ CO2e for car and flight) and the pending wording review.
   Those reasons are noted and accepted by the user. Supersedes the opt-in default in T23 and S10.
+- 07-10-2026: (user) Hourly chart labels and tooltips now use the viewer's local time zone (matching
+  Umbraco.AI's Usage chart), with no "UTC" suffix. Daily buckets are UTC days, so their date is still
+  formatted in UTC to avoid showing the wrong date west or east of UTC. Supersedes the T16 "UTC
+  labels" choice. On the October DST fall-back two hourly ticks read the same; data is unaffected.
