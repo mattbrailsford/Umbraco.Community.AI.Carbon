@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["v*/dev"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Nerdbank.GitVersioning needs full history to compute the version
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # Frontend output (wwwroot/) is gitignored and not built by MSBuild
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+      - run: dotnet restore Umbraco.Community.AI.Carbon.slnx
+      - run: dotnet build Umbraco.Community.AI.Carbon.slnx -c Release --no-restore
+      - run: dotnet test Umbraco.Community.AI.Carbon.slnx -c Release --no-build

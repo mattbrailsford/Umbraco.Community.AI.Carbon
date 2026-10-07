@@ -6,7 +6,9 @@
     "ImageUrl": "https://github.com/mattbrailsford.png"
   },
   "DocumentationUrl": "https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon",
-  "Category": "Developer Tools",
+  "Category": "Artificial Intelligence",
+  "AlternateCategory": "Analytics & Insights",
+  "Description": "Adds an estimated CO2e and energy dashboard to the Umbraco.AI Analytics section. It reads the chat usage Umbraco.AI already records and estimates the footprint using the EcoLogits method, shown as a middle estimate with a low-to-high range. This is an unofficial community package, not made or supported by Umbraco HQ, and the figures are estimates.",
   "IssueTrackerUrl": "https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/issues",
   "LicenseTypes": [
     "Free"
@@ -20,7 +22,7 @@
   ],
   "Screenshots": [
     {
-      "ImageUrl": "https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/v17/main/docs/images/co2-dashboard.png",
+      "ImageUrl": "https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/HEAD/docs/images/co2-dashboard.png",
       "Caption": "The estimated CO2e dashboard in Umbraco AI Analytics (sample data)"
     }
   ]
