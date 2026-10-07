@@ -49,10 +49,13 @@ export class AICarbonSummaryCardElement extends UmbLitElement {
         css`
             :host {
                 display: block;
+                height: 100%;
             }
 
             .summary-card {
                 display: flex;
+                height: 100%;
+                box-sizing: border-box;
                 gap: var(--uui-size-space-2);
                 padding: var(--uui-size-space-5);
             }

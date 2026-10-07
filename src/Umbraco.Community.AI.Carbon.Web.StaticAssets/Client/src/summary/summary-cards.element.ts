@@ -46,6 +46,7 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
             .grid {
                 display: grid;
                 grid-template-columns: 1fr;
+                align-items: stretch;
                 gap: var(--uui-size-space-5);
             }
 
