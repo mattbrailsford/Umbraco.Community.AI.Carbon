@@ -4,14 +4,14 @@ export type ClientOptions = {
     baseUrl: 'https://127.0.0.1:44355/' | (string & {});
 };
 
-export type AiCarbonEquivalentKind = 'PhoneCharges' | 'CarKm' | 'FlightKm';
+export type AiCarbonEquivalentKindModel = 'PhoneCharges' | 'CarKm' | 'FlightKm';
 
-export type AiCarbonEstimateStatus = 'Estimated' | 'UnknownModel' | 'UnsupportedCapability';
+export type AiCarbonEstimateStatusModel = 'Estimated' | 'UnknownModel' | 'UnsupportedCapability';
 
-export type AiUsagePeriod = 'Hourly' | 'Daily';
+export type AiUsagePeriodModel = 'Hourly' | 'Daily';
 
 export type EstimateEquivalentModel = {
-    kind: AiCarbonEquivalentKind;
+    kind: AiCarbonEquivalentKindModel;
     amount: number;
     basisCo2eGrams: number;
     source: string;
@@ -32,7 +32,7 @@ export type EstimateFeatureItemModel = {
 export type EstimateMethodModel = {
     source: string;
     dataVersion: string;
-    electricityZone?: null | string;
+    electricityZone?: string | null;
     electricityZones: Array<string>;
     zoneIsOverride: boolean;
     analyticsEnabled: boolean;
@@ -41,10 +41,10 @@ export type EstimateMethodModel = {
 export type EstimateModelRowModel = {
     providerId: string;
     modelId: string;
-    matchedAs?: null | string;
-    electricityZone?: null | string;
-    status: AiCarbonEstimateStatus;
-    co2eGrams?: null | EstimateRangeModel;
+    matchedAs?: string | null;
+    electricityZone?: string | null;
+    status: AiCarbonEstimateStatusModel;
+    co2eGrams?: EstimateRangeModel | null;
     requests: number;
     outputTokens: number;
     warnings: Array<string>;
@@ -64,7 +64,7 @@ export type EstimateRangeModel = {
 export type EstimateResponseModel = {
     from: string;
     to: string;
-    granularity: AiUsagePeriod;
+    granularity: AiUsagePeriodModel;
     total: EstimateTotalModel;
     byModel: Array<EstimateModelRowModel>;
     byFeature: EstimateFeatureBreakdownModel;
@@ -83,18 +83,19 @@ export type EstimateTotalModel = {
     energyWh: EstimateRangeModel;
     requests: number;
     outputTokens: number;
-    equivalent?: null | EstimateEquivalentModel;
+    equivalent?: EstimateEquivalentModel | null;
 };
 
 export type ValidationProblemDetails = {
-    type?: null | string;
-    title?: null | string;
-    status?: null | number;
-    detail?: null | string;
-    instance?: null | string;
+    type?: string | null;
+    title?: string | null;
+    status?: number | null;
+    detail?: string | null;
+    instance?: string | null;
     errors: {
         [key: string]: Array<string>;
     };
+    [key: string]: unknown;
 };
 
 export type GetEstimateData = {
@@ -103,7 +104,7 @@ export type GetEstimateData = {
     query: {
         from: string;
         to: string;
-        granularity?: AiUsagePeriod;
+        granularity?: AiUsagePeriodModel;
     };
     url: '/umbraco/ai-carbon/management/api/v1/estimate';
 };

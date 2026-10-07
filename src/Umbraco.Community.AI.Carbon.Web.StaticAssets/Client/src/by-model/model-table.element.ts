@@ -1,12 +1,12 @@
 import { css, customElement, html, nothing, property, repeat } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
-import type { AiCarbonEstimateStatus, EstimateModelRowModel } from "../api/types.gen.js";
+import type { AiCarbonEstimateStatusModel, EstimateModelRowModel } from "../api/types.gen.js";
 import { describeWarning } from "../estimate/warning-text.js";
 import { buildModelRows, type ModelRowViewModel } from "./model-table-model.js";
 
 /** Why a row has no estimate, as a localization key and its English default. */
-const NOT_ESTIMATED_REASON: Partial<Record<AiCarbonEstimateStatus, { key: string; fallback: string }>> = {
+const NOT_ESTIMATED_REASON: Partial<Record<AiCarbonEstimateStatusModel, { key: string; fallback: string }>> = {
     UnknownModel: {
         key: "aiCarbon_byModel_unknownModel_detail",
         fallback: "Unknown model \u2014 EcoLogits doesn't know this model.",

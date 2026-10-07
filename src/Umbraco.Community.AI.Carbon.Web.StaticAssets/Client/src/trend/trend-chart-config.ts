@@ -1,6 +1,6 @@
 import type { ChartConfiguration } from "chart.js";
 import { color } from "chart.js/helpers";
-import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
+import type { AiUsagePeriodModel, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
 import { co2eAxisUnit, formatCo2eAxisValue, formatCo2eFigure } from "../estimate/format-co2.js";
 import { toTrendBand } from "../estimate/trend-dataset.js";
 import { formatBucketLabel, formatBucketTitle } from "./trend-format.js";
@@ -91,7 +91,7 @@ export function resolveTrendColors(readVariable: (name: string) => string): Tren
  */
 export function buildTrendChartConfig(
     points: readonly EstimateTimeSeriesPointModel[],
-    granularity: AiUsagePeriod,
+    granularity: AiUsagePeriodModel,
     colors: TrendChartColors,
     yAxisTitle: (unitLabel: string) => string = (unit) => `${unit} CO2e`,
     legendLabels: TrendLegendLabels = DEFAULT_LEGEND_LABELS,

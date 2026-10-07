@@ -15,7 +15,7 @@ import {
     PointElement,
     Tooltip,
 } from "chart.js";
-import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
+import type { AiUsagePeriodModel, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
 import { buildTrendChartConfig, resolveTrendColors, type TrendChartColors, type TrendChartConfiguration } from "./trend-chart-config.js";
 import { describeTrend } from "./trend-format.js";
 
@@ -53,7 +53,7 @@ export class AICarbonTrendChartElement extends UmbLitElement {
     points?: EstimateTimeSeriesPointModel[];
 
     @property({ type: String })
-    granularity: AiUsagePeriod = "Daily";
+    granularity: AiUsagePeriodModel = "Daily";
 
     /** Test seam: how the Chart.js chart is created. */
     chartFactory: TrendChartFactory = createChart;

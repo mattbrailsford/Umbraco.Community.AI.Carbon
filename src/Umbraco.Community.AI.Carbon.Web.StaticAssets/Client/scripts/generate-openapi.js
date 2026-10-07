@@ -18,7 +18,7 @@ try {
     process.exit(1);
 }
 
-const swaggerUrl = `https://127.0.0.1:${port}/umbraco/openapi/${documentName}.json`;
+const swaggerUrl = `https://127.0.0.1:${port}/umbraco/swagger/${documentName}/swagger.json`;
 console.log(chalk.cyan(`Using ${swaggerUrl}`));
 
 // Local dev server uses a self-signed certificate.

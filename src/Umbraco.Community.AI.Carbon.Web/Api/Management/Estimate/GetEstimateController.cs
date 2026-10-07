@@ -44,7 +44,7 @@ public class GetEstimateController : EstimateControllerBase
     [MapToApiVersion("1.0")]
     [ProducesResponseType(typeof(EstimateResponseModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)] // 401 is added to every protected operation by Umbraco's OpenAPI transformer; 403 only for 3+ Authorize attributes, and this has 2.
+    [ProducesResponseType(StatusCodes.Status403Forbidden)] // 401 is added to every protected operation by Umbraco's Swashbuckle operation filter; 403 only for 3+ Authorize attributes, and this has 2.
     public async Task<IActionResult> GetEstimate(
         CancellationToken cancellationToken,
         [BindRequired] DateTime from,

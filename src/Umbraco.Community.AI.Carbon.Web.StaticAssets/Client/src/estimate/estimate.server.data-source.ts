@@ -1,14 +1,14 @@
 import type { UmbControllerHost } from "@umbraco-cms/backoffice/controller-api";
 import { tryExecute } from "@umbraco-cms/backoffice/resources";
 import { EstimateService } from "../api/sdk.gen.js";
-import type { AiUsagePeriod, EstimateResponseModel } from "../api/types.gen.js";
+import type { AiUsagePeriodModel, EstimateResponseModel } from "../api/types.gen.js";
 import { toAICarbonEstimateError, type AICarbonEstimateError } from "./estimate-error.js";
 
 export interface AICarbonEstimateRequest {
     from: Date;
     to: Date;
     /** Omit to let the server pick; `alignedWindow` always supplies it. */
-    granularity?: AiUsagePeriod;
+    granularity?: AiUsagePeriodModel;
 }
 
 export interface AICarbonEstimateResult {

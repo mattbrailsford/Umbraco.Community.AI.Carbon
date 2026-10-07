@@ -52,6 +52,7 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
         base.CustomTestSetup(builder);
         builder.AddUmbracoAI();
         builder.AddAICarbon();
+        builder.Services.RemoveUmbracoAIBackgroundJobs();
     }
 
     // The controllers live in this package's Web assembly, which the test host doesn't scan on its own.

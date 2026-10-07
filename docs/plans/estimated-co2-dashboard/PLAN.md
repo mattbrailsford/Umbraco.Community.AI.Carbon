@@ -140,7 +140,7 @@ Paths are relative to the repo root. `Core` = `src/Umbraco.Community.AI.Carbon.C
   (`AICarbon` section) and method summary.
   story: S1–S9 · depends-on: T19
 
-- [ ] **T21** — v17 line. Create `v17/dev` (and `v17/main`) from `v18/dev`, switch Umbraco and
+- [x] **T21** — v17 line. Create `v17/dev` (and `v17/main`) from `v18/dev`, switch Umbraco and
   Umbraco.AI ranges to `[17.0.0,17.999.999)`, `@umbraco-cms/backoffice` to `^17`, and confirm
   build, tests and a demo-site smoke on v17.
   story: — (release constraint from BRIEF) · depends-on: T20

@@ -8,11 +8,18 @@ Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbra
 
 ## Requirements
 
-- Umbraco CMS 18
-- Umbraco.AI 18 (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `18.x`)
+- Umbraco CMS 17 (17.4.0 or later) or 18
+- Umbraco.AI of the same major (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `17.x` or `18.x`)
 - Umbraco.AI usage analytics switched on. They are on by default (`Umbraco:AI:Analytics:Enabled`). The "By feature" split also needs `Umbraco:AI:Analytics:IncludeUsageFeatureTypeDimension`, which is on by default too.
 
-A version for Umbraco CMS 17 is planned. There is no date yet.
+Each Umbraco major has its own version line of this package, which depends on the matching Umbraco CMS and Umbraco.AI major:
+
+| Umbraco CMS | Umbraco.AI | Branch |
+|-------------|------------|--------|
+| 18 | 18.x | `v18/dev` |
+| 17 (17.4.0 or later) | 17.x | `v17/dev` |
+
+This is the Umbraco CMS 17 line.
 
 ## Install
 
@@ -109,6 +116,6 @@ Create the demo site (gitignored, under `demos/`) with `scripts/install-demo-sit
 
 ## Credits and licence
 
-The estimates use data and formulas from [EcoLogits](https://ecologits.ai) ([source](https://github.com/mlco2/ecologits)), data version 0.11.2. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact. It is licensed under MPL-2.0. See [THIRD-PARTY-NOTICES.md](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v18/main/THIRD-PARTY-NOTICES.md) for which files come from it.
+The estimates use data and formulas from [EcoLogits](https://ecologits.ai) ([source](https://github.com/mlco2/ecologits)), data version 0.11.2. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact. It is licensed under MPL-2.0. See [THIRD-PARTY-NOTICES.md](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v17/main/THIRD-PARTY-NOTICES.md) for which files come from it.
 
-This package is MIT licensed. See [LICENSE](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v18/main/LICENSE).
+This package is MIT licensed. See [LICENSE](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v17/main/LICENSE).

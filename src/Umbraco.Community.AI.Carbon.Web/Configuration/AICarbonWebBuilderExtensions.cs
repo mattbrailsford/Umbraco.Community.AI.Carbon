@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using Umbraco.Cms.Api.Common.DependencyInjection;
 using Umbraco.Cms.Api.Common.OpenApi;
-using Umbraco.Cms.Api.Management.OpenApi;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Mapping;
 using Umbraco.Community.AI.Carbon.Web;
@@ -19,7 +19,7 @@ namespace Umbraco.Community.AI.Carbon.Extensions;
 public static class AICarbonWebBuilderExtensions
 {
     /// <summary>
-    /// Registers the Umbraco AI Carbon Management API: the OpenAPI document, its JSON options and the map
+    /// Registers the Umbraco AI Carbon Management API: the Swagger document, its JSON options and the map
     /// definitions. Authorization uses Umbraco.AI's own <c>SectionAccessAI</c> policy, which Umbraco.AI registers.
     /// </summary>
     /// <param name="builder">The Umbraco builder.</param>
@@ -34,20 +34,28 @@ public static class AICarbonWebBuilderExtensions
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
 
-        builder.AddBackOfficeOpenApiDocument(Constants.ManagementApiName, document =>
+        builder.Services.Configure<SwaggerGenOptions>(options =>
         {
-            document
-                .WithTitle(Constants.ManagementApiTitle)
-                .WithUiTitle(Constants.ManagementApiTitle)
-                .WithJsonOptions(Constants.ManagementApiName)
-                .WithBackOfficeAuthentication();
+            // Only add the document if it hasn't been added already (composers can run more than once in tests).
+            if (options.SwaggerGeneratorOptions.SwaggerDocs.ContainsKey(Constants.ManagementApiName))
+            {
+                return;
+            }
+
+            options.SwaggerDoc(
+                Constants.ManagementApiName,
+                new OpenApiInfo
+                {
+                    Title = Constants.ManagementApiTitle,
+                    Version = "Latest",
+                });
+
+            options.DocumentFilter<MimeTypeDocumentFilter>(Constants.ManagementApiName);
+            options.OperationFilter<AICarbonBackOfficeSecurityRequirementsOperationFilter>(Constants.ManagementApiName);
         });
 
-        // Schema generation reads the named *HTTP* JsonOptions, not the MVC ones above: bridge them.
-        builder.Services.AddSingleton<IConfigureOptions<Microsoft.AspNetCore.Http.Json.JsonOptions>>(
-            sp => new ConfigureAICarbonHttpJsonOptions(
-                Constants.ManagementApiName,
-                sp.GetRequiredService<IOptionsMonitor<Microsoft.AspNetCore.Mvc.JsonOptions>>()));
+        builder.Services.AddSingleton<IOperationIdHandler, AICarbonOperationIdHandler>();
+        builder.Services.AddSingleton<ISchemaIdHandler, AICarbonSchemaIdHandler>();
 
         builder.WithCollectionBuilder<MapDefinitionCollectionBuilder>()
             .Add<EstimateMapDefinition>();

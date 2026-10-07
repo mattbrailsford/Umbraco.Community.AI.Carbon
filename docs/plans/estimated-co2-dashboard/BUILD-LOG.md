@@ -24,3 +24,4 @@
 - 06-10-2026 T22 fd58568: central figure + no status column; browser check with seeded data; npm 194. 1 fix round (central and range units could differ).
 - 06-10-2026 T23 ca5792c: equivalents backend; reviewer confirmed factors against the DESNZ 2025 spreadsheet (sheet/row/column) and the EPA page; 9 source/mapper mutations caught; Unit 373, Integration 49. 1 fix round (EPA year, source tests).
 - 06-10-2026 T24 365126b: equivalent strip + method panel box; browser check with ShowEquivalents on; reviewer fuzzed round-up over 2M values (never under, at most 10% over); npm 222, Unit 373, Integration 49. 1 fix round (rounding understated an up-to figure) + user layout change (own strip).
+- 07-10-2026 T21: CMS 17 line (Umbraco.AI [17.0.0,), CMS [17.4.0,), Swashbuckle OpenAPI, backoffice ^17.4.0); Unit 373, Integration 50, npm 263; reviewer typechecked against backoffice 17.4.0. 1 fix round (backoffice floor).

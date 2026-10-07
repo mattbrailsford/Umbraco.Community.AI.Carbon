@@ -6,6 +6,11 @@ namespace Umbraco.Community.AI.Carbon.Web;
 public static class Constants
 {
     /// <summary>
+    /// The namespace root of this package, used to claim its controllers and types for the OpenAPI handlers.
+    /// </summary>
+    internal const string NamespaceRoot = "Umbraco.Community.AI.Carbon";
+
+    /// <summary>
     /// The Management API name, used for the OpenAPI document and route segment.
     /// </summary>
     public const string ManagementApiName = "ai-carbon-management";

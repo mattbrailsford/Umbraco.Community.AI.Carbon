@@ -171,3 +171,32 @@
   dark theme): #ffe8e6 made translucent on light surfaces, rgba(255, 140, 150, 0.3) on dark ones.
   Chart text, grid and tooltip colours come from theme variables and re-resolve live when the
   backoffice theme changes (per-frame settle window plus a stylesheet load watcher).
+- 07-10-2026: (T21, v17 line) Floors: `Umbraco.AI.*` `[17.0.0,17.999.999)` and `Umbraco.Cms*` `[17.4.0,17.999.999)`.
+  Umbraco.AI 17.0.0 already has everything the package calls (`IAIUsageAnalyticsService`,
+  `AIUsageFilter.FeatureType`, `Constants.FeatureTypes.InlineAgent`, `AIAuthorizationPolicies.SectionAccessAI`,
+  the `UmbracoAI.Workspace.AnalyticsRoot` workspace), but its own dependency floor is CMS 17.4.0, so a
+  lower CMS range fails restore (NU1605). The demo-site script detects the major from the `Umbraco.Cms`
+  lower bound, so it installs the 17.4.0 template and `Umbraco.AI 17.*` into `demos/v17/` unchanged.
+- 07-10-2026: (T21) OpenAPI on CMS 17 is Swashbuckle, not `Microsoft.AspNetCore.OpenApi`. The document is
+  registered with `Configure<SwaggerGenOptions>` (`SwaggerDoc`, Umbraco's `MimeTypeDocumentFilter`, a
+  `BackOfficeSecurityRequirementsOperationFilterBase` subclass) plus our own `OperationIdHandler`
+  (action name, first letter lower-cased) and `SchemaIdHandler` (claims our namespace), because Umbraco's
+  defaults only claim `Umbraco.Cms` types. Same document name and routes; served at
+  `/umbraco/swagger/ai-carbon-management/swagger.json` (was `/umbraco/openapi/<name>.json`), so
+  `generate-openapi.js` and the document tests use that URL. The v18-only HTTP JSON options bridge
+  (`ConfigureAICarbonHttpJsonOptions`) is deleted on this line; Swashbuckle reads the MVC options.
+- 07-10-2026: (T21) The regenerated client differs from v18 only cosmetically, except that the enum
+  types gain Umbraco's `Model` suffix (`AiUsagePeriodModel`, `AiCarbonEstimateStatusModel`,
+  `AiCarbonEquivalentKindModel`; `AIUsagePeriod` belongs to Umbraco.AI, whose own handler adds it, so it
+  cannot be kept stable from here). Frontend references renamed to match; the rest is nullable ordering
+  (`string | null`) and an index signature on `ValidationProblemDetails`.
+- 07-10-2026: (T21) Frontend needed no API changes: every `@umbraco-cms/backoffice` import used exists in
+  17.7.1 and the build and tests pass; range is `^17.4.0`: 17.0.0 lacks `localize.termOrDefault` and `UmbAuthContext.configureClient`, so the floor is 17.4.0 (installed 17.7.1).
+- 07-10-2026: (T21) CMS 17's Management API test host instantiates every hosted service before
+  `UseTestDatabase` points the app at the per-test database. Umbraco.AI's background jobs pull in its EF Core
+  repositories, so EF Core caches `UmbracoAIDbContext` options with an empty connection string and every
+  query fails ("No database provider has been configured"). The integration fixtures remove Umbraco.AI's
+  hosted jobs from the test host (`RemoveUmbracoAIBackgroundJobs`); they have no part in those tests.
+  The v18 host does not show this. A real site is unaffected (the connection string is in config at build).
+- 07-10-2026: (T21) `version.json` unchanged (`0.1.0-alpha`, same scheme as the v18 line and Content
+  Checks' v17 line; `publicReleaseRefSpec` already matches `vN/` branches).

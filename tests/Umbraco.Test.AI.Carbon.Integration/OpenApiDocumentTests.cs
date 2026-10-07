@@ -25,7 +25,7 @@ public class OpenApiDocumentTests : ManagementApiTest<BackOfficeController>
     protected override Expression<Func<BackOfficeController, object>> MethodSelector { get; set; }
         = x => x.Login(CancellationToken.None, null!);
 
-    private static readonly string DocumentUrl = $"/umbraco/openapi/{CarbonWebConstants.ManagementApiName}.json";
+    private static readonly string DocumentUrl = $"/umbraco/swagger/{CarbonWebConstants.ManagementApiName}/swagger.json";
 
     protected override void CustomTestSetup(IUmbracoBuilder builder)
     {
@@ -36,6 +36,7 @@ public class OpenApiDocumentTests : ManagementApiTest<BackOfficeController>
         // composers do, kept to mirror EstimateEndpointTests.
         builder.AddUmbracoAI();
         builder.AddAICarbon();
+        builder.Services.RemoveUmbracoAIBackgroundJobs();
     }
 
     protected override void CustomMvcSetup(IMvcBuilder mvcBuilder)
@@ -60,6 +61,17 @@ public class OpenApiDocumentTests : ManagementApiTest<BackOfficeController>
             .GetProperty("get").GetProperty("responses");
 
         Assert.That(responses.EnumerateObject().Select(response => response.Name), Is.EquivalentTo(new[] { "200", "400", "401", "403" }));
+    }
+
+    [Test]
+    public async Task RequiresBackOfficeAuthenticationOnTheEstimateOperation()
+    {
+        using var document = await GetDocumentAsync();
+        var operation = document.RootElement.GetProperty("paths")
+            .GetProperty($"/umbraco{CarbonWebConstants.ManagementApiBackofficePath}/v1/{CarbonWebConstants.Estimate.RouteSegment}")
+            .GetProperty("get");
+
+        Assert.That(operation.TryGetProperty("security", out var security) && security.GetArrayLength() > 0, Is.True, operation.ToString());
     }
 
     [Test]

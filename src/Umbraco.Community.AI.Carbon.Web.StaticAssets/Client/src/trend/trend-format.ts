@@ -1,4 +1,4 @@
-import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
+import type { AiUsagePeriodModel, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
 import { formatCo2eRange } from "../estimate/format-co2.js";
 import type { LocalizeWithDefault } from "../estimate/warning-text.js";
 
@@ -12,14 +12,14 @@ const HOUR = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digi
 const FULL_DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 /** Short x-axis label: "1 Oct" for Daily, "1 Oct 14:00" for Hourly. */
-export function formatBucketLabel(timestamp: string, granularity: AiUsagePeriod): string {
+export function formatBucketLabel(timestamp: string, granularity: AiUsagePeriodModel): string {
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
     return granularity === "Hourly" ? `${DAY.format(date)} ${HOUR.format(date)}` : DAY.format(date);
 }
 
 /** Full tooltip heading: "1 Oct 2026" for Daily, "1 Oct 2026, 14:00 UTC" for Hourly. */
-export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriod): string {
+export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriodModel): string {
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
     return granularity === "Hourly" ? `${FULL_DAY.format(date)}, ${HOUR.format(date)} UTC` : FULL_DAY.format(date);
@@ -31,7 +31,7 @@ export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriod)
  */
 export function describeTrend(
     points: readonly EstimateTimeSeriesPointModel[],
-    granularity: AiUsagePeriod,
+    granularity: AiUsagePeriodModel,
     localize: LocalizeWithDefault = (_key, fallback) => fallback,
 ): string {
     if (points.length === 0) return "";

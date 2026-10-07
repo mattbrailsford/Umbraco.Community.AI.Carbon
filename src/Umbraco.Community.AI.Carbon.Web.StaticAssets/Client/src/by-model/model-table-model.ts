@@ -1,4 +1,4 @@
-import type { AiCarbonEstimateStatus, EstimateModelRowModel } from "../api/types.gen.js";
+import type { AiCarbonEstimateStatusModel, EstimateModelRowModel } from "../api/types.gen.js";
 import { formatCo2eFigure } from "../estimate/format-co2.js";
 import { formatCount } from "../estimate/format-count.js";
 import { NO_VALUE } from "../estimate/no-value.js";
@@ -16,7 +16,7 @@ export interface ModelRowViewModel {
     co2e: string;
     /** The range as small text, e.g. "1.2–8.4 g CO2e"; empty when there is none or the ends read the same. */
     co2eRange: string;
-    status: AiCarbonEstimateStatus;
+    status: AiCarbonEstimateStatusModel;
     /** Raw warning codes; the element turns them into text. */
     warnings: readonly string[];
 }

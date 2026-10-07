@@ -1,17 +1,17 @@
-import type { AiUsagePeriod } from "../api/types.gen.js";
+import type { AiUsagePeriodModel } from "../api/types.gen.js";
 
 export type EstimateRange = "last24h" | "last7d" | "last30d";
 
 export interface EstimateWindow {
     from: Date;
     to: Date;
-    granularity: AiUsagePeriod;
+    granularity: AiUsagePeriodModel;
 }
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
-const RANGES: Record<EstimateRange, { lengthMs: number; granularity: AiUsagePeriod }> = {
+const RANGES: Record<EstimateRange, { lengthMs: number; granularity: AiUsagePeriodModel }> = {
     last24h: { lengthMs: DAY_MS, granularity: "Hourly" },
     // An exact 7-day window is still Hourly (Umbraco.AI treats only more than 7 days as Daily).
     last7d: { lengthMs: 7 * DAY_MS, granularity: "Hourly" },
