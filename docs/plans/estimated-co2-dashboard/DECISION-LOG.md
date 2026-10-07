@@ -159,3 +159,5 @@
   database and hosting are not included." Review rejected an earlier "the AI models running your
   requests" draft: it implied all request types and undersold the data-centre and hardware share.
   Method panel and README "not counted" lists now name your own servers, database and hosting.
+- 07-10-2026: (user) Scope line shortened to "AI provider side of chat requests only. Excludes your
+  own servers, database and hosting." Keeps "chat" (no image/speech overclaim) and the exclusions.

@@ -6,7 +6,7 @@ export default {
     aiCarbon: {
         tabLabel: "CO2",
         headline: "Estimated CO2e from AI Inference",
-        scope: "Covers the AI provider's servers and data centres for your chat requests. Your own servers, database and hosting are not included.",
+        scope: "AI provider side of chat requests only. Excludes your own servers, database and hosting.",
         range_label: "Time Range",
         range_last24h: "Last 24 Hours",
         range_last7d: "Last 7 Days",

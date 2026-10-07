@@ -21,7 +21,7 @@ import { loadDateRange, saveDateRange } from "./date-range-store.js";
 import { selectViewState, type ViewState } from "./view-state.js";
 
 const SCOPE_FALLBACK =
-    "Covers the AI provider's servers and data centres for your chat requests. Your own servers, database and hosting are not included.";
+    "AI provider side of chat requests only. Excludes your own servers, database and hosting.";
 
 /** Loads one estimate. The default goes to the server; tests inject their own. */
 export type AICarbonEstimateLoader = (

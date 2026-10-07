@@ -68,7 +68,7 @@ describe("Feature: CO2 tab states", () => {
         it("shows the scope subtitle", async () => {
             const element = await render(() => new Promise(() => {}));
             expect(element.shadowRoot!.querySelector(".scope")!.textContent).toContain(
-                "Covers the AI provider's servers and data centres for your chat requests.",
+                "AI provider side of chat requests only.",
             );
         });
     });
