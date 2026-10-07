@@ -54,7 +54,7 @@ Everything is optional. Settings live in the `AICarbon` section of `appsettings.
 {
   "AICarbon": {
     "ElectricityZone": "SWE",
-    "ShowEquivalents": true,
+    "ShowEquivalents": false,
     "ProviderMappings": {
       "my-company-gateway": "openai"
     },
