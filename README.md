@@ -4,7 +4,7 @@
 
 Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. Each energy and CO2e figure leads with a rounded middle estimate (≈) and shows the low-to-high range under it.
 
-![The CO2 tab in Umbraco.AI Analytics: estimated CO2e and energy cards, an everyday comparison, an hourly chart with likely-range bars and a middle-estimate line, and tables by model and by feature](docs/images/co2-dashboard.png)
+![The CO2 tab in Umbraco.AI Analytics: estimated CO2e and energy cards, an everyday comparison, an hourly chart with likely-range bars and a middle-estimate line, and tables by model and by feature](https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/HEAD/docs/images/co2-dashboard.png)
 
 *Screenshot uses sample data.*
 
@@ -18,10 +18,10 @@ Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbra
 
 Each Umbraco major has its own version line of this package, which depends on the matching Umbraco CMS and Umbraco.AI major:
 
-| Umbraco CMS | Umbraco.AI | Branch |
-|-------------|------------|--------|
-| 18 | 18.x | `v18/dev` |
-| 17 (17.4.0 or later) | 17.x | `v17/dev` |
+| Umbraco CMS | Umbraco.AI | Package | Branch |
+|-------------|------------|---------|--------|
+| 18 | 18.x | 18.x | `v18/dev` |
+| 17 (17.4.0 or later) | 17.x | 17.x | `v17/dev` |
 
 This is the Umbraco CMS 18 line.
 
@@ -128,6 +128,25 @@ npm run generate-client   # needs the demo site running
 ```
 
 Create the demo site (gitignored, under `demos/`) with `scripts/install-demo-site.sh` or `scripts/install-demo-site.ps1`. It installs Umbraco.AI from NuGet and references the local package. A provider package and an API key are needed to produce real usage data.
+
+## Releasing
+
+Package versions track the Umbraco CMS major: this line (`v18/*` branches) ships `18.x`, the v17 line ships `17.x`, under the same package ids. Each line is released from its own `vN/main` branch.
+
+To cut a release:
+
+1. Set `version` in `version.json` on `vN/dev` (for example `18.0.0-beta.1` or `18.0.0`). Use dotted prerelease identifiers only (`-beta.1`, never `-beta1`).
+2. Merge `vN/dev` into `vN/main`.
+3. Create a GitHub Release with the tag `vN.x.y` (for example `v18.0.0-beta.1`), targeting `vN/main`, with hand-written release notes. The tagged commit must be on `vN/main`; the release workflow checks this and fails otherwise. Tick "pre-release" for prerelease versions. Publishing the release triggers `.github/workflows/release.yml`.
+
+The workflow first checks that the tag matches the computed package version, the CMS major of the branch, and that the tagged commit is on `vN/main`. It then builds the frontend and the solution, runs the frontend and .NET tests, packs, and, in a separate publish job that has no access to the build steps, pushes to nuget.org using **Trusted Publishing** (OIDC). No long-lived API key is stored in the repo. Pull requests and pushes to `vN/dev` run the same build and tests (frontend and .NET) through `.github/workflows/ci.yml`, without packing or publishing.
+
+One-time setup:
+
+- Add a `NUGET_USER` repo secret set to your nuget.org profile name (not your email). It is not a credential.
+- On nuget.org, open your username menu, then Trusted Publishing, and add a policy for Repository Owner `mattbrailsford`, Repository `Umbraco.Community.AI.Carbon` and Workflow File `release.yml`.
+- When creating the policy, make sure its scope allows pushing new packages (see "Select Scopes" in the [NuGet Trusted Publishing docs](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)). Otherwise, push the first version of each of the four package ids by hand (`Umbraco.Community.AI.Carbon`, `.Core`, `.Web` and `.Web.StaticAssets`), for example with an API key from your own machine.
+- A new policy may start as "temporarily active" for 7 days, until its first successful publish. Run the first release within that window.
 
 ## Credits and licence
 
