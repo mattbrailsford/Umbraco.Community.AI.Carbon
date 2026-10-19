@@ -177,7 +177,7 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
     public async Task ReportsTheEcoLogitsDataVersion()
     {
         var json = await GetJsonAsAdminAsync();
-        Assert.That(json.RootElement.GetProperty("method").GetProperty("dataVersion").GetString(), Is.EqualTo("0.11.2"));
+        Assert.That(json.RootElement.GetProperty("method").GetProperty("dataVersion").GetString(), Is.EqualTo("0.11.3"));
     }
 
     [Test]
@@ -350,7 +350,7 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
             new AICarbonFeatureBreakdown(true, [new AICarbonFeatureEstimate("agent", new RangeValue(1, 3), 8)]),
             [new AICarbonTimeSeriesPoint(From, new RangeValue(1.5, 4.5))],
             new AICarbonNotEstimated(3, 70, 1),
-            new AICarbonMethod(AICarbonMethod.EcoLogitsSource, "0.11.2", "USA", ["SWE", "USA"], true, true));
+            new AICarbonMethod(AICarbonMethod.EcoLogitsSource, "0.11.3", "USA", ["SWE", "USA"], true, true));
 
         var model = GetRequiredService<IUmbracoMapper>().Map<EstimateResponseModel>(estimate)!;
         var options = GetRequiredService<IOptionsMonitor<Microsoft.AspNetCore.Mvc.JsonOptions>>()

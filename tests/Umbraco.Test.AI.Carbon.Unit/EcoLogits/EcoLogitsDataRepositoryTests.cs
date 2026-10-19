@@ -49,7 +49,7 @@ public class EcoLogitsDataRepositoryTests
                 Is.EqualTo(ReadJsonResource("electricity_mixes.json").GetProperty("electricity_mixes").GetArrayLength()));
 
         [Test]
-        public void ItReportsTheEcoLogitsVersion() => Assert.That(Data.DataVersion, Is.EqualTo("0.11.2"));
+        public void ItReportsTheEcoLogitsVersion() => Assert.That(Data.DataVersion, Is.EqualTo("0.11.3"));
 
         [Test]
         public void TheEmbeddedInstanceIsParsedOnce() => Assert.That(EcoLogitsDataRepository.LoadEmbedded(), Is.SameAs(Data));

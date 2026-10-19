@@ -160,6 +160,6 @@ One-time setup:
 
 ## Credits and licence
 
-The estimates use data and formulas from [EcoLogits](https://ecologits.ai) ([source](https://github.com/mlco2/ecologits)), data version 0.11.2. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact. It is licensed under MPL-2.0. See [THIRD-PARTY-NOTICES.md](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v17/main/THIRD-PARTY-NOTICES.md) for which files come from it.
+The estimates use data and formulas from [EcoLogits](https://ecologits.ai) ([source](https://github.com/mlco2/ecologits)), data version 0.11.3. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact. It is licensed under MPL-2.0. See [THIRD-PARTY-NOTICES.md](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v17/main/THIRD-PARTY-NOTICES.md) for which files come from it.
 
 This package is MIT licensed. See [LICENSE](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/blob/v17/main/LICENSE).
