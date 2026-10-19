@@ -1,8 +1,8 @@
 # Downloads the EcoLogits reference data (models.json, electricity_mixes.json) for a given tag
 # into the Core project's embedded Data/EcoLogits folder.
-# Usage: ./scripts/update-ecologits-data.ps1 [-Tag 0.11.2]
+# Usage: ./scripts/update-ecologits-data.ps1 [-Tag 0.11.3]
 param(
-    [string]$Tag = "0.11.2"
+    [string]$Tag = "0.11.3"
 )
 
 $ErrorActionPreference = "Stop"
