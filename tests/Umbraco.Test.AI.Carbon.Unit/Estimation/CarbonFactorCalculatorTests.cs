@@ -1,7 +1,9 @@
 // S1 (AC5, AC6, AC8) — Carbon factor calculator. Task: T3.
-// Reference values from EcoLogits 0.11.2 llm_impacts(...) with request_latency=1e9 (latency cap
-// disabled, matching ARCHITECTURE.md), one request.
+// Reference values from EcoLogits 0.11.3 compute_llm_impacts(...) with request_latency=1e9 (latency
+// cap disabled, matching ARCHITECTURE.md), one request. The inputs are fixed in this file (they are
+// the EcoLogits 0.11.2 figures for each named model), so a reference data update cannot move them.
 using NUnit.Framework;
+using Umbraco.Community.AI.Carbon.Core;
 using Umbraco.Community.AI.Carbon.Core.EcoLogits;
 using Umbraco.Community.AI.Carbon.Core.Estimation;
 
@@ -12,14 +14,21 @@ public class CarbonFactorCalculatorTests
 {
     private const double Tolerance = 0.01; // 1%
 
-    private static CarbonImpact Estimate(string provider, string model, long outputTokens, string? zone = null)
-    {
-        var data = EcoLogitsDataRepository.LoadEmbedded();
-        var ecoModel = data.GetModel(provider, model)!;
-        var providerConfig = data.GetProviderConfig(provider)!;
-        var mix = data.GetElectricityMix(zone ?? providerConfig.Zone)!;
-        return new CarbonFactorCalculator().Calculate(ecoModel, providerConfig, mix).Apply(outputTokens, requests: 1);
-    }
+    private static readonly ElectricityMix Usa = new("USA", 0.3844, []);
+    private static readonly ElectricityMix Sweden = new("SWE", 0.03526, []);
+
+    private static readonly EcoLogitsProviderConfig Anthropic = new("USA", new RangeValue(1.09, 1.14), new RangeValue(0.13, 0.999));
+    private static readonly EcoLogitsProviderConfig OpenAi = new("USA", RangeValue.Of(1.20), RangeValue.Of(0.569));
+    private static readonly EcoLogitsProviderConfig Mistral = new("SWE", RangeValue.Of(1.16), RangeValue.Of(0.09));
+
+    private static readonly EcoLogitsModel ClaudeSonnet45 = new("anthropic", "claude-sonnet-4-5", new RangeValue(44, 132), RangeValue.Of(440), 44.0, 1.18, []);
+    private static readonly EcoLogitsModel Gpt4oMini = new("openai", "gpt-4o-mini", new RangeValue(8, 28), new RangeValue(8, 28), 58.0, 0.53, []);
+    private static readonly EcoLogitsModel MistralSmall = new("mistralai", "mistral-small-latest", RangeValue.Of(8), RangeValue.Of(119), null, null, []);
+    private static readonly EcoLogitsModel ClaudeHaiku45 = new("anthropic", "claude-haiku-4-5-20251001", new RangeValue(10, 35), new RangeValue(10, 35), 60.0, 0.61, []);
+    private static readonly EcoLogitsModel ClaudeOpus48 = new("anthropic", "claude-opus-4-8", new RangeValue(67, 200), RangeValue.Of(670), 108.5, 1.01, []);
+
+    private static CarbonFactor Factor(EcoLogitsModel model, EcoLogitsProviderConfig providerConfig, ElectricityMix mix)
+        => new CarbonFactorCalculator().Calculate(model, providerConfig, mix);
 
     [TestFixture]
     public class GivenAClosedModelWithARangeOfSizes
@@ -27,7 +36,7 @@ public class CarbonFactorCalculatorTests
         private CarbonImpact _impact = null!;
 
         [SetUp]
-        public void SetUp() => _impact = Estimate("anthropic", "claude-sonnet-4-5", 1000);
+        public void SetUp() => _impact = Factor(ClaudeSonnet45, Anthropic, Usa).Apply(1000, requests: 1);
 
         [Test]
         public void MinCo2eMatchesEcoLogits()
@@ -56,7 +65,7 @@ public class CarbonFactorCalculatorTests
         private CarbonImpact _impact = null!;
 
         [SetUp]
-        public void SetUp() => _impact = Estimate("openai", "gpt-4o-mini", 500);
+        public void SetUp() => _impact = Factor(Gpt4oMini, OpenAi, Usa).Apply(500, requests: 1);
 
         [Test]
         public void MinCo2eMatchesEcoLogits()
@@ -73,7 +82,7 @@ public class CarbonFactorCalculatorTests
         private CarbonImpact _impact = null!;
 
         [SetUp]
-        public void SetUp() => _impact = Estimate("mistralai", "mistral-small-latest", 2000);
+        public void SetUp() => _impact = Factor(MistralSmall, Mistral, Sweden).Apply(2000, requests: 1);
 
         [Test]
         public void Co2eMatchesEcoLogits()
@@ -90,7 +99,7 @@ public class CarbonFactorCalculatorTests
         private CarbonImpact _impact = null!;
 
         [SetUp]
-        public void SetUp() => _impact = Estimate("anthropic", "claude-sonnet-4-5", 1000, zone: "SWE");
+        public void SetUp() => _impact = Factor(ClaudeSonnet45, Anthropic, Sweden).Apply(1000, requests: 1);
 
         [Test]
         public void MinCo2eMatchesEcoLogits()
@@ -134,7 +143,7 @@ public class CarbonFactorCalculatorTests
             data.GetModel(provider, model)!, config, data.GetElectricityMix(config.Zone)!);
     }
 
-    // Reference: EcoLogits 0.11.2 compute_llm_impacts called once per request (400 + 250 + 900 output
+    // Reference: EcoLogits 0.11.3 compute_llm_impacts called once per request (400 + 250 + 900 output
     // tokens) with request_latency=1e9, results summed. ttft is per request, so one call with the
     // summed tokens would differ.
     [TestFixture]
@@ -143,7 +152,7 @@ public class CarbonFactorCalculatorTests
         private CarbonImpact _impact = null!;
 
         [SetUp]
-        public void SetUp() => _impact = FactorFor("anthropic", "claude-haiku-4-5-20251001").Apply(1550, requests: 3);
+        public void SetUp() => _impact = Factor(ClaudeHaiku45, Anthropic, Usa).Apply(1550, requests: 3);
 
         [Test]
         public void MinCo2eMatchesEcoLogits()
@@ -168,7 +177,7 @@ public class CarbonFactorCalculatorTests
         private CarbonImpact _impact = null!;
 
         [SetUp]
-        public void SetUp() => _impact = FactorFor("anthropic", "claude-opus-4-8").Apply(1550, requests: 3);
+        public void SetUp() => _impact = Factor(ClaudeOpus48, Anthropic, Usa).Apply(1550, requests: 3);
 
         [Test]
         public void MinCo2eMatchesEcoLogits()
@@ -229,6 +238,24 @@ public class CarbonFactorCalculatorTests
                 .ToList();
 
             Assert.That(inverted, Is.Empty);
+        }
+
+        [Test]
+        public void EveryModelHasAPositiveEstimate()
+        {
+            var data = EcoLogitsDataRepository.LoadEmbedded();
+            var calculator = new CarbonFactorCalculator();
+            var notPositive = data.GetModels()
+                .Where(model =>
+                {
+                    var config = data.GetProviderConfig(model.Provider)!;
+                    var impact = calculator.Calculate(model, config, data.GetElectricityMix(config.Zone)!).Apply(1000, 1);
+                    return !(impact.Co2eKg.Min > 0) || !(impact.EnergyKwh.Min > 0);
+                })
+                .Select(model => $"{model.Provider}/{model.Name}")
+                .ToList();
+
+            Assert.That(notPositive, Is.Empty);
         }
     }
 

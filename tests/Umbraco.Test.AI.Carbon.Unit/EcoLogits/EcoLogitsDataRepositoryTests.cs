@@ -21,6 +21,15 @@ public class EcoLogitsDataRepositoryTests
 
     private static RangeValue Active(string provider, string name) => Data.GetModel(provider, name)!.ActiveParameters;
 
+    // Reads a model's deployment value straight from the JSON, so the parsing tests follow data updates.
+    private static double? Deployment(string name, string field)
+    {
+        var value = ReadJsonResource("models.json").GetProperty("models").EnumerateArray()
+            .Single(m => m.GetProperty("name").GetString() == name)
+            .GetProperty("deployment").GetProperty(field);
+        return value.ValueKind == JsonValueKind.Null ? null : value.GetDouble();
+    }
+
     [TestFixture]
     public class GivenTheEmbeddedData
     {
@@ -30,9 +39,6 @@ public class EcoLogitsDataRepositoryTests
                 Data.GetModels(),
                 Has.Count.EqualTo(ReadJsonResource("models.json").GetProperty("models").GetArrayLength()
                                   + ReadJsonResource("models.json").GetProperty("aliases").GetArrayLength()));
-
-        [Test]
-        public void ItLoadsEveryDenseAndMoeModelPlusAliasCopies() => Assert.That(Data.GetModels(), Has.Count.EqualTo(348));
 
         [Test]
         public void EveryModelInTheFileIsDenseOrMoe()
@@ -101,16 +107,16 @@ public class EcoLogitsDataRepositoryTests
         public void ActiveMaxIsRead() => Assert.That(Active("anthropic", "claude-sonnet-4-5-20250929").Max, Is.EqualTo(132));
 
         [Test]
-        public void TpsIsRead() => Assert.That(Model("anthropic", "claude-sonnet-4-5-20250929").Tps, Is.EqualTo(44));
+        public void TpsIsRead() => Assert.That(Model("anthropic", "claude-sonnet-4-5-20250929").Tps, Is.EqualTo(Deployment("claude-sonnet-4-5-20250929", "tps")));
 
         [Test]
-        public void TtftIsRead() => Assert.That(Model("anthropic", "claude-sonnet-4-5-20250929").Ttft, Is.EqualTo(1.18));
+        public void TtftIsRead() => Assert.That(Model("anthropic", "claude-sonnet-4-5-20250929").Ttft, Is.EqualTo(Deployment("claude-sonnet-4-5-20250929", "ttft")));
 
         [Test]
         public void NullTpsStaysNull() => Assert.That(Model("google_genai", "gemini-2.5-flash-image").Tps, Is.Null);
 
         [Test]
-        public void TtftIsReadWhenTpsIsNull() => Assert.That(Model("google_genai", "gemini-2.5-flash-image").Ttft, Is.EqualTo(13.48));
+        public void TtftIsReadWhenTpsIsNull() => Assert.That(Model("google_genai", "gemini-2.5-flash-image").Ttft, Is.EqualTo(Deployment("gemini-2.5-flash-image", "ttft")));
 
         [Test]
         public void ModelWarningsAreRead() => Assert.That(Model("anthropic", "claude-sonnet-4-5-20250929").Warnings, Does.Contain("model-arch-not-released"));
