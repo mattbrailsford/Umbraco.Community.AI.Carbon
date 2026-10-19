@@ -48,7 +48,7 @@ internal sealed class EcoLogitsDataRepository : IEcoLogitsDataRepository
     }
 
     /// <inheritdoc />
-    public string DataVersion => "0.11.2";
+    public string DataVersion => "0.11.3";
 
     /// <summary>Gets the repository over the embedded EcoLogits data (parsed once).</summary>
     /// <returns>The shared repository instance.</returns>

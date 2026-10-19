@@ -1,10 +1,10 @@
 #!/bin/bash
 # Downloads the EcoLogits reference data (models.json, electricity_mixes.json) for a given tag
 # into the Core project's embedded Data/EcoLogits folder.
-# Usage: ./scripts/update-ecologits-data.sh [tag]   (default: 0.11.2)
+# Usage: ./scripts/update-ecologits-data.sh [tag]   (default: 0.11.3)
 set -euo pipefail
 
-TAG="${1:-0.11.2}"
+TAG="${1:-0.11.3}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$ROOT/src/Umbraco.Community.AI.Carbon.Core/Data/EcoLogits"
 BASE="https://raw.githubusercontent.com/mlco2/ecologits/$TAG/ecologits/data"

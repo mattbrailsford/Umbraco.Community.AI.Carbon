@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using Umbraco.AI.Core.Models;
+using Umbraco.Community.AI.Carbon.Core;
 using Umbraco.Community.AI.Carbon.Core.Configuration;
 using Umbraco.Community.AI.Carbon.Core.EcoLogits;
 using Umbraco.Community.AI.Carbon.Core.Estimation;
@@ -27,6 +28,17 @@ public class ElectricityZoneTests
 
     private static Task<AICarbonEstimate> EstimateOnAsync(IAICarbonEstimateService service)
         => service.GetEstimateAsync(From, From.AddDays(7), null);
+
+    // The calculator's own tests check it against EcoLogits; these check the service hands it the
+    // override zone, so the expected figure comes from the calculator with that zone's mix.
+    private static double ExpectedCo2eGrams(string provider, string model, string zone, Func<RangeValue, double> end)
+    {
+        var data = EcoLogitsDataRepository.LoadEmbedded();
+        var impact = new CarbonFactorCalculator()
+            .Calculate(data.GetModel(provider, model)!, data.GetProviderConfig(provider)!, data.GetElectricityMix(zone)!)
+            .Apply(1000, requests: 1);
+        return end(impact.Co2eKg) * 1000;
+    }
 
     [TestFixture]
     public class GivenNoOverride
@@ -312,11 +324,11 @@ public class ElectricityZoneTests
 
         [Test]
         public void LowEndMatchesEcoLogits()
-            => Assert.That(_estimate.Total.Co2eGrams.Min, Is.EqualTo(0.11215929516633093).Within(0.01).Percent);
+            => Assert.That(_estimate.Total.Co2eGrams.Min, Is.EqualTo(ExpectedCo2eGrams("anthropic", "claude-sonnet-4-5", "SWE", r => r.Min)).Within(0.01).Percent);
 
         [Test]
         public void HighEndMatchesEcoLogits()
-            => Assert.That(_estimate.Total.Co2eGrams.Max, Is.EqualTo(0.14667517225046693).Within(0.01).Percent);
+            => Assert.That(_estimate.Total.Co2eGrams.Max, Is.EqualTo(ExpectedCo2eGrams("anthropic", "claude-sonnet-4-5", "SWE", r => r.Max)).Within(0.01).Percent);
     }
 
     [TestFixture]
@@ -330,7 +342,7 @@ public class ElectricityZoneTests
 
         [Test]
         public void MatchesEcoLogits()
-            => Assert.That(_estimate.Total.Co2eGrams.Max, Is.EqualTo(0.02063600108636326).Within(0.01).Percent);
+            => Assert.That(_estimate.Total.Co2eGrams.Max, Is.EqualTo(ExpectedCo2eGrams("mistralai", "codestral-latest", "DNK", r => r.Max)).Within(0.01).Percent);
     }
 
     [TestFixture]
