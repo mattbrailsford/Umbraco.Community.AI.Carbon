@@ -76,7 +76,7 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
             .Build();
 
         await new RunAIMigrationNotificationHandler(configuration, NullLogger<RunAIMigrationNotificationHandler>.Instance)
-            .HandleAsync(new UmbracoApplicationStartedNotification(isRestarting: false), CancellationToken.None);
+            .HandleAsync(new PostRuntimePremigrationsUpgradeNotification(), CancellationToken.None);
     }
 
     [Test]
