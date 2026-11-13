@@ -15,6 +15,31 @@ describe("Feature: trend chart formatting", () => {
         else env.TZ = originalTz;
     });
 
+    describe("Scenario: the server counted Daily buckets in UTC", () => {
+        beforeEach(() => {
+            env.TZ = "Europe/Copenhagen";
+        });
+
+        it("labels a Daily bucket on its UTC day", () => {
+            expect(formatBucketLabel("2026-10-06T22:00:00Z", "Daily", "UTC")).toBe("6 Oct");
+        });
+
+        it("titles a Daily bucket on its UTC day", () => {
+            expect(formatBucketTitle("2026-10-06T22:00:00Z", "Daily", "UTC")).toBe("6 Oct 2026");
+        });
+
+        it("describes the range on UTC days", () => {
+            const points = [
+                { timestamp: "2026-10-06T22:00:00Z", co2eGrams: { min: 1, max: 2 } },
+            ] as unknown as Parameters<typeof describeTrend>[0];
+            expect(describeTrend(points, "Daily", undefined, undefined, "UTC")).toContain("from 6 Oct 2026");
+        });
+
+        it("still shows Hourly buckets in the viewer's zone", () => {
+            expect(formatBucketLabel("2026-10-07T12:00:00Z", "Hourly", "UTC")).toBe("7 Oct 14:00");
+        });
+    });
+
     describe("Scenario: x-axis labels follow the granularity", () => {
         it("shows day and month for Daily buckets", () => {
             expect(formatBucketLabel("2026-10-01T00:00:00Z", "Daily")).toBe("1 Oct");

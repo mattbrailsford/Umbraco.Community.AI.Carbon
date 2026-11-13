@@ -8,7 +8,7 @@ import type { Observable } from "@umbraco-cms/backoffice/external/rxjs";
  */
 export interface AnalyticsDateRange {
     range: { from: string; to: string; preset?: string };
-    /** Kept for a later comparison feature; nothing reads it yet. */
+    /** The period the header compares against, when comparison is on. The tab loads it as a second estimate. */
     compare?: { mode: string; from: string; to: string };
 }
 

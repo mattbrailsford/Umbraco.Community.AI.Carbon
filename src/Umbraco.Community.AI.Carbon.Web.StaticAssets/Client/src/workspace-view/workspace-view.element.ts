@@ -62,6 +62,10 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     /** The main range `_estimate` was loaded for. A comparison only goes with figures of the same range. */
     private _estimateKey?: string;
 
+    /** The zone the server counted `_estimate`'s Daily buckets in; `UTC` when it could not use the viewer's. */
+    @state()
+    private _estimateTimeZone?: string;
+
     /**
      * The compared period's estimate, with the main range it was loaded for. Only ever decoration: when it is missing,
      * failed, still loading, or for another range than the figures on screen, the tab shows no comparison.
@@ -142,7 +146,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         const key = rangeKey(this._dateRange.range);
         const request = this.loader(windowForDateRange(this._dateRange.range), abortController.signal);
         void this.#loadCompare(false);
-        const { data, error } = await request;
+        const { data, error, timeZone } = await request;
 
         // A newer load, or leaving the tab, supersedes this one.
         if (abortController.signal.aborted) return;
@@ -155,6 +159,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
 
         this._estimate = data;
         this._estimateKey = key;
+        this._estimateTimeZone = timeZone;
         this._error = error;
         this._loading = false;
     }
@@ -226,6 +231,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                         .points=${estimate?.timeSeries}
                         .comparePoints=${compare?.timeSeries}
                         .granularity=${estimate?.granularity ?? "Daily"}
+                        .timeZone=${this._estimateTimeZone}
                         ?loading=${loading}
                     ></aicarbon-trend-chart>
                 </section>

@@ -5,14 +5,16 @@ import type { LocalizeWithDefault } from "../estimate/warning-text.js";
 /*
  * Buckets are shown in the viewer's local time zone. Hourly buckets are UTC hour starts and Daily buckets
  * are the start of a local day (the request sends the viewer's zone), so both are real instants that convert
- * cleanly. Formatters are built per call so they follow the zone in force at that moment.
+ * cleanly. Formatters are built per call so they follow the zone in force at that moment. When the server could
+ * not resolve the viewer's zone its Daily buckets are UTC days, so Daily labels take `dayTimeZone` (`UTC`) instead.
  */
 
 const LOCALE = "en-GB";
 
 /** Date part, in the viewer's zone. */
-function dateFormat(withYear: boolean): Intl.DateTimeFormat {
+function dateFormat(withYear: boolean, timeZone?: string): Intl.DateTimeFormat {
     return new Intl.DateTimeFormat(LOCALE, {
+        ...(timeZone ? { timeZone } : {}),
         day: "numeric",
         month: "short",
         ...(withYear ? { year: "numeric" } : {}),
@@ -24,18 +26,18 @@ function hourFormat(): Intl.DateTimeFormat {
 }
 
 /** Short x-axis label: "1 Oct" for Daily, "1 Oct 14:00" (local time) for Hourly. */
-export function formatBucketLabel(timestamp: string, granularity: AiUsagePeriod): string {
+export function formatBucketLabel(timestamp: string, granularity: AiUsagePeriod, dayTimeZone?: string): string {
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
-    const day = dateFormat(false).format(date);
+    const day = dateFormat(false, granularity === "Daily" ? dayTimeZone : undefined).format(date);
     return granularity === "Hourly" ? `${day} ${hourFormat().format(date)}` : day;
 }
 
 /** Full tooltip heading: "1 Oct 2026" for Daily, "1 Oct 2026, 14:00" (local time) for Hourly. */
-export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriod): string {
+export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriod, dayTimeZone?: string): string {
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
-    const day = dateFormat(true).format(date);
+    const day = dateFormat(true, granularity === "Daily" ? dayTimeZone : undefined).format(date);
     return granularity === "Hourly" ? `${day}, ${hourFormat().format(date)}` : day;
 }
 
@@ -48,6 +50,7 @@ export function describeTrend(
     granularity: AiUsagePeriod,
     localize: LocalizeWithDefault = (_key, fallback) => fallback,
     comparePoints?: readonly EstimateTimeSeriesPointModel[],
+    dayTimeZone?: string,
 ): string {
     if (points.length === 0) return "";
     const first = points[0];
@@ -61,15 +64,15 @@ export function describeTrend(
         "Estimated CO2e over time, {bucket} from {from} to {to}, shown as range bars with a middle line. The highest period is up to {high}.",
     )
         .replace("{bucket}", bucket)
-        .replace("{from}", formatBucketTitle(first.timestamp, granularity))
-        .replace("{to}", formatBucketTitle(last.timestamp, granularity))
+        .replace("{from}", formatBucketTitle(first.timestamp, granularity, dayTimeZone))
+        .replace("{to}", formatBucketTitle(last.timestamp, granularity, dayTimeZone))
         .replace("{high}", formatCo2eRange({ min: peak, max: peak }));
     if (!comparePoints || comparePoints.length === 0) return summary;
     // The comparison's own dates, since the line is the other period's figures lined up under this one's days.
     return (
         summary +
         localize("aiCarbon_trend_summaryComparison", " Compared with {from} to {to}.")
-            .replace("{from}", formatBucketTitle(comparePoints[0].timestamp, granularity))
-            .replace("{to}", formatBucketTitle(comparePoints[comparePoints.length - 1].timestamp, granularity))
+            .replace("{from}", formatBucketTitle(comparePoints[0].timestamp, granularity, dayTimeZone))
+            .replace("{to}", formatBucketTitle(comparePoints[comparePoints.length - 1].timestamp, granularity, dayTimeZone))
     );
 }

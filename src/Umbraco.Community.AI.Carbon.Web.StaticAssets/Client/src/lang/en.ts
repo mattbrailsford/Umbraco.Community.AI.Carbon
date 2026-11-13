@@ -47,7 +47,7 @@ export default {
             "No primary-energy data for this electricity zone, so a world average was used.",
         "warning_invalid-model-data": "The reference data for this model is invalid, so it could not be estimated.",
         "warning_missing-provider-data": "There is no reference data for this provider, so it could not be estimated.",
-        trend_headline: "CO2e Over Time",
+        trend_headline: "Estimated CO2e Over Time",
         trend_axis: "{unit} CO2e",
         trend_hourly: "hourly",
         trend_daily: "daily",

@@ -6,6 +6,7 @@ const getEstimate = vi.hoisted(() => vi.fn());
 vi.mock("../api/sdk.gen.js", () => ({ EstimateService: { getEstimate } }));
 
 import { AICarbonEstimateRepository } from "./estimate.repository.js";
+import { resetTimeZoneFallback } from "./estimate.server.data-source.js";
 
 class TestHost extends UmbControllerHostElementMixin(HTMLElement) {}
 customElements.define("aicarbon-test-host", TestHost);
@@ -22,6 +23,8 @@ describe("Feature: requesting an estimate", () => {
 
     beforeEach(() => {
         getEstimate.mockReset();
+        resetTimeZoneFallback();
+        vi.restoreAllMocks();
         repository = new AICarbonEstimateRepository(new TestHost());
     });
 
@@ -69,6 +72,83 @@ describe("Feature: requesting an estimate", () => {
         it("keeps the status and does not flag it as forbidden", async () => {
             const { error } = await repository.requestEstimate(request);
             expect([error?.status, error?.isForbidden]).toEqual([400, false]);
+        });
+    });
+
+    describe("Scenario: the server cannot resolve the time zone", () => {
+        const payload = { granularity: "Daily" } as EstimateResponseModel;
+        const timeZoneProblem = { status: 400, title: "Validation", errors: { timeZone: ["Unknown time zone."] } };
+        const queryOf = (call: number) => getEstimate.mock.calls[call][0].query;
+        let warn: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+            getEstimate.mockResolvedValueOnce({ error: timeZoneProblem }).mockResolvedValue({ data: payload });
+        });
+
+        it("retries once without the zone and returns the data", async () => {
+            const result = await repository.requestEstimate(request);
+            expect([result.data, getEstimate.mock.calls.length, queryOf(1).timeZone]).toEqual([payload, 2, undefined]);
+        });
+
+        it("keeps everything else in the retried request", async () => {
+            await repository.requestEstimate(request);
+            expect(queryOf(1)).toEqual({ from: "2026-10-05T15:00:00.000Z", to: "2026-10-06T15:00:00.000Z", granularity: "Hourly", timeZone: undefined });
+        });
+
+        it("reports UTC as the zone the figures are in", async () => {
+            expect((await repository.requestEstimate(request)).timeZone).toBe("UTC");
+        });
+
+        it("warns once, naming the zone", async () => {
+            await repository.requestEstimate(request);
+            expect(warn.mock.calls.map((c: unknown[]) => String(c[0]).includes("Europe/Copenhagen"))).toEqual([true]);
+        });
+
+        it("leaves the zone out of later requests without a failed attempt first", async () => {
+            await repository.requestEstimate(request);
+            await repository.requestEstimate(request);
+            expect([getEstimate.mock.calls.length, queryOf(2).timeZone]).toEqual([3, undefined]);
+        });
+
+        it("sends the compare period's request the same way", async () => {
+            await repository.requestEstimate(request);
+            const compare = { ...request, from: new Date("2026-10-03T15:00:00Z"), to: new Date("2026-10-04T15:00:00Z") };
+            const result = await repository.requestEstimate(compare);
+            expect([queryOf(2).timeZone, queryOf(2).from, result.timeZone]).toEqual([undefined, "2026-10-03T15:00:00.000Z", "UTC"]);
+        });
+
+        it("reports the zone it sent when the server accepts it", async () => {
+            resetTimeZoneFallback();
+            getEstimate.mockReset();
+            getEstimate.mockResolvedValue({ data: payload });
+            expect((await repository.requestEstimate(request)).timeZone).toBe("Europe/Copenhagen");
+        });
+    });
+
+    describe("Scenario: the server answers 400 for another field", () => {
+        beforeEach(() => {
+            getEstimate.mockResolvedValue({ error: { status: 400, title: "Validation", errors: { from: ["Bad."] } } });
+        });
+
+        it("does not retry", async () => {
+            const result = await repository.requestEstimate(request);
+            expect([getEstimate.mock.calls.length, result.error?.status]).toEqual([1, 400]);
+        });
+
+        it("keeps sending the zone afterwards", async () => {
+            await repository.requestEstimate(request);
+            await repository.requestEstimate(request);
+            expect(getEstimate.mock.calls[1][0].query.timeZone).toBe("Europe/Copenhagen");
+        });
+    });
+
+    describe("Scenario: the time zone is still rejected on the retry", () => {
+        it("returns the error after one retry", async () => {
+            vi.spyOn(console, "warn").mockImplementation(() => {});
+            getEstimate.mockResolvedValue({ error: { status: 400, errors: { timeZone: ["x"] } } });
+            const result = await repository.requestEstimate(request);
+            expect([getEstimate.mock.calls.length, result.error?.status]).toEqual([2, 400]);
         });
     });
 

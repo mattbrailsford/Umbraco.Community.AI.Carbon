@@ -55,6 +55,7 @@ export function buildTrendChartConfig(
     yAxisTitle: (unitLabel: string) => string = (unit) => `${unit} CO2e`,
     legendLabels: TrendLegendLabels = DEFAULT_LEGEND_LABELS,
     comparePoints?: readonly EstimateTimeSeriesPointModel[],
+    dayTimeZone?: string,
 ): TrendChartConfiguration {
     const band = toTrendBand(points);
     // The compared period lines up by position (point i under point i); where it is shorter, the line stops, and where it is longer, the extra points are dropped.
@@ -157,11 +158,11 @@ export function buildTrendChartConfig(
                     filter: (item) =>
                         item.datasetIndex === 0 || (item.datasetIndex === compareIndex && compare !== undefined && item.dataIndex < compare.lower.length),
                     callbacks: {
-                        title: (items) => (items[0] ? formatBucketTitle(band.labels[items[0].dataIndex], granularity) : ""),
+                        title: (items) => (items[0] ? formatBucketTitle(band.labels[items[0].dataIndex], granularity, dayTimeZone) : ""),
                         label: (item) => {
                             if (item.datasetIndex === compareIndex && compare) {
                                 // The compared period's own date, so the two lines can be told apart.
-                                const date = formatBucketTitle(compare.labels[item.dataIndex], granularity);
+                                const date = formatBucketTitle(compare.labels[item.dataIndex], granularity, dayTimeZone);
                                 const name = legendLabels.comparison ?? DEFAULT_LEGEND_LABELS.comparison!;
                                 return `${name} (${date}): ${figureText(compare.lower[item.dataIndex], compare.upper[item.dataIndex])}`;
                             }
@@ -179,7 +180,7 @@ export function buildTrendChartConfig(
                         maxRotation: 45,
                         autoSkip: true,
                         maxTicksLimit: MAX_X_TICKS,
-                        callback: (value) => formatBucketLabel(band.labels[Number(value)] ?? "", granularity),
+                        callback: (value) => formatBucketLabel(band.labels[Number(value)] ?? "", granularity, dayTimeZone),
                     },
                 },
                 y: {

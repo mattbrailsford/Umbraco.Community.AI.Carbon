@@ -58,6 +58,10 @@ export class AICarbonTrendChartElement extends UmbLitElement {
     @property({ type: String })
     granularity: AiUsagePeriod = "Daily";
 
+    /** The zone Daily buckets were counted in (`UTC` when the server could not use the viewer's). Unset means the viewer's zone. */
+    @property({ attribute: false })
+    timeZone?: string;
+
     /** The compared period's points, drawn as a dashed line lined up by position. Unset draws no comparison. */
     @property({ type: Array })
     comparePoints?: EstimateTimeSeriesPointModel[];
@@ -104,7 +108,7 @@ export class AICarbonTrendChartElement extends UmbLitElement {
                 this.#chart = this.chartFactory(this._canvas, this.#buildConfig(this.points));
                 if (this.#chart) this.#stopWatchingTheme = this.themeWatcher(this.#chart, (colors) => this.#applyConfig(colors));
             }
-        } else if (changed.has("points") || changed.has("granularity") || changed.has("comparePoints")) {
+        } else if (changed.has("points") || changed.has("granularity") || changed.has("comparePoints") || changed.has("timeZone")) {
             this.#applyConfig();
         }
     }
@@ -122,6 +126,7 @@ export class AICarbonTrendChartElement extends UmbLitElement {
                 comparison: this.localize.termOrDefault("aiCarbon_trend_legendComparison", "Comparison"),
             },
             this.comparePoints,
+            this.timeZone,
         );
     }
 
@@ -146,11 +151,11 @@ export class AICarbonTrendChartElement extends UmbLitElement {
         if (!hasPoints && !this.loading) return nothing;
         const t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
         return html`
-            <uui-box headline=${t("aiCarbon_trend_headline", "CO2e Over Time")}>
+            <uui-box headline=${t("aiCarbon_trend_headline", "Estimated CO2e Over Time")}>
                 <div class="chart-container" aria-busy=${this.loading ? "true" : "false"}>
                     ${hasPoints && this.loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                     ${hasPoints
-                        ? html`<canvas role="img" aria-label=${describeTrend(this.points!, this.granularity, t, this.comparePoints)}></canvas>`
+                        ? html`<canvas role="img" aria-label=${describeTrend(this.points!, this.granularity, t, this.comparePoints, this.timeZone)}></canvas>`
                         : html`<div class="skeleton" aria-hidden="true"></div>`}
                 </div>
             </uui-box>

@@ -33,7 +33,7 @@ const estimate = (requests: number, analyticsEnabled = true): EstimateResponseMo
     }) as unknown as EstimateResponseModel;
 
 const failure = (status?: number, isAborted = false): AICarbonEstimateResult => ({
-    error: { status, isForbidden: status === 403, isAborted, message: "x" } satisfies AICarbonEstimateError,
+    error: { status, isForbidden: status === 403, isAborted, message: "x", invalidFields: [] } satisfies AICarbonEstimateError,
 });
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -382,6 +382,13 @@ describe("Feature: CO2 tab states", () => {
             const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), lastWeek);
             await flush(element);
             expect(requests.map((r) => r.timeZone)).toEqual([Intl.DateTimeFormat().resolvedOptions().timeZone]);
+        });
+
+        it("tells the trend chart the zone the server counted days in", async () => {
+            const { element } = await renderIn(async () => ({ data: estimate(5), timeZone: "UTC" }), lastWeek);
+            await flush(element);
+            const chart = element.shadowRoot!.querySelector("aicarbon-trend-chart") as unknown as { timeZone?: string };
+            expect(chart.timeZone).toBe("UTC");
         });
 
         it("loads hourly for a one-day range", async () => {

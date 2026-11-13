@@ -195,7 +195,7 @@ describe("Feature: aicarbon-trend-chart loading", () => {
         element.loading = true;
         await mount(element);
         const root = element.shadowRoot!;
-        expect(root.querySelector("uui-box")!.getAttribute("headline")).toBe("CO2e Over Time");
+        expect(root.querySelector("uui-box")!.getAttribute("headline")).toBe("Estimated CO2e Over Time");
         expect(root.querySelector(".skeleton")).not.toBeNull();
         expect(root.querySelector("canvas")).toBeNull();
         expect(factory).not.toHaveBeenCalled();
