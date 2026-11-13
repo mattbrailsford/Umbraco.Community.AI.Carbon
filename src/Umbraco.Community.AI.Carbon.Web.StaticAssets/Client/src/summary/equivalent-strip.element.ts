@@ -1,6 +1,7 @@
 import { css, customElement, html, nothing, property } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
+import { UauiPaletteStyles } from "@umbraco/analytics-ui";
 import type { EstimateEquivalentModel } from "../api/types.gen.js";
 import { formatEquivalent } from "../estimate/format-equivalent.js";
 
@@ -22,6 +23,7 @@ export class AICarbonEquivalentStripElement extends UmbLitElement {
 
     static override styles = [
         UmbTextStyles,
+        UauiPaletteStyles,
         css`
             :host {
                 display: block;
@@ -35,6 +37,7 @@ export class AICarbonEquivalentStripElement extends UmbLitElement {
                 background: var(--uui-color-surface);
                 border: 1px solid var(--uui-color-border);
                 border-radius: var(--uui-border-radius);
+                color: var(--uui-color-text);
             }
 
             /* Gives screen readers the context the visible text leaves implicit. */
@@ -51,7 +54,7 @@ export class AICarbonEquivalentStripElement extends UmbLitElement {
             }
 
             uui-icon {
-                color: var(--uui-color-default-emphasis, #2d42ab);
+                color: var(--uaui-color-marker);
             }
         `,
     ];
