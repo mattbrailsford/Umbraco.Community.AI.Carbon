@@ -19,6 +19,8 @@
     <PackageVersion Include="Umbraco.AI.Web" Version="[19.0.0-rc.1,19.999.999)" />
     <!-- Integration tests only: Umbraco.AI.Startup's AddUmbracoAI() boots Umbraco.AI's real services. -->
     <PackageVersion Include="Umbraco.AI.Startup" Version="[19.0.0-rc.1,19.999.999)" />
+    <!-- Shared backoffice charts/tables (RCL). Umbraco.AI already depends on it; keep the range on one major (19.999.999, never 20.0.0). -->
+    <PackageVersion Include="Umbraco.Analytics.UI" Version="[19.0.0-rc.1,19.999.999)" />
     <!-- Test -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />

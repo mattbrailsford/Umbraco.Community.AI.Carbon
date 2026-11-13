@@ -1,6 +1,17 @@
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
+
+const stub = (file: string) => fileURLToPath(new URL(`./src/test-support/analytics-ui/${file}`, import.meta.url));
 
 export default defineConfig({
+    // The npm package is types only (the runtime comes from the NuGet package via the backoffice import map),
+    // so tests import local stubs. The longer path must come first. tsc still resolves the real types.
+    resolve: {
+        alias: [
+            { find: /^@umbraco\/analytics-ui\/external\/chart\.js$/, replacement: stub("chart.stub.ts") },
+            { find: /^@umbraco\/analytics-ui$/, replacement: stub("analytics-ui.stub.ts") },
+        ],
+    },
     test: {
         // Mirrors Umbraco.AI: @umbraco-ui/uui imports a bare directory that Node's ESM resolver
         // rejects, so backoffice packages are transformed by Vite rather than externalised.
