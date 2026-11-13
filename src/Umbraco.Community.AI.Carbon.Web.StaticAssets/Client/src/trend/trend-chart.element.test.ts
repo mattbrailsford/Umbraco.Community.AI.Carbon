@@ -35,6 +35,23 @@ describe("Feature: aicarbon-trend-chart element", () => {
         element.remove();
     });
 
+    it("gives the box an h3 heading, as the Usage chart box has", async () => {
+        const { element } = setup();
+        element.points = points;
+        await mount(element);
+        expect(element.shadowRoot!.querySelector("uui-box")!.getAttribute("headline-variant")).toBe("h3");
+        element.remove();
+    });
+
+    it("passes slotted header actions on to the box's header-actions slot", async () => {
+        const { element } = setup();
+        element.points = points;
+        await mount(element);
+        const forward = element.shadowRoot!.querySelector('uui-box > slot[name="header-actions"]')!;
+        expect(forward.getAttribute("slot")).toBe("header-actions");
+        element.remove();
+    });
+
     it("gives the chart range bars and a middle line", async () => {
         const { element, factory } = setup();
         element.points = points;

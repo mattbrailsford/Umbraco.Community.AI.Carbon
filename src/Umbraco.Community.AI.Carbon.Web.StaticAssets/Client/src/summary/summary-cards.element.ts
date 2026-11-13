@@ -72,12 +72,12 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
                 container-type: inline-size;
             }
 
-            /* Four tiles: 4 across, then 2 x 2, then 1 column. Never 3 + 1. Gap is Usage's. */
+            /* Four tiles: 4 across, then 2 x 2, then 1 column. Never 3 + 1. Same gap as Usage's tiles. */
             .grid {
                 display: grid;
                 grid-template-columns: 1fr;
                 align-items: stretch;
-                gap: var(--uui-size-space-5);
+                gap: var(--uui-size-space-4);
             }
 
             @container (min-width: 500px) {

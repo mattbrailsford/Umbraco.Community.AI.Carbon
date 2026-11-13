@@ -52,6 +52,11 @@ describe("Feature: aicarbon-feature-table element", () => {
         expect(table!.sort).toEqual({ key: "co2eMid", direction: "desc" });
     });
 
+    it("gives the By Feature box an h3 heading, as the Usage boxes have", async () => {
+        const { element } = await render(available, true);
+        expect(element.shadowRoot!.querySelector("uui-box")!.getAttribute("headline-variant")).toBe("h3");
+    });
+
     it("has no search field", async () => {
         const { table } = await render(available, true);
         expect(table!.querySelector("uaui-search-field")).toBeNull();

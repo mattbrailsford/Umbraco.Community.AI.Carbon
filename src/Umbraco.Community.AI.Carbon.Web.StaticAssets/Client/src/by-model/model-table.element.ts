@@ -64,7 +64,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
         if (this._tableRows.length === 0 && !this.loading) return nothing;
         const headline = this.localize.termOrDefault("aiCarbon_byModel_headline", "By Model");
         return html`
-            <uui-box class="flush" headline=${headline}>
+            <uui-box class="flush" headline=${headline} headline-variant="h3">
                 <uaui-data-table
                     label=${headline}
                     .rowKey=${MODEL_ROW_KEY}
@@ -74,7 +74,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
                     .sort=${MODEL_TABLE_DEFAULT_SORT}
                     ?loading=${this.loading}
                 >
-                    <div slot="toolbar"><uaui-search-field></uaui-search-field></div>
+                    <uaui-search-field slot="toolbar-start"></uaui-search-field>
                 </uaui-data-table>
             </uui-box>
         `;

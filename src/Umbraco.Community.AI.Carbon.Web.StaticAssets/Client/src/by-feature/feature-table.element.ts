@@ -25,8 +25,8 @@ const NO_ITEMS: EstimateFeatureBreakdownModel["items"] = [];
  *   exception is the first load, which draws skeleton rows so the page doesn't change shape when the figures arrive.
  * - Breakdown unavailable (analytics on): the table's empty state, pointing at the Umbraco.AI setting.
  * - Available but no items: renders nothing (all usage is from models that aren't estimated).
- * There is deliberately no share-of-total column: a percentage of a range would imply precision the
- * estimate doesn't have.
+ * Requests shows a share bar (requests are counted, not estimated). CO2e has no share: a percentage
+ * of a range would imply precision the estimate doesn't have.
  */
 @customElement("aicarbon-feature-table")
 export class AICarbonFeatureTableElement extends UmbLitElement {
@@ -97,7 +97,7 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
         }
         const headline = this.#t("aiCarbon_byFeature_headline", "By Feature");
         return html`
-            <uui-box class="flush" headline=${headline}>
+            <uui-box class="flush" headline=${headline} headline-variant="h3">
                 <uaui-data-table
                     label=${headline}
                     row-key="key"

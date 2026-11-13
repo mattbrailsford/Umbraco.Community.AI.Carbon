@@ -64,8 +64,8 @@ export function withFeatureNames(rows: readonly FeatureRowViewModel[], t: Locali
 }
 
 /**
- * The table's columns. There is deliberately no share-of-total column: a percentage of a range would
- * imply precision the estimate doesn't have.
+ * The table's columns. Requests shows a share bar (requests are counted, not estimated). CO2e has no
+ * share: a percentage of a range would imply precision the estimate doesn't have.
  */
 export function buildFeatureColumns(t: LocalizeWithDefault): UauiTableColumn[] {
     return [
@@ -78,7 +78,7 @@ export function buildFeatureColumns(t: LocalizeWithDefault): UauiTableColumn[] {
         {
             key: "requests",
             label: t("aiCarbon_byFeature_requests", "Requests"),
-            elementName: UAUI_TABLE_CELL.number,
+            elementName: UAUI_TABLE_CELL.share,
             align: "end",
             sortable: true,
             sortAs: "number",

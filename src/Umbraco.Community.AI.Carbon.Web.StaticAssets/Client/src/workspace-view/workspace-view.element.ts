@@ -29,8 +29,11 @@ import { selectViewState, type ViewState } from "./view-state.js";
 /** Identifies the main range an estimate was loaded for. */
 const rangeKey = (range: { from: string; to: string }) => `${range.from}|${range.to}`;
 
-const SCOPE_FALLBACK =
-    "AI provider side of chat requests only. Excludes your own servers, database and hosting.";
+const FOOTNOTE_FALLBACK =
+    "Estimated with EcoLogits for the AI provider side of chat requests only, excluding your own servers, database and hosting.";
+
+/** The states that show figures or are about to: the footnote explains them. The rest have none, and no method to open. */
+const FOOTNOTE_STATES: readonly ViewState[] = ["loading", "content", "empty"];
 
 /** Loads one estimate. The default goes to the server; tests inject their own. */
 export type AICarbonEstimateLoader = (
@@ -210,6 +213,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     /** The page for the loading and content states: the same parts either way, so nothing jumps when the figures arrive. */
     #renderDashboard(estimate?: EstimateResponseModel) {
         const loading = this._loading;
+        const methodLabel = this.#t("aiCarbon_method_button", "How is this calculated?");
         // The comparison of another range than the figures shown would measure the wrong periods against each other.
         const compare = estimate && this._compare && this._compare.key === this._estimateKey ? this._compare.estimate : undefined;
         return html`
@@ -233,7 +237,19 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                         .granularity=${estimate?.granularity ?? "Daily"}
                         .timeZone=${this._estimateTimeZone}
                         ?loading=${loading}
-                    ></aicarbon-trend-chart>
+                    >
+                        <uui-button
+                            slot="header-actions"
+                            look="default"
+                            compact
+                            label=${methodLabel}
+                            title=${methodLabel}
+                            ?disabled=${!this._estimate?.method}
+                            @click=${this.#onMethodOpen}
+                        >
+                            <uui-icon name="icon-info"></uui-icon>
+                        </uui-button>
+                    </aicarbon-trend-chart>
                 </section>
                 <section id="by-model">
                     <aicarbon-model-table
@@ -320,30 +336,24 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
             // 0 marks a failure with no HTTP status (e.g. offline): still an error, not forbidden.
             errorStatus: this._error ? (this._error.status ?? 0) : undefined,
         });
-        const methodLabel = this.#t("aiCarbon_method_button", "How is this calculated?");
         return html`
             <div class="layout">
-                <div class="page-header">
-                    <div class="page-title">
-                        <h3>${this.#t("aiCarbon_headline", "Estimated CO2e from AI Inference")}</h3>
-                        <p class="scope">${this.#t("aiCarbon_scope", SCOPE_FALLBACK)}</p>
-                    </div>
-                    <uui-button
-                        look="default"
-                        compact
-                        label=${methodLabel}
-                        title=${methodLabel}
-                        ?disabled=${!this._estimate?.method}
-                        @click=${this.#onMethodOpen}
-                    >
-                        <uui-icon name="icon-info"></uui-icon>
-                    </uui-button>
-                </div>
                 <div id="body" tabindex="-1" aria-busy=${this._loading ? "true" : "false"}>
                     ${this.#renderBody(state)}
                 </div>
+                ${FOOTNOTE_STATES.includes(state) ? this.#renderFootnote() : nothing}
             </div>
         `;
+    }
+
+    /** Says how the figures are made and what they cover, with the way into the full method panel. */
+    #renderFootnote() {
+        return html`<p class="footnote">
+            ${this.#t("aiCarbon_footnote", FOOTNOTE_FALLBACK)}
+            <button type="button" class="link" ?disabled=${!this._estimate?.method} @click=${this.#onMethodOpen}>
+                ${this.#t("aiCarbon_method_button", "How is this calculated?")}
+            </button>
+        </p>`;
     }
 
     static override styles = [
@@ -352,43 +362,45 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
             :host {
                 display: block;
                 /* Same page padding and section spacing as Umbraco.AI's Usage dashboard. */
-                padding: var(--uui-size-layout-2);
+                padding: var(--uui-size-layout-1);
             }
 
             .layout {
                 display: flex;
                 flex-direction: column;
-                gap: var(--uui-size-space-5);
-            }
-
-            .page-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: var(--uui-size-space-3);
-                margin-bottom: var(--uui-size-space-3);
-            }
-
-            .page-title {
-                flex: 1 1 20rem;
-                min-width: 0;
-            }
-
-            .page-header h3 {
-                margin: 0 0 var(--uui-size-space-1);
-            }
-
-            .scope {
-                margin: 0;
-                color: var(--uui-color-text-alt);
-                font-size: var(--uui-type-small-size);
+                gap: var(--uui-size-4);
             }
 
             .sections {
                 display: flex;
                 flex-direction: column;
-                gap: var(--uui-size-space-5);
+                gap: var(--uui-size-4);
+            }
+
+            .footnote {
+                margin: 0;
+                color: var(--uui-color-text-alt);
+                font-size: var(--uui-type-small-size);
+            }
+
+            /* A link in the text, but a real button so the keyboard reaches it. */
+            .footnote .link {
+                padding: 0;
+                border: 0;
+                background: none;
+                font: inherit;
+                color: var(--uui-color-interactive);
+                cursor: pointer;
+                text-decoration: underline;
+            }
+
+            .footnote .link:hover:not(:disabled) {
+                color: var(--uui-color-interactive-emphasis);
+            }
+
+            .footnote .link:disabled {
+                color: var(--uui-color-disabled-contrast);
+                cursor: not-allowed;
             }
 
             #body:focus {

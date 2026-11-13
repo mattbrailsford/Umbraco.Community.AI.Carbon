@@ -108,6 +108,10 @@ describe("Feature: by-model columns", () => {
         ]);
     });
 
+    it("gives the first column a width, which the search field above it takes", () => {
+        expect(columns[0].width).toBe("28%");
+    });
+
     it("shows the provider as the model's second line", () => {
         expect(columns[0].meta?.secondaryKey).toBe("providerId");
     });
@@ -117,7 +121,7 @@ describe("Feature: by-model columns", () => {
             "uaui-text-cell",
             "aicarbon-missing-text-cell",
             "aicarbon-missing-text-cell",
-            "uaui-number-cell",
+            "uaui-share-cell",
             "uaui-number-cell",
             "aicarbon-co2e-cell",
         ]);

@@ -60,9 +60,9 @@ describe("Feature: aicarbon-summary-cards element", () => {
             expect(tiles.map((t) => t.previous)).toEqual([undefined, undefined, undefined, undefined]);
         });
 
-        it("is not openable, as the old card did nothing when pressed", async () => {
+        it("is not selectable or openable, as the old card did nothing when pressed", async () => {
             const tiles = await render(estimate(2));
-            expect(tiles.some((t) => t.openable || t.href)).toBe(false);
+            expect(tiles.some((t) => t.selectable || t.openable || t.href)).toBe(false);
         });
     });
 

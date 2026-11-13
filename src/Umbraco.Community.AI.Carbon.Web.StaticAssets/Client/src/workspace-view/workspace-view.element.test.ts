@@ -83,6 +83,22 @@ async function flush(element: AICarbonWorkspaceViewElement) {
     await element.updateComplete;
 }
 
+/** Renders a loaded tab in a host with a fake modal manager, so a test can see what the method panel is opened with. */
+async function renderWithModal() {
+    const open = vi.fn();
+    class FakeModalManager extends UmbContextBase {
+        open = open;
+        constructor(host: UmbControllerHost) {
+            super(host, UMB_MODAL_MANAGER_CONTEXT);
+        }
+    }
+    const equivalent = { kind: "carKm", amount: 3 };
+    const loaded = { ...estimate(5), total: { ...estimate(5).total, equivalent } } as unknown as EstimateResponseModel;
+    const { element } = await renderIn(async () => ({ data: loaded }), lastWeek, (host) => void new FakeModalManager(host));
+    await flush(element);
+    return { element, open, loaded };
+}
+
 const text = (element: AICarbonWorkspaceViewElement) => element.shadowRoot!.textContent ?? "";
 const body = (element: AICarbonWorkspaceViewElement) => element.shadowRoot!.querySelector("#body")!;
 const part = (element: AICarbonWorkspaceViewElement, tag: string) => element.shadowRoot!.querySelector(tag)!;
@@ -122,12 +138,12 @@ describe("Feature: CO2 tab states", () => {
         });
     });
 
-    describe("Scenario: the header explains what the estimate covers", () => {
-        it("shows the scope subtitle", async () => {
-            const element = await render(() => new Promise(() => {}));
-            expect(element.shadowRoot!.querySelector(".scope")!.textContent).toContain(
-                "AI provider side of chat requests only.",
-            );
+    describe("Scenario: there is no page header, as on the Usage tab", () => {
+        it("has no heading, subtitle or header row above the boxes", async () => {
+            const element = await render(async () => ({ data: estimate(5) }));
+            await flush(element);
+            expect(element.shadowRoot!.querySelector("h3, .page-header, .scope")).toBeNull();
+            expect(text(element)).not.toContain("Estimated CO2e from AI Inference");
         });
     });
 
@@ -310,28 +326,67 @@ describe("Feature: CO2 tab states", () => {
         });
     });
 
-    describe("Scenario: the heading and method button stay in every state", () => {
-        const states: Array<[string, AICarbonEstimateLoader]> = [
+    describe("Scenario: the footnote says how the figures are estimated", () => {
+        const footnote = (element: AICarbonWorkspaceViewElement) => element.shadowRoot!.querySelector(".footnote");
+        const link = (element: AICarbonWorkspaceViewElement) => element.shadowRoot!.querySelector<HTMLButtonElement>(".footnote button")!;
+
+        it.each<[string, AICarbonEstimateLoader]>([
             ["loading", () => new Promise(() => {})],
             ["content", async () => ({ data: estimate(5) })],
             ["empty", async () => ({ data: estimate(0) })],
+        ])("is shown while %s, with the scope and the link", async (_name, loader) => {
+            const element = await render(loader);
+            await flush(element);
+            expect(footnote(element)!.textContent).toContain(
+                "Estimated with EcoLogits for the AI provider side of chat requests only, excluding your own servers, database and hosting.",
+            );
+            expect(link(element).textContent!.trim()).toBe("How is this calculated?");
+        });
+
+        it.each<[string, AICarbonEstimateLoader]>([
             ["analytics off", async () => ({ data: estimate(0, false) })],
             ["error", async () => failure(500)],
             ["forbidden", async () => failure(403)],
-        ];
-
-        it.each(states)("%s", async (_name, loader) => {
+        ])("is left out when %s, as there are no figures to explain", async (_name, loader) => {
             const element = await render(loader);
             await flush(element);
-            expect(element.shadowRoot!.querySelector(".page-title h3")!.textContent).toContain("Estimated CO2e from AI Inference");
-            const button = element.shadowRoot!.querySelector('.page-header uui-button[label="How is this calculated?"]');
-            expect(button).not.toBeNull();
+            expect(footnote(element)).toBeNull();
+        });
+
+        it("sits under the boxes, after the body", async () => {
+            const element = await render(async () => ({ data: estimate(5) }));
+            await flush(element);
+            expect(body(element).nextElementSibling).toBe(footnote(element));
+        });
+
+        it("has its link disabled until an estimate has loaded", async () => {
+            const element = await render(() => new Promise(() => {}));
+            await flush(element);
+            expect(link(element).disabled).toBe(true);
+        });
+
+        it("opens the method panel with the estimate's method and equivalent when the link is clicked", async () => {
+            const { element, open, loaded } = await renderWithModal();
+            link(element).dispatchEvent(new Event("click"));
+            await flush(element);
+            expect(open).toHaveBeenCalledTimes(1);
+            expect(open.mock.calls[0][1]).toBe(AICARBON_METHOD_PANEL_MODAL);
+            expect(open.mock.calls[0][2]).toEqual({ data: { method: loaded.method, equivalent: loaded.total.equivalent } });
         });
     });
 
     describe("Scenario: the method button", () => {
         const methodButton = (element: AICarbonWorkspaceViewElement) =>
-            element.shadowRoot!.querySelector('uui-button[label="How is this calculated?"]')!;
+            element.shadowRoot!.querySelector<HTMLElement>('aicarbon-trend-chart > uui-button[label="How is this calculated?"]')!;
+
+        it("sits in the trend chart's header-actions slot, as an icon button", async () => {
+            const element = await render(async () => ({ data: estimate(5) }));
+            await flush(element);
+            const button = methodButton(element);
+            expect(button.getAttribute("slot")).toBe("header-actions");
+            expect(button.querySelector("uui-icon")!.getAttribute("name")).toBe("icon-info");
+            expect(button.getAttribute("title")).toBe("How is this calculated?");
+        });
 
         it("is disabled until an estimate has loaded", async () => {
             const element = await render(() => new Promise(() => {}));
@@ -346,22 +401,12 @@ describe("Feature: CO2 tab states", () => {
         });
 
         it("opens the method panel with the estimate's method and equivalent when clicked", async () => {
-            const open = vi.fn();
-            class FakeModalManager extends UmbContextBase {
-                open = open;
-                constructor(host: UmbControllerHost) {
-                    super(host, UMB_MODAL_MANAGER_CONTEXT);
-                }
-            }
-            const equivalent = { kind: "carKm", amount: 3 };
-            const loaded = { ...estimate(5), total: { ...estimate(5).total, equivalent } } as unknown as EstimateResponseModel;
-            const { element } = await renderIn(async () => ({ data: loaded }), lastWeek, (host) => void new FakeModalManager(host));
-            await flush(element);
+            const { element, open, loaded } = await renderWithModal();
             methodButton(element).dispatchEvent(new Event("click"));
             await flush(element);
             expect(open).toHaveBeenCalledTimes(1);
             expect(open.mock.calls[0][1]).toBe(AICARBON_METHOD_PANEL_MODAL);
-            expect(open.mock.calls[0][2]).toEqual({ data: { method: loaded.method, equivalent } });
+            expect(open.mock.calls[0][2]).toEqual({ data: { method: loaded.method, equivalent: loaded.total.equivalent } });
         });
     });
 
@@ -693,7 +738,7 @@ describe("Feature: CO2 tab states", () => {
             expect(requests[0].granularity).toBe("Daily");
             expect(warn).toHaveBeenCalledTimes(1);
             expect(String(warn.mock.calls[0][0])).toContain("dateRange");
-            expect(text(element)).toContain("Estimated CO2e from AI Inference");
+            expect(element.shadowRoot!.querySelector("#summary")).not.toBeNull();
         });
 
         it("falls back, and warns, when the context emits a range of an unknown shape", async () => {

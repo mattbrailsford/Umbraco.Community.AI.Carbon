@@ -5,8 +5,8 @@ import type { UmbLocalizationDictionary } from "@umbraco-cms/backoffice/localiza
 export default {
     aiCarbon: {
         tabLabel: "CO2",
-        headline: "Estimated CO2e from AI Inference",
-        scope: "AI provider side of chat requests only. Excludes your own servers, database and hosting.",
+        footnote:
+            "Estimated with EcoLogits for the AI provider side of chat requests only, excluding your own servers, database and hosting.",
         card_co2e_label: "Estimated CO2e",
         card_energy_label: "Estimated Energy",
         card_requests_label: "Requests Estimated",

@@ -64,9 +64,16 @@ describe("Feature: aicarbon-model-table element", () => {
         expect(table!.sort).toEqual({ key: "co2eMid", direction: "desc" });
     });
 
-    it("puts a search field in the toolbar", async () => {
+    it("puts the search field in the first column's toolbar cell, so it lines up with the column's text", async () => {
         const { table } = await render([row({})]);
-        expect(table!.querySelector('[slot="toolbar"] uaui-search-field')).not.toBeNull();
+        const field = table!.querySelector("uaui-search-field")!;
+        expect(field.getAttribute("slot")).toBe("toolbar-start");
+        expect(field.parentElement).toBe(table);
+    });
+
+    it("gives the By Model box an h3 heading, as the Usage boxes have", async () => {
+        const { element } = await render([row({})]);
+        expect(element.shadowRoot!.querySelector("uui-box")!.getAttribute("headline-variant")).toBe("h3");
     });
 
     it("keeps the By Model heading", async () => {

@@ -51,6 +51,7 @@ const createChart: TrendChartFactory = (canvas, config) => {
  * The estimated CO2e trend: floating bars for each bucket's likely range (min to max) with a line through the middle estimate. Renders from the
  * `points` and `granularity` properties; it never fetches. Does nothing without points, unless `loading` (the empty
  * page state belongs to the view). Times and days are shown in the viewer's local zone (see trend-format.ts).
+ * @slot header-actions - Controls for the right of the box heading, such as the method button.
  */
 @customElement("aicarbon-trend-chart")
 export class AICarbonTrendChartElement extends UmbLitElement {
@@ -225,7 +226,8 @@ export class AICarbonTrendChartElement extends UmbLitElement {
         if (!hasPoints && !this.loading) return nothing;
         const t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
         return html`
-            <uui-box headline=${t("aiCarbon_trend_headline", "Estimated CO2e Over Time")}>
+            <uui-box headline=${t("aiCarbon_trend_headline", "Estimated CO2e Over Time")} headline-variant="h3">
+                <slot name="header-actions" slot="header-actions"></slot>
                 <div class="chart-container" aria-busy=${this.loading ? "true" : "false"}>
                     ${hasPoints && this.loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                     ${hasPoints && this._tooltip

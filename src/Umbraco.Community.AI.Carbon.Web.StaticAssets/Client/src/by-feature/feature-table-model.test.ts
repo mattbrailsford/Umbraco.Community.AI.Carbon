@@ -44,10 +44,10 @@ describe("Feature: by-feature rows", () => {
 describe("Feature: by-feature columns", () => {
     const columns = buildFeatureColumns((_key, fallback) => fallback);
 
-    it("has the feature, requests and CO2e columns, and no share column", () => {
+    it("has the feature, requests (with share bars) and CO2e columns", () => {
         expect(columns.map((c) => [c.key, c.label, c.elementName])).toEqual([
             ["feature", "Feature", "uaui-text-cell"],
-            ["requests", "Requests", "uaui-number-cell"],
+            ["requests", "Requests", "uaui-share-cell"],
             ["co2eMid", "Estimated CO2e", "aicarbon-co2e-cell"],
         ]);
     });

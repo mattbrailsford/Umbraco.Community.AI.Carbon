@@ -90,6 +90,8 @@ export function buildModelColumns(t: LocalizeWithDefault): UauiTableColumn[] {
             key: "modelId",
             label: t("aiCarbon_byModel_model", "Model"),
             elementName: UAUI_TABLE_CELL.text,
+            // The search field above takes this column's width, so it needs room to be usable.
+            width: "28%",
             meta: { secondaryKey: "providerId" },
             searchable: true,
             sortable: true,
@@ -111,7 +113,7 @@ export function buildModelColumns(t: LocalizeWithDefault): UauiTableColumn[] {
         {
             key: "requests",
             label: t("aiCarbon_byModel_requests", "Requests"),
-            elementName: UAUI_TABLE_CELL.number,
+            elementName: UAUI_TABLE_CELL.share,
             align: "end",
             sortable: true,
             sortAs: "number",
