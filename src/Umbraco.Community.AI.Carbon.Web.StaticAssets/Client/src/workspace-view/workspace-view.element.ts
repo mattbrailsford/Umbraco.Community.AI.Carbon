@@ -2,22 +2,27 @@ import { css, html, customElement, nothing, property, state, type TemplateResult
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UMB_MODAL_MANAGER_CONTEXT } from "@umbraco-cms/backoffice/modal";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
+import { UMB_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/workspace";
 import type { EstimateResponseModel } from "../api/types.gen.js";
 import {
-    alignedWindow,
+    windowForDateRange,
     AICarbonEstimateRepository,
     type AICarbonEstimateError,
     type AICarbonEstimateRequest,
     type AICarbonEstimateResult,
-    type EstimateRange,
 } from "../estimate/index.js";
+import {
+    ANALYTICS_WORKSPACE_CONTEXT_NAME,
+    defaultAnalyticsDateRange,
+    hasAnalyticsDateRange,
+    toAnalyticsDateRange,
+    type AnalyticsDateRange,
+} from "../date-range/index.js";
 import "../by-feature/index.js";
 import "../by-model/index.js";
-import "../header/index.js";
 import { AICARBON_METHOD_PANEL_MODAL } from "../method/index.js";
 import "../summary/index.js";
 import "../trend/index.js";
-import { loadDateRange, saveDateRange } from "./date-range-store.js";
 import { selectViewState, type ViewState } from "./view-state.js";
 
 const SCOPE_FALLBACK =
@@ -55,12 +60,19 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     @state()
     private _loading = false;
 
+    /** The range of Umbraco.AI's header picker. Kept whole so the comparison can use it later; only `range` is read today. */
     @state()
-    private _range: EstimateRange = loadDateRange();
+    private _dateRange?: AnalyticsDateRange;
+
+    #warned = false;
 
     override connectedCallback() {
         super.connectedCallback();
-        void this.#load();
+        // Loading from the start: the range arrives a moment later, and the page should not flash its empty shape first.
+        this._loading = true;
+        // A reconnect starts over, so the first range it reads always loads.
+        this._dateRange = undefined;
+        void this.#followHeaderRange();
     }
 
     override disconnectedCallback() {
@@ -69,7 +81,36 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this._loading = false;
     }
 
+    /** Follows the range in Umbraco.AI's header; without it (or in a shape we don't know) the tab uses Umbraco.AI's default range. */
+    async #followHeaderRange() {
+        // The workspace context is there when this view connects; a miss means a different Umbraco.AI, so getContext rejects.
+        const context = await this.getContext(UMB_WORKSPACE_CONTEXT).catch(() => undefined);
+        if (!this.isConnected) return;
+        if (hasAnalyticsDateRange(context)) {
+            // One alias, so a reconnect replaces the observer instead of adding another.
+            this.observe(context.dateRange, (value) => this.#applyDateRange(toAnalyticsDateRange(value)), "aicarbonHeaderDateRange");
+        } else {
+            this.#applyDateRange(undefined);
+        }
+    }
+
+    #applyDateRange(next: AnalyticsDateRange | undefined) {
+        if (!next && !this.#warned) {
+            this.#warned = true;
+            console.warn(
+                `Umbraco.Community.AI.Carbon: could not read the date range from the ${ANALYTICS_WORKSPACE_CONTEXT_NAME}; using the last 7 days.`,
+            );
+        }
+        const range = next ?? defaultAnalyticsDateRange();
+        const previous = this._dateRange?.range;
+        this._dateRange = range;
+        // A change to the comparison alone gives the same figures.
+        if (previous?.from === range.range.from && previous?.to === range.range.to) return;
+        void this.#load();
+    }
+
     async #load() {
+        if (!this._dateRange) return;
         this.#abortController?.abort();
         const abortController = new AbortController();
         this.#abortController = abortController;
@@ -77,7 +118,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this._loading = true;
         // A retry starts from a clean slate; figures already on screen stay until replaced, while the chart and tables show a loading bar.
         this._error = undefined;
-        const { from, to, granularity } = alignedWindow(this._range);
+        const { from, to, granularity } = windowForDateRange(this._dateRange.range);
         const { data, error } = await this.loader({ from, to, granularity }, abortController.signal);
 
         // A newer load, or leaving the tab, supersedes this one.
@@ -99,12 +140,6 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         // The error state is replaced by the loading page, so hand focus to the body rather than lose it.
         await this.updateComplete;
         this.shadowRoot?.querySelector<HTMLElement>("#body")?.focus();
-    }
-
-    #onRangeChange(event: CustomEvent<EstimateRange>) {
-        this._range = event.detail;
-        saveDateRange(this._range);
-        void this.#load();
     }
 
     async #onMethodOpen() {
@@ -219,6 +254,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
             // 0 marks a failure with no HTTP status (e.g. offline): still an error, not forbidden.
             errorStatus: this._error ? (this._error.status ?? 0) : undefined,
         });
+        const methodLabel = this.#t("aiCarbon_method_button", "How is this calculated?");
         return html`
             <div class="layout">
                 <div class="page-header">
@@ -226,12 +262,16 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                         <h3>${this.#t("aiCarbon_headline", "Estimated CO2e from AI Inference")}</h3>
                         <p class="scope">${this.#t("aiCarbon_scope", SCOPE_FALLBACK)}</p>
                     </div>
-                    <aicarbon-header
-                        .range=${this._range}
-                        .method=${this._estimate?.method}
-                        @range-change=${this.#onRangeChange}
-                        @method-open=${this.#onMethodOpen}
-                    ></aicarbon-header>
+                    <uui-button
+                        look="default"
+                        compact
+                        label=${methodLabel}
+                        title=${methodLabel}
+                        ?disabled=${!this._estimate?.method}
+                        @click=${this.#onMethodOpen}
+                    >
+                        <uui-icon name="icon-info"></uui-icon>
+                    </uui-button>
                 </div>
                 <div id="body" tabindex="-1" aria-busy=${this._loading ? "true" : "false"}>
                     ${this.#renderBody(state)}

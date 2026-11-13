@@ -1,6 +1,15 @@
+import { customElement } from "@umbraco-cms/backoffice/external/lit";
+import { UmbContextBase } from "@umbraco-cms/backoffice/class-api";
+import type { UmbControllerHost } from "@umbraco-cms/backoffice/controller-api";
+import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
+import { UmbBasicState } from "@umbraco-cms/backoffice/observable-api";
+import { UMB_MODAL_MANAGER_CONTEXT } from "@umbraco-cms/backoffice/modal";
+import { AICARBON_METHOD_PANEL_MODAL } from "../method/index.js";
+import { UMB_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/workspace";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EstimateResponseModel } from "../api/types.gen.js";
-import type { AICarbonEstimateError, AICarbonEstimateResult } from "../estimate/index.js";
+import type { AnalyticsDateRange } from "../date-range/index.js";
+import type { AICarbonEstimateError, AICarbonEstimateResult, AICarbonEstimateRequest } from "../estimate/index.js";
 import { AICarbonWorkspaceViewElement, type AICarbonEstimateLoader } from "./workspace-view.element.js";
 
 // happy-dom has no ElementInternals, which the uui form mixins need on construction.
@@ -29,12 +38,44 @@ const failure = (status?: number, isAborted = false): AICarbonEstimateResult => 
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-async function render(loader: AICarbonEstimateLoader) {
+const longerRange: AnalyticsDateRange = { range: { from: "2026-10-15", to: "2026-11-13", preset: "last-30-days" } };
+const lastWeek: AnalyticsDateRange = { range: { from: "2026-11-07", to: "2026-11-13", preset: "last-7-days" } };
+
+@customElement("aicarbon-test-host")
+class TestHostElement extends UmbLitElement {}
+
+/** Stands in for Umbraco.AI's analytics workspace context: the default workspace context token plus its `dateRange`. */
+class FakeAnalyticsWorkspaceContext extends UmbContextBase {
+    readonly workspaceAlias = "Fake.Analytics";
+    #dateRange: UmbBasicState<unknown>;
+    readonly dateRange;
+
+    constructor(host: UmbControllerHost, initial: unknown = lastWeek) {
+        super(host, UMB_WORKSPACE_CONTEXT);
+        this.#dateRange = new UmbBasicState<unknown>(initial);
+        this.dateRange = this.#dateRange.asObservable();
+    }
+
+    setDateRange(value: unknown) {
+        this.#dateRange.setValue(value);
+    }
+}
+
+/** Renders the tab in a host that provides the fake context (with `initial` as its range), or none when `initial` is `null`. */
+async function renderIn(loader: AICarbonEstimateLoader, initial: unknown = lastWeek, setup?: (host: TestHostElement) => void) {
+    const host = new TestHostElement();
+    document.body.appendChild(host);
+    setup?.(host);
+    const context = initial === null ? undefined : new FakeAnalyticsWorkspaceContext(host, initial);
     const element = new AICarbonWorkspaceViewElement();
     element.loader = loader;
-    document.body.appendChild(element);
+    host.appendChild(element);
     await element.updateComplete;
-    return element;
+    return { element, context };
+}
+
+async function render(loader: AICarbonEstimateLoader) {
+    return (await renderIn(loader)).element;
 }
 
 async function flush(element: AICarbonWorkspaceViewElement) {
@@ -47,14 +88,9 @@ const body = (element: AICarbonWorkspaceViewElement) => element.shadowRoot!.quer
 const part = (element: AICarbonWorkspaceViewElement, tag: string) => element.shadowRoot!.querySelector(tag)!;
 const loading = (element: AICarbonWorkspaceViewElement, tag: string) => (part(element, tag) as unknown as { loading: boolean }).loading;
 
-function chooseRange(element: AICarbonWorkspaceViewElement, range: string) {
-    element.shadowRoot!.querySelector("aicarbon-header")!.dispatchEvent(new CustomEvent("range-change", { detail: range }));
-}
-
 describe("Feature: CO2 tab states", () => {
     afterEach(() => {
         document.body.innerHTML = "";
-        localStorage.clear();
         vi.restoreAllMocks();
     });
 
@@ -120,12 +156,12 @@ describe("Feature: CO2 tab states", () => {
         it("keeps the old figures, every part loading, until the new result arrives", async () => {
             let release: (r: AICarbonEstimateResult) => void = () => {};
             let calls = 0;
-            const element = await render(() => {
+            const { element, context } = await renderIn(() => {
                 calls++;
                 return calls === 1 ? Promise.resolve({ data: estimate(5) }) : new Promise((r) => (release = r));
             });
             await flush(element);
-            chooseRange(element, "last30d");
+            context!.setDateRange(longerRange);
             await element.updateComplete;
             expect(element.shadowRoot!.querySelector("#by-model")).not.toBeNull();
             expect(
@@ -171,10 +207,10 @@ describe("Feature: CO2 tab states", () => {
     describe("Scenario: changing the range while the empty state shows", () => {
         it("shows a loading bar on the box until the new result arrives", async () => {
             let calls = 0;
-            const element = await render(() => (++calls === 1 ? Promise.resolve({ data: estimate(0) }) : new Promise(() => {})));
+            const { element, context } = await renderIn(() => (++calls === 1 ? Promise.resolve({ data: estimate(0) }) : new Promise(() => {})));
             await flush(element);
             expect(element.shadowRoot!.querySelector(".state uui-loader-bar")).toBeNull();
-            chooseRange(element, "last30d");
+            context!.setDateRange(longerRange);
             await element.updateComplete;
             expect(element.shadowRoot!.querySelector("uaui-empty-state")).not.toBeNull();
             expect(element.shadowRoot!.querySelector(".state uui-loader-bar")).not.toBeNull();
@@ -264,9 +300,9 @@ describe("Feature: CO2 tab states", () => {
 
         it("drops it silently during a reload with figures shown", async () => {
             let calls = 0;
-            const element = await render(async () => (++calls === 1 ? { data: estimate(5) } : failure(undefined, true)));
+            const { element, context } = await renderIn(async () => (++calls === 1 ? { data: estimate(5) } : failure(undefined, true)));
             await flush(element);
-            chooseRange(element, "last30d");
+            context!.setDateRange(longerRange);
             await flush(element);
             expect(element.shadowRoot!.querySelector("uaui-error-state")).toBeNull();
             expect(element.shadowRoot!.querySelector("#by-model")).not.toBeNull();
@@ -288,22 +324,125 @@ describe("Feature: CO2 tab states", () => {
             const element = await render(loader);
             await flush(element);
             expect(element.shadowRoot!.querySelector(".page-title h3")!.textContent).toContain("Estimated CO2e from AI Inference");
-            expect(element.shadowRoot!.querySelector("aicarbon-header")).not.toBeNull();
+            const button = element.shadowRoot!.querySelector('.page-header uui-button[label="How is this calculated?"]');
+            expect(button).not.toBeNull();
         });
     });
 
-    describe("Scenario: remembered range", () => {
-        it("starts from the stored range", async () => {
-            localStorage.setItem("aicarbon.dateRange", "last30d");
-            const element = await render(async () => ({ data: estimate(5) }));
-            expect(element.shadowRoot!.querySelector("aicarbon-header")!.getAttribute("range")).toBeNull();
-            expect((element.shadowRoot!.querySelector("aicarbon-header") as unknown as { range: string }).range).toBe("last30d");
+    describe("Scenario: the method button", () => {
+        const methodButton = (element: AICarbonWorkspaceViewElement) =>
+            element.shadowRoot!.querySelector('uui-button[label="How is this calculated?"]')!;
+
+        it("is disabled until an estimate has loaded", async () => {
+            const element = await render(() => new Promise(() => {}));
+            await flush(element);
+            expect(methodButton(element).hasAttribute("disabled")).toBe(true);
         });
 
-        it("saves the range when it changes", async () => {
+        it("is enabled once the estimate is there", async () => {
             const element = await render(async () => ({ data: estimate(5) }));
-            chooseRange(element, "last24h");
-            expect(localStorage.getItem("aicarbon.dateRange")).toBe("last24h");
+            await flush(element);
+            expect(methodButton(element).hasAttribute("disabled")).toBe(false);
+        });
+
+        it("opens the method panel with the estimate's method and equivalent when clicked", async () => {
+            const open = vi.fn();
+            class FakeModalManager extends UmbContextBase {
+                open = open;
+                constructor(host: UmbControllerHost) {
+                    super(host, UMB_MODAL_MANAGER_CONTEXT);
+                }
+            }
+            const equivalent = { kind: "carKm", amount: 3 };
+            const loaded = { ...estimate(5), total: { ...estimate(5).total, equivalent } } as unknown as EstimateResponseModel;
+            const { element } = await renderIn(async () => ({ data: loaded }), lastWeek, (host) => void new FakeModalManager(host));
+            await flush(element);
+            methodButton(element).dispatchEvent(new Event("click"));
+            await flush(element);
+            expect(open).toHaveBeenCalledTimes(1);
+            expect(open.mock.calls[0][1]).toBe(AICARBON_METHOD_PANEL_MODAL);
+            expect(open.mock.calls[0][2]).toEqual({ data: { method: loaded.method, equivalent } });
+        });
+    });
+
+    describe("Scenario: the tab follows Umbraco.AI's header range", () => {
+        it("loads the window for the range in the workspace context", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), lastWeek);
+            await flush(element);
+            expect(requests.map((r) => [r.from.getTime() - r.to.getTime() < 0, r.granularity])).toEqual([[true, "Daily"]]);
+            // 7 inclusive local days, whichever zone the tests run in: from the first local midnight to the one after the last.
+            const [{ from, to }] = requests;
+            expect(to.getTime() - from.getTime()).toBeGreaterThanOrEqual(7 * 24 * 3_600_000 - 3_600_000);
+            expect(to.getTime() - from.getTime()).toBeLessThanOrEqual(7 * 24 * 3_600_000 + 3_600_000);
+        });
+
+        it("loads hourly for a one-day range", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(
+                async (request) => (requests.push(request), { data: estimate(5) }),
+                { range: { from: "2026-11-13", to: "2026-11-13", preset: "today" } },
+            );
+            await flush(element);
+            expect(requests.map((r) => r.granularity)).toEqual(["Hourly"]);
+        });
+
+        it("reloads when the header range changes", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element, context } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }));
+            await flush(element);
+            context!.setDateRange(longerRange);
+            await flush(element);
+            expect(requests).toHaveLength(2);
+            expect(requests[1].from.getTime()).toBeLessThan(requests[0].from.getTime());
+        });
+
+        it("does not reload when only the comparison changes", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element, context } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }));
+            await flush(element);
+            context!.setDateRange({ ...lastWeek, compare: { mode: "previous-period", from: "2026-10-31", to: "2026-11-06" } });
+            await flush(element);
+            expect(requests).toHaveLength(1);
+        });
+
+        it("lets the latest range win when changes overlap", async () => {
+            const releases: Array<(r: AICarbonEstimateResult) => void> = [];
+            const { element, context } = await renderIn(() => new Promise((resolve) => releases.push(resolve)));
+            await flush(element);
+            context!.setDateRange(longerRange);
+            await flush(element);
+            releases[1]({ data: estimate(9) });
+            releases[0]({ data: estimate(1) });
+            await flush(element);
+            const tiles = part(element, "aicarbon-summary-cards") as unknown as { estimate: EstimateResponseModel };
+            expect(tiles.estimate.total.requests).toBe(9);
+        });
+    });
+
+    describe("Scenario: Umbraco.AI's header range cannot be read", () => {
+        const waitForFallback = () => new Promise((resolve) => setTimeout(resolve, 100));
+
+        it("falls back to the last 7 days and warns once, naming the expected context, when there is no workspace context", async () => {
+            const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), null);
+            await waitForFallback();
+            await element.updateComplete;
+            expect(requests).toHaveLength(1);
+            expect(requests[0].granularity).toBe("Daily");
+            expect(warn).toHaveBeenCalledTimes(1);
+            expect(String(warn.mock.calls[0][0])).toContain("dateRange");
+            expect(text(element)).toContain("Estimated CO2e from AI Inference");
+        });
+
+        it("falls back, and warns, when the context emits a range of an unknown shape", async () => {
+            const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), { from: 1, to: 2 });
+            await flush(element);
+            expect(requests).toHaveLength(1);
+            expect(warn).toHaveBeenCalledTimes(1);
         });
     });
 });

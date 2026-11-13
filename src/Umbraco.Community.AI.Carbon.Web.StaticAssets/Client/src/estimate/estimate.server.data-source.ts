@@ -7,7 +7,7 @@ import { toAICarbonEstimateError, type AICarbonEstimateError } from "./estimate-
 export interface AICarbonEstimateRequest {
     from: Date;
     to: Date;
-    /** Omit to let the server pick; `alignedWindow` always supplies it. */
+    /** Omit to let the server pick; `windowForDateRange` always supplies it. */
     granularity?: AiUsagePeriod;
 }
 
