@@ -20,7 +20,8 @@ const NO_ITEMS: EstimateFeatureBreakdownModel["items"] = [];
 /**
  * The "By Feature" table. Renders from the `byFeature` property; it never fetches. The table sorts the rows
  * itself. There is no search field: the table has about five rows.
- * - Analytics switched off (or not known yet): renders nothing, because the whole-view message (T19) covers it.
+ * - Analytics switched off (or not known yet): renders nothing, because the whole-view message covers it. The one
+ *   exception is the first load, which draws skeleton rows so the page doesn't change shape when the figures arrive.
  * - Breakdown unavailable (analytics on): the table's empty state, pointing at the Umbraco.AI setting.
  * - Available but no items: renders nothing (all usage is from models that aren't estimated).
  * There is deliberately no share-of-total column: a percentage of a range would imply precision the
@@ -34,6 +35,10 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
     /** From the estimate's method info. Unknown (not loaded yet) renders nothing. */
     @property({ attribute: false })
     analyticsEnabled?: boolean;
+
+    /** The estimate is being loaded: before any breakdown the table draws skeleton rows, with one it keeps its rows under a loading bar. */
+    @property({ type: Boolean })
+    loading = false;
 
     // The table needs stable arrays: it starts over when it is handed a new one. They are rebuilt with the
     // input, or when the labels or feature names change (the language changed, or translations loaded after first paint).
@@ -70,8 +75,12 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
     override render() {
         // Switched off (or not known yet) is the whole-view message's job; the breakdown being available with no
         // items means all usage is from models that aren't estimated, which the By Model table shows.
-        if (!this.analyticsEnabled || !this.byFeature) return nothing;
-        if (this.byFeature.available && this.byFeature.items.length === 0) return nothing;
+        // The first load is the exception: nothing is known yet, so the table's skeleton keeps the page's shape.
+        const firstLoad = this.loading && !this.byFeature;
+        if (!firstLoad) {
+            if (!this.analyticsEnabled || !this.byFeature) return nothing;
+            if (this.byFeature.available && this.byFeature.items.length === 0) return nothing;
+        }
         const headline = this.#t("aiCarbon_byFeature_headline", "By Feature");
         return html`
             <uui-box class="flush" headline=${headline}>
@@ -89,6 +98,7 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
                     .columns=${this._columns}
                     .rows=${this._tableRows}
                     .sort=${FEATURE_TABLE_DEFAULT_SORT}
+                    ?loading=${this.loading}
                 ></uaui-data-table>
             </uui-box>
         `;

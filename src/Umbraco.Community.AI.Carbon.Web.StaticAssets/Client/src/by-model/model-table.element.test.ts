@@ -102,4 +102,36 @@ describe("Feature: aicarbon-model-table element", () => {
         await element.updateComplete;
         expect(element.shadowRoot!.querySelector<Element & { columns: unknown }>("uaui-data-table")!.columns).toBe(columns);
     });
+
+    describe("Scenario: loading", () => {
+        async function renderLoading(rows?: EstimateModelRowModel[]) {
+            const element = new AICarbonModelTableElement();
+            element.rows = rows;
+            element.loading = true;
+            document.body.appendChild(element);
+            await element.updateComplete;
+            return element.shadowRoot!.querySelector("uaui-data-table") as (Element & { columns: unknown[]; rows: unknown[] }) | null;
+        }
+
+        it("first load: shows the table, with its columns and no rows, loading", async () => {
+            const table = await renderLoading(undefined);
+            expect(table!.hasAttribute("loading")).toBe(true);
+            expect([table!.columns.length, table!.rows]).toEqual([6, []]);
+        });
+
+        it("keeps the heading while loading, so the box does not jump", async () => {
+            const table = await renderLoading(undefined);
+            expect(table!.closest("uui-box")!.getAttribute("headline")).toBe("By Model");
+        });
+
+        it("reload: keeps the rows and sets loading", async () => {
+            const table = await renderLoading([row({})]);
+            expect([table!.hasAttribute("loading"), table!.rows.length]).toEqual([true, 1]);
+        });
+
+        it("is not loading by default", async () => {
+            const { table } = await render([row({})]);
+            expect(table!.hasAttribute("loading")).toBe(false);
+        });
+    });
 });

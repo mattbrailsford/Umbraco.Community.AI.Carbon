@@ -1,4 +1,4 @@
-import { css, html, customElement, nothing, property, state } from "@umbraco-cms/backoffice/external/lit";
+import { css, html, customElement, nothing, property, state, type TemplateResult } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UMB_MODAL_MANAGER_CONTEXT } from "@umbraco-cms/backoffice/modal";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
@@ -31,7 +31,8 @@ export type AICarbonEstimateLoader = (
 
 /**
  * The "CO2" tab of Umbraco.AI's Analytics workspace. Owns loading and the estimate/error/loading
- * state, and renders one body per `selectViewState` result under an always-visible header.
+ * state, and renders one body per `selectViewState` result under an always-visible header. Loading, error and empty
+ * are drawn by Analytics.UI's own states (tile and table `loading`/`error`/`no-data`, `uaui-error-state`, `uaui-empty-state`).
  */
 @customElement("aicarbon-workspace-view")
 export class AICarbonWorkspaceViewElement extends UmbLitElement {
@@ -74,7 +75,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this.#abortController = abortController;
 
         this._loading = true;
-        // A retry starts from a clean slate; figures already on screen stay (dimmed) until replaced.
+        // A retry starts from a clean slate; figures already on screen stay until replaced, while the chart and tables show a loading bar.
         this._error = undefined;
         const { from, to, granularity } = alignedWindow(this._range);
         const { data, error } = await this.loader({ from, to, granularity }, abortController.signal);
@@ -95,7 +96,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
 
     async #onRetry() {
         void this.#load();
-        // The error box is replaced by the loader, so hand focus to the body rather than lose it.
+        // The error state is replaced by the loading page, so hand focus to the body rather than lose it.
         await this.updateComplete;
         this.shadowRoot?.querySelector<HTMLElement>("#body")?.focus();
     }
@@ -118,85 +119,97 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         return this.localize.termOrDefault(key, fallback);
     }
 
-    #renderContent(estimate: EstimateResponseModel) {
+    /** The page for the loading and content states: the same parts either way, so nothing jumps when the figures arrive. */
+    #renderDashboard(estimate?: EstimateResponseModel) {
+        const loading = this._loading;
         return html`
             <div class="sections">
                 <section id="summary">
-                    <aicarbon-summary-cards .estimate=${estimate}></aicarbon-summary-cards>
+                    <aicarbon-summary-cards .estimate=${estimate} ?loading=${loading}></aicarbon-summary-cards>
                 </section>
-                ${estimate.total.equivalent
+                ${estimate?.total.equivalent
                     ? html`<section id="equivalent">
                           <aicarbon-equivalent-strip .equivalent=${estimate.total.equivalent}></aicarbon-equivalent-strip>
                       </section>`
                     : nothing}
                 <section id="trend">
                     <aicarbon-trend-chart
-                        .points=${estimate.timeSeries}
-                        .granularity=${estimate.granularity}
+                        .points=${estimate?.timeSeries}
+                        .granularity=${estimate?.granularity ?? "Daily"}
+                        ?loading=${loading}
                     ></aicarbon-trend-chart>
                 </section>
                 <section id="by-model">
-                    <aicarbon-model-table .rows=${estimate.byModel}></aicarbon-model-table>
+                    <aicarbon-model-table .rows=${estimate?.byModel} ?loading=${loading}></aicarbon-model-table>
                 </section>
                 <section id="by-feature">
                     <aicarbon-feature-table
-                        .byFeature=${estimate.byFeature}
-                        .analyticsEnabled=${estimate.method.analyticsEnabled}
+                        .byFeature=${estimate?.byFeature}
+                        .analyticsEnabled=${estimate?.method.analyticsEnabled}
+                        ?loading=${loading}
                     ></aicarbon-feature-table>
                 </section>
             </div>
         `;
     }
 
-    #renderMessage(headline: string, detail?: string) {
-        return html`<div class="message">
-            <strong>${headline}</strong>
-            ${detail ? html`<p>${detail}</p>` : nothing}
+    /** Tiles (when given) above one box holding a message state. A reload over a message shows a loading bar on the box. */
+    #renderStateBox(state: TemplateResult, tiles?: TemplateResult) {
+        return html`<div class="sections">
+            ${tiles ? html`<section id="summary">${tiles}</section>` : nothing}
+            <uui-box>
+                <div class="state">
+                    ${this._loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
+                    ${state}
+                </div>
+            </uui-box>
         </div>`;
     }
 
     #renderBody(state: ViewState) {
         switch (state) {
             case "loading":
-                return html`<uui-box>
-                    <uui-loader-bar></uui-loader-bar>
-                    <p class="loading-text">${this.#t("aiCarbon_loading", "Loading the estimate…")}</p>
-                </uui-box>`;
+                return this.#renderDashboard();
             case "content":
-                return this._estimate ? this.#renderContent(this._estimate) : nothing;
+                return this.#renderDashboard(this._estimate);
             case "empty":
-                return html`<uui-box>
-                    ${this.#renderMessage(
-                        this.#t("aiCarbon_empty_headline", "No AI usage in this period yet"),
-                        this.#t("aiCarbon_empty_hint", "Pick a longer time range to look further back."),
-                    )}
-                </uui-box>`;
+                return this.#renderStateBox(
+                    html`<uaui-empty-state
+                        headline=${this.#t("aiCarbon_empty_headline", "No AI usage in this period yet")}
+                        description=${this.#t("aiCarbon_empty_hint", "Pick a longer time range to look further back.")}
+                    ></uaui-empty-state>`,
+                    html`<aicarbon-summary-cards .estimate=${this._estimate} no-data></aicarbon-summary-cards>`,
+                );
             case "analyticsDisabled":
-                return html`<uui-box>
-                    ${this.#renderMessage(
-                        this.#t("aiCarbon_analyticsDisabled_headline", "Umbraco.AI analytics are switched off"),
-                        this.#t(
+                return this.#renderStateBox(
+                    html`<uaui-empty-state
+                        icon="icon-settings"
+                        headline=${this.#t("aiCarbon_analyticsDisabled_headline", "Umbraco.AI analytics are switched off")}
+                        description=${this.#t(
                             "aiCarbon_analyticsDisabled_body",
                             "There is no usage recorded, so there is nothing to estimate. To turn analytics on, set Umbraco:AI:Analytics:Enabled to true in appsettings.json.",
-                        ),
-                    )}
-                </uui-box>`;
+                        )}
+                    ></uaui-empty-state>`,
+                );
             case "forbidden":
-                return html`<uui-box>
-                    ${this.#renderMessage(this.#t("aiCarbon_forbidden", "You need access to the AI section to see this."))}
-                </uui-box>`;
+                // No description: the default ("The data could not be loaded.") would not say why. Retrying can't grant access.
+                return this.#renderStateBox(
+                    html`<uaui-error-state
+                        icon="icon-lock"
+                        headline=${this.#t("aiCarbon_forbidden", "You need access to the AI section to see this.")}
+                        description=""
+                    ></uaui-error-state>`,
+                );
             case "error":
-                return html`<uui-box class="error" role="alert">
-                    ${this.#renderMessage(
-                        this.#t("aiCarbon_loadFailed", "The estimate couldn't be loaded."),
-                        this.#t("aiCarbon_loadFailed_hint", "Check your connection and try again."),
-                    )}
-                    <uui-button
-                        look="primary"
-                        label=${this.#t("aiCarbon_retry", "Retry")}
-                        @click=${this.#onRetry}
-                    ></uui-button>
-                </uui-box>`;
+                return this.#renderStateBox(
+                    html`<uaui-error-state
+                        headline=${this.#t("aiCarbon_loadFailed", "The estimate couldn't be loaded.")}
+                        description=${this.#t("aiCarbon_loadFailed_hint", "Check your connection and try again.")}
+                        retryable
+                        @retry=${this.#onRetry}
+                    ></uaui-error-state>`,
+                    html`<aicarbon-summary-cards error></aicarbon-summary-cards>`,
+                );
         }
     }
 
@@ -206,8 +219,6 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
             // 0 marks a failure with no HTTP status (e.g. offline): still an error, not forbidden.
             errorStatus: this._error ? (this._error.status ?? 0) : undefined,
         });
-        // Reloading: figures from the previous range stay visible, dimmed, until the new ones arrive.
-        const reloading = this._loading && state !== "loading";
         return html`
             <div class="layout">
                 <div class="page-header">
@@ -222,13 +233,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                         @method-open=${this.#onMethodOpen}
                     ></aicarbon-header>
                 </div>
-                ${reloading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
-                <div
-                    id="body"
-                    tabindex="-1"
-                    class=${reloading ? "reloading" : ""}
-                    aria-busy=${this._loading ? "true" : "false"}
-                >
+                <div id="body" tabindex="-1" aria-busy=${this._loading ? "true" : "false"}>
                     ${this.#renderBody(state)}
                 </div>
             </div>
@@ -284,25 +289,14 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 outline: none;
             }
 
-            #body.reloading {
-                opacity: 0.5;
-                pointer-events: none;
+            /* Positions the loading bar a reload shows over an empty or switched-off message. */
+            .state {
+                position: relative;
             }
 
-            .message {
-                text-align: center;
-                padding: var(--uui-size-space-6);
-            }
-
-            .loading-text {
-                text-align: center;
-                color: var(--uui-color-text-alt);
-            }
-
-            .error uui-button {
-                display: block;
-                width: fit-content;
-                margin: 0 auto;
+            .state uui-loader-bar {
+                position: absolute;
+                inset: 0 0 auto 0;
             }
         `,
     ];

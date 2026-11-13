@@ -29,4 +29,15 @@ describe("Feature: aicarbon-missing-text-cell element", () => {
         await element.updateComplete;
         expect(element.shadowRoot!.querySelector("img")).toBeNull();
     });
+
+    it("draws the table's skeleton cell, on the column's side, while the table is loading", async () => {
+        const element = new AICarbonMissingTextCellElement();
+        element.column = { key: "zone", label: "", align: "end" };
+        element.loading = true;
+        document.body.appendChild(element);
+        await element.updateComplete;
+        const skeleton = element.shadowRoot!.querySelector("uaui-table-skeleton-cell")!;
+        expect(skeleton.getAttribute("align")).toBe("end");
+        expect(element.shadowRoot!.textContent).not.toContain("—");
+    });
 });

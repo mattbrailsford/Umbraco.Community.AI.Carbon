@@ -47,7 +47,7 @@ const createChart: TrendChartFactory = (canvas, config) => {
 
 /**
  * The estimated CO2e trend: floating bars for each bucket's likely range (min to max) with a line through the middle estimate. Renders from the
- * `points` and `granularity` properties; it never fetches. Does nothing without points (the empty
+ * `points` and `granularity` properties; it never fetches. Does nothing without points, unless `loading` (the empty
  * page state belongs to the view). Hourly times are shown in the viewer's local zone; daily buckets are UTC days (see trend-format.ts).
  */
 @customElement("aicarbon-trend-chart")
@@ -57,6 +57,13 @@ export class AICarbonTrendChartElement extends UmbLitElement {
 
     @property({ type: String })
     granularity: AiUsagePeriod = "Daily";
+
+    /**
+     * The estimate is being loaded. With no points yet the box keeps its heading and height and shows a placeholder where
+     * the chart goes; with points the chart stays under a loading bar.
+     */
+    @property({ type: Boolean })
+    loading = false;
 
     /** Test seam: how the Chart.js chart is created. */
     chartFactory: TrendChartFactory = createChart;
@@ -129,13 +136,16 @@ export class AICarbonTrendChartElement extends UmbLitElement {
     }
 
     override render() {
-        if (!this.points || this.points.length === 0) return nothing;
+        const hasPoints = !!this.points && this.points.length > 0;
+        if (!hasPoints && !this.loading) return nothing;
         const t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
-        const summary = describeTrend(this.points, this.granularity, t);
         return html`
             <uui-box headline=${t("aiCarbon_trend_headline", "CO2e Over Time")}>
-                <div class="chart-container">
-                    <canvas role="img" aria-label=${summary}></canvas>
+                <div class="chart-container" aria-busy=${this.loading ? "true" : "false"}>
+                    ${hasPoints && this.loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
+                    ${hasPoints
+                        ? html`<canvas role="img" aria-label=${describeTrend(this.points!, this.granularity, t)}></canvas>`
+                        : html`<div class="skeleton" aria-hidden="true"></div>`}
                 </div>
             </uui-box>
         `;
@@ -155,6 +165,43 @@ export class AICarbonTrendChartElement extends UmbLitElement {
                 position: relative;
                 height: 350px;
                 padding: 0 var(--uui-size-space-4);
+            }
+
+            uui-loader-bar {
+                position: absolute;
+                inset: 0 0 auto 0;
+            }
+
+            /* The same grey shimmer block Analytics.UI draws for its own charts, at the chart's height. */
+            .skeleton {
+                height: 100%;
+                border-radius: var(--uui-border-radius);
+                background-color: var(--uaui-color-tint-neutral);
+                background-image: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    color-mix(in srgb, var(--uui-color-surface) 55%, transparent) 50%,
+                    transparent 100%
+                );
+                background-size: 800px 100%;
+                background-repeat: no-repeat;
+                animation: shimmer 1.2s linear infinite;
+            }
+
+            @keyframes shimmer {
+                from {
+                    background-position: -800px 0;
+                }
+                to {
+                    background-position: 800px 0;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .skeleton {
+                    animation: none;
+                    background-image: none;
+                }
             }
         `,
     ];

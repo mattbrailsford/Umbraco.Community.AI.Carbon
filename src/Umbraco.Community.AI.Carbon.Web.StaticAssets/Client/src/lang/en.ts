@@ -99,7 +99,6 @@ export default {
             "Figures use EcoLogits (data version {dataVersion}), licensed under MPL-2.0. EcoLogits is part of the CodeCarbon non-profit and was started by GenAI Impact.",
         method_notice:
             "This is an unofficial community package. It is not made or endorsed by Umbraco HQ. The figures are estimates, not claims by Umbraco.",
-        loading: "Loading the estimate…",
         empty_headline: "No AI usage in this period yet",
         empty_hint: "Pick a longer time range to look further back.",
         analyticsDisabled_headline: "Umbraco.AI analytics are switched off",
@@ -107,7 +106,6 @@ export default {
             "There is no usage recorded, so there is nothing to estimate. To turn analytics on, set Umbraco:AI:Analytics:Enabled to true in appsettings.json.",
         loadFailed: "The estimate couldn't be loaded.",
         loadFailed_hint: "Check your connection and try again.",
-        retry: "Retry",
         forbidden: "You need access to the AI section to see this.",
     },
 } as UmbLocalizationDictionary;

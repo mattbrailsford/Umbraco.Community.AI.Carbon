@@ -19,7 +19,14 @@ export class AICarbonMissingTextCellElement extends UmbLitElement implements Uau
     @property({ attribute: false })
     value: unknown;
 
+    /** Set by the table, with no value, while it shows its loading rows. */
+    @property({ type: Boolean })
+    loading = false;
+
     override render() {
+        if (this.loading) {
+            return html`<uaui-table-skeleton-cell align=${this.column.align ?? "start"}></uaui-table-skeleton-cell>`;
+        }
         return html`${typeof this.value === "string" && this.value !== "" ? this.value : NO_VALUE}`;
     }
 }

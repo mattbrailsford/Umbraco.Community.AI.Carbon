@@ -91,4 +91,34 @@ describe("Feature: aicarbon-co2e-cell element", () => {
         const root = await render({ status: "Estimated", co2e: "1 g CO2e", co2eRange: "" });
         expect(root.querySelector(".warnings-slot")).toBeNull();
     });
+
+    describe("Scenario: the table is loading", () => {
+        async function renderLoading(align?: "end") {
+            const element = new AICarbonCo2eCellElement();
+            if (align) element.column = { key: "co2eMid", label: "", align };
+            element.loading = true;
+            document.body.appendChild(element);
+            await element.updateComplete;
+            return element.shadowRoot!;
+        }
+
+        it("draws the table's two-line skeleton cell, on the column's side, instead of a figure", async () => {
+            const root = await renderLoading("end");
+            const skeleton = root.querySelector("uaui-table-skeleton-cell")!;
+            expect([skeleton.getAttribute("align"), skeleton.getAttribute("lines")]).toEqual(["end", "2"]);
+            expect(root.querySelector(".central, .not-estimated")).toBeNull();
+        });
+
+        it("draws the figure again once loading stops", async () => {
+            const element = new AICarbonCo2eCellElement();
+            element.loading = true;
+            element.item = { co2e: "3 g CO2e" };
+            document.body.appendChild(element);
+            await element.updateComplete;
+            element.loading = false;
+            await element.updateComplete;
+            expect(element.shadowRoot!.querySelector("uaui-table-skeleton-cell")).toBeNull();
+            expect(element.shadowRoot!.querySelector(".central")!.textContent).toBe("3 g CO2e");
+        });
+    });
 });

@@ -1,4 +1,4 @@
-import { css, customElement, html, nothing, property } from "@umbraco-cms/backoffice/external/lit";
+import { css, customElement, html, property } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
 // Loads Analytics.UI at runtime, which registers `uaui-kpi-tile`.
@@ -19,6 +19,18 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
     @property({ type: Object })
     estimate?: EstimateResponseModel;
 
+    /** The estimate is being loaded: tiles with no figures yet draw a skeleton, tiles with figures stay as they are. */
+    @property({ type: Boolean })
+    loading = false;
+
+    /** The load failed: every tile shows its error dash. Wins over `loading` and `noData`. */
+    @property({ type: Boolean })
+    error = false;
+
+    /** There is no usage in the period: every tile shows "no data" instead of a zero. */
+    @property({ type: Boolean, attribute: "no-data" })
+    noData = false;
+
     /** The second line: the likely range for the estimated figures, a short note for the counts. */
     #detail(card: SummaryCardModel): string | undefined {
         if (card.range) {
@@ -31,7 +43,6 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
     }
 
     override render() {
-        if (!this.estimate) return nothing;
         return html`<div class="grid">${buildSummaryCards(this.estimate).map(
             (card) => html`<uaui-kpi-tile
                 label=${this.localize.termOrDefault(`aiCarbon_card_${card.kind}_label`, LABELS[card.kind].label)}
@@ -40,6 +51,9 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
                 .current=${card.current}
                 .detail=${this.#detail(card)}
                 .color=${card.status}
+                ?loading=${this.loading}
+                ?error=${this.error}
+                ?no-data=${this.noData || card.noData}
             ></uaui-kpi-tile>`,
         )}</div>`;
     }

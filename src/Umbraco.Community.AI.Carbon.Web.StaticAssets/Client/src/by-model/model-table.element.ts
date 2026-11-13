@@ -18,13 +18,17 @@ import {
 /**
  * The "By Model" table. Renders from the `rows` property; it never fetches. The table sorts, searches and
  * pages the rows itself.
- * Renders nothing when there are no rows: the empty page state belongs to the view (T19), and a
- * second "no models" line here would repeat it.
+ * Renders nothing when there are no rows and nothing is loading: the empty page state belongs to the view, and a
+ * second "no models" line here would repeat it. While loading it always renders, so the page keeps its shape.
  */
 @customElement("aicarbon-model-table")
 export class AICarbonModelTableElement extends UmbLitElement {
     @property({ type: Array })
     rows?: EstimateModelRowModel[];
+
+    /** The estimate is being loaded: with no rows yet the table draws skeleton rows, with rows it keeps them under a loading bar. */
+    @property({ type: Boolean })
+    loading = false;
 
     // The table needs stable arrays: it starts over when it is handed a new one. Rows change with the input,
     // columns with the input or the labels (the language changed, or translations loaded after first paint).
@@ -48,7 +52,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
     }
 
     override render() {
-        if (this._tableRows.length === 0) return nothing;
+        if (this._tableRows.length === 0 && !this.loading) return nothing;
         const headline = this.localize.termOrDefault("aiCarbon_byModel_headline", "By Model");
         return html`
             <uui-box class="flush" headline=${headline}>
@@ -58,6 +62,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
                     .columns=${this._columns}
                     .rows=${this._tableRows}
                     .sort=${MODEL_TABLE_DEFAULT_SORT}
+                    ?loading=${this.loading}
                 >
                     <div slot="toolbar"><uaui-search-field></uaui-search-field></div>
                 </uaui-data-table>

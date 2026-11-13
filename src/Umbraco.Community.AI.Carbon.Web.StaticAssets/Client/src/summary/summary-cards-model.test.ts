@@ -43,4 +43,34 @@ describe("Feature: summary cards", () => {
             expect(buildSummaryCards(estimate(0)).find((c) => c.kind === "notEstimated")!.status).toBe("default");
         });
     });
+
+    describe("Scenario: a figure that cannot be computed", () => {
+        it("flags only that card as having no data", () => {
+            const bad = estimate(0);
+            bad.total.co2eGrams = { min: NaN, max: NaN };
+            expect(buildSummaryCards(bad).map((c) => c.noData)).toEqual([true, false, false, false]);
+        });
+
+        it("flags a count that is not a number", () => {
+            const bad = estimate(0);
+            bad.total.requests = NaN;
+            expect(buildSummaryCards(bad).find((c) => c.kind === "requests")!.noData).toBe(true);
+        });
+
+        it("flags nothing for a healthy estimate", () => {
+            expect(buildSummaryCards(estimate(0)).some((c) => c.noData)).toBe(false);
+        });
+    });
+
+    describe("Scenario: no estimate yet", () => {
+        const cards = buildSummaryCards(undefined);
+
+        it("still lists the four tiles, so a loading or failed view can draw them", () => {
+            expect(cards.map((c) => c.kind)).toEqual(["co2e", "energy", "requests", "notEstimated"]);
+        });
+
+        it("has no figures, and does not call that no data", () => {
+            expect(cards.map((c) => [c.value, c.current, c.noData])).toEqual(Array(4).fill([undefined, undefined, false]));
+        });
+    });
 });

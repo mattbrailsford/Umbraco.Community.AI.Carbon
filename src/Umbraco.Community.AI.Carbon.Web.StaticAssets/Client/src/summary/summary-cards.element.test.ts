@@ -78,4 +78,56 @@ describe("Feature: aicarbon-summary-cards element", () => {
             expect(tiles[0].detail).toBeUndefined();
         });
     });
+
+    describe("Scenario: load states", () => {
+        async function renderState(props: Partial<Pick<AICarbonSummaryCardsElement, "loading" | "error" | "noData">>, value?: EstimateResponseModel) {
+            const element = new AICarbonSummaryCardsElement();
+            Object.assign(element, props);
+            element.estimate = value;
+            document.body.appendChild(element);
+            await element.updateComplete;
+            return [...element.shadowRoot!.querySelectorAll("uaui-kpi-tile")] as unknown as Array<Element & Record<string, unknown>>;
+        }
+        const flags = (tiles: Array<Element>, name: string) => tiles.map((t) => t.hasAttribute(name));
+
+        it("first load: four tiles, loading, with no value", async () => {
+            const tiles = await renderState({ loading: true });
+            expect([flags(tiles, "loading"), tiles.map((t) => t.value)]).toEqual([Array(4).fill(true), Array(4).fill(undefined)]);
+        });
+
+        it("keeps the labels while loading, so the tiles do not change size", async () => {
+            const tiles = await renderState({ loading: true });
+            expect(tiles.map((t) => t.getAttribute("label"))).toEqual([
+                "Estimated CO2e",
+                "Estimated Energy",
+                "Requests Estimated",
+                "Not Estimated",
+            ]);
+        });
+
+        it("reload: keeps the figures and sets loading", async () => {
+            const tiles = await renderState({ loading: true }, estimate(2));
+            expect([flags(tiles, "loading"), tiles[2].value]).toEqual([Array(4).fill(true), "5"]);
+        });
+
+        it("failed: every tile shows its error dash", async () => {
+            const tiles = await renderState({ error: true });
+            expect(flags(tiles, "error")).toEqual(Array(4).fill(true));
+        });
+
+        it("no usage: every tile is no-data", async () => {
+            const tiles = await renderState({ noData: true }, estimate(0));
+            expect(flags(tiles, "no-data")).toEqual(Array(4).fill(true));
+        });
+
+        it("a figure that cannot be computed is no-data on its own tile only", async () => {
+            const tiles = await renderState({}, estimate(0, { min: NaN, max: NaN }));
+            expect(flags(tiles, "no-data")).toEqual([true, false, false, false]);
+        });
+
+        it("a loaded estimate sets none of loading, error or no-data", async () => {
+            const tiles = await renderState({}, estimate(0));
+            expect(tiles.some((t) => t.hasAttribute("loading") || t.hasAttribute("error") || t.hasAttribute("no-data"))).toBe(false);
+        });
+    });
 });

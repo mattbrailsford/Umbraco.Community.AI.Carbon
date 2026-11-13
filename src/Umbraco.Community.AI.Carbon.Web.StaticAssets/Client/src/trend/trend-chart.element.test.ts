@@ -187,4 +187,40 @@ describe("Feature: aicarbon-trend-chart theme switching", () => {
         expect(stop).toHaveBeenCalledTimes(1);
         element.remove();
     });
+
+
+describe("Feature: aicarbon-trend-chart loading", () => {
+    it("first load: keeps the box and its heading, with a placeholder where the chart goes", async () => {
+        const { element, factory } = setup();
+        element.loading = true;
+        await mount(element);
+        const root = element.shadowRoot!;
+        expect(root.querySelector("uui-box")!.getAttribute("headline")).toBe("CO2e Over Time");
+        expect(root.querySelector(".skeleton")).not.toBeNull();
+        expect(root.querySelector("canvas")).toBeNull();
+        expect(factory).not.toHaveBeenCalled();
+        element.remove();
+    });
+
+    it("reload: keeps the chart and shows a loading bar over it", async () => {
+        const { element, factory } = setup();
+        element.points = points;
+        element.loading = true;
+        await mount(element);
+        const root = element.shadowRoot!;
+        expect(root.querySelector("canvas")).not.toBeNull();
+        expect(root.querySelector(".skeleton")).toBeNull();
+        expect(root.querySelector("uui-loader-bar")).not.toBeNull();
+        expect(factory).toHaveBeenCalledTimes(1);
+        element.remove();
+    });
+
+    it("loaded: shows neither the placeholder nor the bar", async () => {
+        const { element } = setup();
+        element.points = points;
+        await mount(element);
+        expect(element.shadowRoot!.querySelector(".skeleton, uui-loader-bar")).toBeNull();
+        element.remove();
+    });
+});
 });

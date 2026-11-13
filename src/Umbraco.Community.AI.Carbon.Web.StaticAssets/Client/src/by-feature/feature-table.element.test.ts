@@ -116,4 +116,32 @@ describe("Feature: aicarbon-feature-table element", () => {
         expect(after.rows).toBe(rows);
         expect(after.columns).toBe(columns);
     });
+
+    describe("Scenario: loading", () => {
+        async function renderLoading(byFeature?: EstimateFeatureBreakdownModel, enabled?: boolean) {
+            const element = new AICarbonFeatureTableElement();
+            element.byFeature = byFeature;
+            element.analyticsEnabled = enabled;
+            element.loading = true;
+            document.body.appendChild(element);
+            await element.updateComplete;
+            return element.shadowRoot!.querySelector("uaui-data-table") as (Element & { columns: unknown[]; rows: unknown[] }) | null;
+        }
+
+        it("first load: shows the table, with its columns and no rows, loading", async () => {
+            const table = await renderLoading(undefined, undefined);
+            expect(table!.hasAttribute("loading")).toBe(true);
+            expect([table!.columns.length > 0, table!.rows]).toEqual([true, []]);
+        });
+
+        it("reload: keeps the rows and sets loading", async () => {
+            const table = await renderLoading(available, true);
+            expect([table!.hasAttribute("loading"), table!.rows.length > 0]).toEqual([true, true]);
+        });
+
+        it("is not loading by default", async () => {
+            const { table } = await render(available, true);
+            expect(table!.hasAttribute("loading")).toBe(false);
+        });
+    });
 });

@@ -46,6 +46,10 @@ export class AICarbonCo2eCellElement extends UmbLitElement implements UauiTableC
     @property({ attribute: false })
     value: unknown;
 
+    /** Set by the table, with no value, while it shows its loading rows. */
+    @property({ type: Boolean })
+    loading = false;
+
     /** With `reserveWarningSpace`, always renders the slot, so figures line up on one right edge whether or not a row has a warning. */
     #renderWarnings(warnings: readonly string[]) {
         if (warnings.length === 0) return this.column.reserveWarningSpace ? html`<span class="warnings-slot"></span>` : nothing;
@@ -66,6 +70,10 @@ export class AICarbonCo2eCellElement extends UmbLitElement implements UauiTableC
     }
 
     override render() {
+        // Two lines, as a loaded figure with its range, so the row keeps its height when the figures arrive.
+        if (this.loading) {
+            return html`<uaui-table-skeleton-cell align=${this.column.align ?? "end"} lines="2"></uaui-table-skeleton-cell>`;
+        }
         const { status = "Estimated", co2e, co2eRange, warnings = [] } = this.item as Co2eCellItem;
         if (status === "Estimated") {
             return html`<div class="figure">
