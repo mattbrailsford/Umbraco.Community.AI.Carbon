@@ -9,8 +9,7 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@umbraco-cms/backoffice": "^19.0.0-rc1",
-        "chart.js": "^4.5.1"
+        "@umbraco-cms/backoffice": "^19.0.0-rc1"
     },
     "devDependencies": {
         "@hey-api/openapi-ts": "^0.99.0",

@@ -10,6 +10,6 @@ describe("analytics-ui test aliases", () => {
 
     it("resolves @umbraco/analytics-ui/external/chart.js to the local stub", () => {
         expect(typeof Chart.register).toBe("function");
-        expect(uauiChartColors(document.body).series).toEqual([]);
+        expect(uauiChartColors(document.body).series).toHaveLength(8);
     });
 });

@@ -1,11 +1,17 @@
-import type { TooltipItem } from "chart.js";
+import type { TooltipItem } from "@umbraco/analytics-ui/external/chart.js";
 import { describe, expect, it } from "vitest";
-import { color } from "chart.js/helpers";
-import { translucentEquivalent, buildTrendChartConfig, isDarkColor, rangeFillFor, resolveTrendColors } from "./trend-chart-config.js";
+import { stubColors, uauiChartOptions } from "../test-support/analytics-ui/chart.stub.js";
+import { buildTrendChartConfig, withAlpha, type TrendLegendLabels } from "./trend-chart-config.js";
 
-const colors = { line: "#283a97", fill: "rgba(0,0,0,0.25)", text: "#000", strongText: "#111", surface: "#fff", grid: "#ccc" };
+const colors = stubColors;
+const look = uauiChartOptions(document.body, "bar");
+const build = (
+    points: Parameters<typeof buildTrendChartConfig>[0],
+    yAxisTitle?: (unit: string) => string,
+    legendLabels?: TrendLegendLabels,
+) => buildTrendChartConfig(points, "Daily", colors, look, yAxisTitle, legendLabels);
 const yScale = (max: number) =>
-    buildTrendChartConfig([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max } }], "Daily", colors).options!
+    build([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max } }]).options!
         .scales!.y as { suggestedMax?: number };
 
 describe("Feature: trend chart y-axis", () => {
@@ -18,41 +24,11 @@ describe("Feature: trend chart y-axis", () => {
     });
 });
 
-describe("Feature: translucent range fill", () => {
-    const pink = "#f5c1bc";
-    const composite = (fill: string, bg: { r: number; g: number; b: number }) => {
-        const { r, g, b, a } = color(fill).rgb;
-        return [r, g, b].map((c, i) => c * a + [bg.r, bg.g, bg.b][i] * (1 - a));
-    };
-
-    it("looks like the original colour once drawn over the background", () => {
-        const shown = composite(translucentEquivalent(pink, "#ffffff"), { r: 255, g: 255, b: 255 });
-        const original = color(pink).rgb;
-        expect(shown.every((c, i) => Math.abs(c - [original.r, original.g, original.b][i]) <= 1)).toBe(true);
-    });
-
-    it("uses the requested alpha", () => {
-        expect(color(translucentEquivalent(pink, "#ffffff", 0.5)).rgb.a).toBe(0.5);
-    });
-
-    it("defaults to an alpha of 0.35", () => {
-        expect(translucentEquivalent(pink, "#ffffff")).toBe("rgba(226, 78, 64, 0.35)");
-    });
-
-    it("returns the colour unchanged when it can't be parsed", () => {
-        expect(translucentEquivalent("not-a-colour", "#ffffff")).toBe("not-a-colour");
-    });
-
-    it("returns the colour unchanged, without throwing, when the background can't be parsed", () => {
-        expect(translucentEquivalent(pink, "not-a-colour")).toBe(pink);
-    });
-});
-
 const series = [
     { timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 4.5, max: 7.5 } },
     { timestamp: "2026-10-02T00:00:00Z", co2eGrams: { min: 0, max: 2 } },
 ];
-const config = () => buildTrendChartConfig(series, "Daily", colors);
+const config = () => build(series);
 const tooltip = () => config().options!.plugins!.tooltip!;
 const itemAt = (dataIndex: number, datasetIndex = 0) => ({ dataIndex, datasetIndex }) as TooltipItem<"bar">;
 
@@ -79,7 +55,7 @@ describe("Feature: trend chart datasets", () => {
     });
 
     it("shows a dot for a single bucket, which has no line to draw", () => {
-        const single = buildTrendChartConfig([series[0]], "Daily", colors);
+        const single = build([series[0]]);
         expect((single.data.datasets[1] as { pointRadius: number }).pointRadius).toBe(3);
     });
 
@@ -105,7 +81,7 @@ describe("Feature: trend chart legend", () => {
     });
 
     it("uses the localized labels it is given", () => {
-        const localized = buildTrendChartConfig(series, "Daily", colors, undefined, { range: "R", middle: "M" });
+        const localized = build(series, undefined, { range: "R", middle: "M" });
         expect(localized.data.datasets.map((d) => d.label)).toEqual(["R", "M"]);
     });
 });
@@ -126,7 +102,7 @@ describe("Feature: trend chart tooltip", () => {
     });
 
     it("shows only the central figure when the range collapses to it", () => {
-        const flat = buildTrendChartConfig([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 3, max: 3 } }], "Daily", colors);
+        const flat = build([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 3, max: 3 } }]);
         expect((flat.options!.plugins!.tooltip!.callbacks as { label: Function }).label(itemAt(0))).toBe("3 g CO2e");
     });
 
@@ -136,75 +112,73 @@ describe("Feature: trend chart tooltip", () => {
     });
 
     it("reads 0 g CO2e for a bucket with no emissions", () => {
-        const zero = buildTrendChartConfig([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max: 0 } }], "Daily", colors);
+        const zero = build([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max: 0 } }]);
         expect((zero.options!.plugins!.tooltip!.callbacks as { label: Function }).label(itemAt(0))).toBe("0 g CO2e");
     });
 });
 
-describe("Feature: theme-aware range fill", () => {
-    it("treats a dark surface as dark", () => {
-        expect(isDarkColor("#1b1c20")).toBe(true);
+describe("Feature: trend chart colours come from the Analytics.UI palette", () => {
+    it("draws the range bars as the first series bar colour at partial alpha", () => {
+        expect((config().data.datasets[0] as { backgroundColor: string }).backgroundColor).toBe("rgba(10, 20, 30, 0.45)");
     });
 
-    it("treats a white surface as light", () => {
-        expect(isDarkColor("#ffffff")).toBe(false);
+    it("draws the range bars without an outline, so the legend swatch is the fill alone", () => {
+        expect((config().data.datasets[0] as { borderWidth: number }).borderWidth).toBe(0);
     });
 
-    it("treats an unparseable surface as light", () => {
-        expect(isDarkColor("not-a-colour")).toBe(false);
+    it("keeps the band a different colour from the middle line", () => {
+        const [bars, line] = config().data.datasets as { backgroundColor: string; borderColor?: string }[];
+        expect(bars.backgroundColor).not.toBe(line.borderColor);
     });
 
-    it("uses the pale pink, made translucent, on a light surface", () => {
-        expect(rangeFillFor("#ffffff")).toBe("rgba(255, 189, 184, 0.35)");
+    it("draws the middle line in the first series line colour", () => {
+        const line = config().data.datasets[1] as { borderColor: string; pointBackgroundColor: string };
+        expect([line.borderColor, line.pointBackgroundColor]).toEqual(["series-1-line", "series-1-line"]);
     });
 
-    it("uses a lighter pink at low alpha on a dark surface", () => {
-        expect(rangeFillFor("#1b1c20")).toBe("rgba(255, 140, 150, 0.3)");
-    });
-});
-
-describe("Feature: resolving chart colours from theme variables", () => {
-    const vars: Record<string, string> = {
-        "--uui-color-text": " #eee ",
-        "--uui-color-text-alt": "#aaa",
-        "--uui-color-border": "#444",
-        "--uui-color-surface": "#1b1c20",
-        "--uui-color-default-emphasis": "#99f",
-        "--uui-color-current": "#2d42ab",
-    };
-    const resolved = () => resolveTrendColors((name) => vars[name] ?? "");
-
-    it("reads the strong text from --uui-color-text, trimmed", () => {
-        expect(resolved().strongText).toBe("#eee");
+    it("colours the tooltip from the palette surface, text and grid", () => {
+        expect([tooltip().backgroundColor, tooltip().bodyColor, tooltip().titleColor, tooltip().borderColor]).toEqual(["surface", "text", "text", "grid"]);
     });
 
-    it("reads the tick text from --uui-color-text-alt", () => {
-        expect(resolved().text).toBe("#aaa");
-    });
-
-    it("reads the grid from --uui-color-border", () => {
-        expect(resolved().grid).toBe("#444");
-    });
-
-    it("keeps the bars pink even though --uui-color-current is blue", () => {
-        expect(resolved().fill).toBe("rgba(255, 140, 150, 0.3)");
-    });
-
-    it("falls back to light defaults when no variables are set", () => {
-        expect(resolveTrendColors(() => "").fill).toBe("rgba(255, 189, 184, 0.35)");
+    it("colours the y-axis title from the palette text", () => {
+        expect((config().options!.scales!.y as { title: { color: string } }).title.color).toBe("text");
     });
 });
 
-describe("Feature: explicit chart text colours", () => {
-    it("colours the legend labels from the strong text", () => {
-        expect(config().options!.plugins!.legend!.labels!.color).toBe("#111");
+describe("Feature: trend chart keeps the Analytics.UI look", () => {
+    it("keeps the look's axis grid and tick colours", () => {
+        const { x, y } = config().options!.scales as { x: { grid: object; ticks: { color: string } }; y: { grid: object; ticks: { color: string } } };
+        expect([x.grid, x.ticks.color, y.grid, y.ticks.color]).toEqual([{ display: false }, "text", { color: "grid" }, "text"]);
     });
 
-    it("colours the tooltip text from the strong text", () => {
-        expect(tooltip().bodyColor).toBe("#111");
+    it("keeps the look's legend label colour while turning the legend on", () => {
+        expect(config().options!.plugins!.legend!.labels!.color).toBe("text");
     });
 
-    it("colours the tooltip background from the surface", () => {
-        expect(tooltip().backgroundColor).toBe("#fff");
+    it("keeps the look's tooltip font", () => {
+        expect((tooltip() as { titleFont: object }).titleFont).toEqual({ family: "font" });
+    });
+
+    it("enables the tooltip explicitly, as another product may have turned it off", () => {
+        expect(tooltip().enabled).toBe(true);
+    });
+
+    it("tells the axis to label ticks with the local-time bucket label", () => {
+        const ticks = (config().options!.scales!.x as { ticks: { callback: Function } }).ticks;
+        expect(ticks.callback(0)).toBe("1 Oct");
+    });
+});
+
+describe("Feature: withAlpha", () => {
+    it("applies the alpha to an rgb() colour", () => {
+        expect(withAlpha("rgb(1, 2, 3)", 0.5, "x")).toBe("rgba(1, 2, 3, 0.5)");
+    });
+
+    it("applies the alpha to a color(srgb) colour", () => {
+        expect(withAlpha("color(srgb 0.1 0.2 0.3)", 0.5, "x")).toBe("color(srgb 0.1 0.2 0.3 / 0.5)");
+    });
+
+    it("returns the fallback for a colour it can't read", () => {
+        expect(withAlpha("not-a-colour", 0.5, "fallback")).toBe("fallback");
     });
 });
