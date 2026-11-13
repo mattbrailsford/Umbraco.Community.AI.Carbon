@@ -41,6 +41,29 @@ export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriod,
     return granularity === "Hourly" ? `${day}, ${hourFormat().format(date)}` : day;
 }
 
+/** The calendar day of an instant as an ISO date ("2026-10-31"), in `timeZone` (the viewer's when unset). Empty when it isn't a date. */
+export function formatIsoDay(timestamp: string | number | Date, timeZone?: string): string {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("en-CA", { ...(timeZone ? { timeZone } : {}), year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+/**
+ * The index of the bucket that contains `now`, or undefined when none does. Daily: the bucket for today's day in the
+ * zone the days were counted in (`dayTimeZone`, the viewer's when unset). Hourly: the bucket whose hour it is.
+ */
+export function incompleteBucketIndex(labels: readonly string[], granularity: AiUsagePeriod, now: Date, dayTimeZone?: string): number | undefined {
+    const at = now.getTime();
+    const index =
+        granularity === "Hourly"
+            ? labels.findIndex((label) => {
+                  const start = new Date(label).getTime();
+                  return at >= start && at < start + 3_600_000;
+              })
+            : labels.findIndex((label) => formatIsoDay(label, dayTimeZone) === formatIsoDay(now, dayTimeZone));
+    return index < 0 ? undefined : index;
+}
+
 /**
  * One-sentence text description of the series for screen readers: the period, the bucket size and
  * the highest value. Empty when there are no points.

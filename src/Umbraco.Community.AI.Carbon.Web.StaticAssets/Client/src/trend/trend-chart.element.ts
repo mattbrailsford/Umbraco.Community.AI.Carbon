@@ -1,8 +1,8 @@
-import { css, customElement, html, nothing, property, query } from "@umbraco-cms/backoffice/external/lit";
+import { css, customElement, html, nothing, property, query, state } from "@umbraco-cms/backoffice/external/lit";
 import type { PropertyValues } from "@umbraco-cms/backoffice/external/lit";
 import { UmbLitElement } from "@umbraco-cms/backoffice/lit-element";
 import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
-import { UauiPaletteStyles } from "@umbraco/analytics-ui";
+import { UauiPaletteStyles, uauiFormatDateRange } from "@umbraco/analytics-ui";
 import {
     BarController,
     BarElement,
@@ -20,8 +20,10 @@ import {
 } from "@umbraco/analytics-ui/external/chart.js";
 import type { UauiChartColors } from "@umbraco/analytics-ui/external/chart.js";
 import type { AiUsagePeriod, EstimateTimeSeriesPointModel } from "../api/types.gen.js";
-import { buildTrendChartConfig, type TrendChartConfiguration } from "./trend-chart-config.js";
-import { describeTrend } from "./trend-format.js";
+import { buildTrendChartConfig, type TrendChartConfiguration, type TrendIncomplete, type TrendTooltipModel } from "./trend-chart-config.js";
+import "./trend-tooltip.element.js";
+import type { AICarbonTrendTooltipElement } from "./trend-tooltip.element.js";
+import { describeTrend, formatIsoDay, incompleteBucketIndex } from "./trend-format.js";
 
 // The Chart.js copy is shared with Analytics.UI and every other product, so register only what a bar chart with a
 // line on top uses (registering again is harmless) and never change Chart.defaults.
@@ -99,6 +101,7 @@ export class AICarbonTrendChartElement extends UmbLitElement {
 
     override updated(changed: PropertyValues) {
         super.updated(changed);
+        if (changed.has("_tooltip")) void this.#placeTooltip();
         if (!this.points || this.points.length === 0) {
             this.#destroyChart();
             return;
@@ -113,20 +116,89 @@ export class AICarbonTrendChartElement extends UmbLitElement {
         }
     }
 
+    /** Test seam: the current moment, which decides the incomplete bucket. */
+    now: () => Date = () => new Date();
+
+    /** The hovered bucket's tooltip, or none. */
+    @state()
+    private _tooltip?: TrendTooltipModel;
+
+    @query("aicarbon-trend-tooltip")
+    private _tooltipElement?: AICarbonTrendTooltipElement;
+
+    #showTooltip = (tooltip?: TrendTooltipModel) => {
+        const shown = this._tooltip;
+        // Chart.js calls this on every pointer move; only a different tooltip needs a redraw (a data refresh can change the figures under the same bucket).
+        if (shown && tooltip && JSON.stringify(shown) === JSON.stringify(tooltip)) return;
+        this._tooltip = tooltip;
+    };
+
+    /** Puts the tooltip beside the hovered bucket, on the side with room, kept inside the chart (as Analytics.UI's chart does). */
+    async #placeTooltip() {
+        const tip = this._tooltipElement;
+        const canvas = this._canvas;
+        const tooltip = this._tooltip;
+        if (!tip || !canvas || !tooltip) return;
+        await tip.updateComplete;
+        if (this._tooltip !== tooltip || !tip.isConnected) return;
+        const container = tip.offsetParent as HTMLElement | null;
+        if (!container) return;
+        const gap = 14;
+        const { offsetWidth: width, offsetHeight: height } = tip;
+        const x = canvas.offsetLeft + tooltip.x;
+        const y = canvas.offsetTop + tooltip.y;
+        const left = x + gap + width > container.clientWidth ? x - gap - width : x + gap;
+        tip.style.left = `${Math.max(left, 0)}px`;
+        tip.style.top = `${Math.min(Math.max(y - height - 8, 0), Math.max(container.clientHeight - height, 0))}px`;
+        tip.style.visibility = "visible";
+    }
+
+    #incomplete(points: EstimateTimeSeriesPointModel[]): TrendIncomplete | undefined {
+        const from = incompleteBucketIndex(
+            points.map((p) => p.timestamp),
+            this.granularity,
+            this.now(),
+            this.timeZone,
+        );
+        if (from === undefined) return undefined;
+        const hourly = this.granularity === "Hourly";
+        // The same wording as the Usage chart: "(incomplete)", and at hour level "(now, incomplete)" for the hour that is now, where it also draws the now line.
+        return {
+            from,
+            title: (title, isNow) =>
+                isNow
+                    ? (this.localize.termOrDefault("uauiAnalytics_chartNowIncompleteDate", null, title) ?? `${title} (now, incomplete)`)
+                    : (this.localize.termOrDefault("uauiAnalytics_chartIncompleteDate", null, title) ?? `${title} (incomplete)`),
+            nowLabel: hourly ? this.localize.termOrDefault("uauiAnalytics_chartNow", "Now") : undefined,
+        };
+    }
+
+    /** The compared period's date range, as the Usage chart labels its comparison ("Oct 31, 2026 to Nov 6, 2026"). */
+    #comparisonLabel(points: EstimateTimeSeriesPointModel[]): string {
+        const shown = (this.comparePoints ?? []).slice(0, points.length);
+        if (shown.length === 0) return this.localize.termOrDefault("aiCarbon_trend_legendComparison", "Comparison");
+        const zone = this.granularity === "Daily" ? this.timeZone : undefined;
+        return uauiFormatDateRange(this.localize, { from: formatIsoDay(shown[0].timestamp, zone), to: formatIsoDay(shown[shown.length - 1].timestamp, zone) });
+    }
+
     #buildConfig(points: EstimateTimeSeriesPointModel[], colors: UauiChartColors = uauiChartColors(this)): TrendChartConfiguration {
         return buildTrendChartConfig(
             points,
             this.granularity,
             colors,
             uauiChartOptions(this, "bar", colors),
-            (unit) => this.localize.termOrDefault("aiCarbon_trend_axis", "{unit} CO2e").replace("{unit}", unit),
             {
-                range: this.localize.termOrDefault("aiCarbon_trend_legendRange", "Likely range"),
-                middle: this.localize.termOrDefault("aiCarbon_trend_legendMiddle", "Middle estimate"),
-                comparison: this.localize.termOrDefault("aiCarbon_trend_legendComparison", "Comparison"),
+                yAxisTitle: (unit) => this.localize.termOrDefault("aiCarbon_trend_axis", "{unit} CO2e").replace("{unit}", unit),
+                legendLabels: {
+                    range: this.localize.termOrDefault("aiCarbon_trend_legendRange", "Likely range"),
+                    middle: this.localize.termOrDefault("aiCarbon_trend_legendMiddle", "Middle estimate"),
+                    comparison: this.#comparisonLabel(points),
+                },
+                comparePoints: this.comparePoints,
+                dayTimeZone: this.timeZone,
+                incomplete: this.#incomplete(points),
+                onTooltip: this.#showTooltip,
             },
-            this.comparePoints,
-            this.timeZone,
         );
     }
 
@@ -140,6 +212,8 @@ export class AICarbonTrendChartElement extends UmbLitElement {
     }
 
     #destroyChart() {
+        // chart.destroy() does not tell the tooltip handler, so a hovered tooltip would outlive the chart.
+        this._tooltip = undefined;
         this.#stopWatchingTheme?.();
         this.#stopWatchingTheme = undefined;
         this.#chart?.destroy();
@@ -154,6 +228,9 @@ export class AICarbonTrendChartElement extends UmbLitElement {
             <uui-box headline=${t("aiCarbon_trend_headline", "Estimated CO2e Over Time")}>
                 <div class="chart-container" aria-busy=${this.loading ? "true" : "false"}>
                     ${hasPoints && this.loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
+                    ${hasPoints && this._tooltip
+                        ? html`<aicarbon-trend-tooltip style="visibility:hidden" aria-hidden="true" .model=${this._tooltip}></aicarbon-trend-tooltip>`
+                        : nothing}
                     ${hasPoints
                         ? html`<canvas role="img" aria-label=${describeTrend(this.points!, this.granularity, t, this.comparePoints, this.timeZone)}></canvas>`
                         : html`<div class="skeleton" aria-hidden="true"></div>`}

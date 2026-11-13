@@ -1,7 +1,6 @@
-import type { TooltipItem } from "@umbraco/analytics-ui/external/chart.js";
 import { describe, expect, it } from "vitest";
 import { stubColors, uauiChartOptions } from "../test-support/analytics-ui/chart.stub.js";
-import { buildTrendChartConfig, withAlpha, type TrendLegendLabels } from "./trend-chart-config.js";
+import { buildTrendChartConfig, withAlpha, type TrendChartOptions, type TrendIncomplete, type TrendLegendLabels, type TrendTooltipModel } from "./trend-chart-config.js";
 import { formatBucketTitle } from "./trend-format.js";
 
 const colors = stubColors;
@@ -10,7 +9,7 @@ const build = (
     points: Parameters<typeof buildTrendChartConfig>[0],
     yAxisTitle?: (unit: string) => string,
     legendLabels?: TrendLegendLabels,
-) => buildTrendChartConfig(points, "Daily", colors, look, yAxisTitle, legendLabels);
+) => buildTrendChartConfig(points, "Daily", colors, look, { yAxisTitle, legendLabels });
 const yScale = (max: number) =>
     build([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max } }]).options!
         .scales!.y as { suggestedMax?: number };
@@ -31,7 +30,19 @@ const series = [
 ];
 const config = () => build(series);
 const tooltip = () => config().options!.plugins!.tooltip!;
-const itemAt = (dataIndex: number, datasetIndex = 0) => ({ dataIndex, datasetIndex }) as TooltipItem<"bar">;
+
+/** What the chart hands the element's tooltip handler when the pointer is over bucket `dataIndex` (opacity 0 is the pointer leaving). */
+function hover(
+    points: Parameters<typeof buildTrendChartConfig>[0],
+    dataIndex: number,
+    extra: { compare?: TrendChartOptions["comparePoints"]; incomplete?: TrendIncomplete; opacity?: number } = {},
+): TrendTooltipModel | undefined | "not called" {
+    let got: TrendTooltipModel | undefined | "not called" = "not called";
+    const cfg = buildTrendChartConfig(points, "Daily", colors, look, { comparePoints: extra.compare, incomplete: extra.incomplete, onTooltip: (m) => (got = m) });
+    const external = cfg.options!.plugins!.tooltip!.external as Function;
+    external({ tooltip: { opacity: extra.opacity ?? 1, dataPoints: [{ dataIndex }], caretX: 40, caretY: 60 } });
+    return got;
+}
 
 describe("Feature: trend chart datasets", () => {
     it("is a bar chart carrying a line dataset", () => {
@@ -88,39 +99,44 @@ describe("Feature: trend chart legend", () => {
 });
 
 describe("Feature: trend chart tooltip", () => {
-    const callbacks = () => tooltip().callbacks! as { title: Function; label: Function };
-
     it("follows the nearest bucket, not the pointer position", () => {
         expect(config().options!.interaction).toEqual({ mode: "index", intersect: false });
     });
 
-    it("is titled with the bucket time", () => {
-        expect(callbacks().title([itemAt(0)])).toBe("1 Oct 2026");
+    it("is an HTML tooltip: the canvas one is off and the chart hands the bucket on", () => {
+        expect([tooltip().enabled, typeof tooltip().external]).toEqual([false, "function"]);
     });
 
-    it("shows the middle estimate and the range on one line", () => {
-        expect(callbacks().label(itemAt(0))).toBe("≈ 6 g CO2e (4.5–7.5 g CO2e)");
+    it("is titled with the bucket date", () => {
+        expect((hover(series, 0) as TrendTooltipModel).heading).toBe("1 Oct 2026");
     });
 
-    it("shows only the central figure when the range collapses to it", () => {
-        const flat = build([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 3, max: 3 } }]);
-        expect((flat.options!.plugins!.tooltip!.callbacks as { label: Function }).label(itemAt(0))).toBe("3 g CO2e");
+    it("gives the middle estimate and, apart from it, the likely range", () => {
+        expect((hover(series, 0) as TrendTooltipModel).middle).toEqual({ text: "≈ 6 g CO2e", range: "4.5–7.5 g CO2e" });
     });
 
-    it("lists one line per bucket by keeping only the bar dataset", () => {
-        const filter = tooltip().filter as Function;
-        expect([filter(itemAt(0, 0)), filter(itemAt(0, 1))]).toEqual([true, false]);
+    it("gives only the central figure when the range collapses to it", () => {
+        const flat = [{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 3, max: 3 } }];
+        expect((hover(flat, 0) as TrendTooltipModel).middle).toEqual({ text: "3 g CO2e", range: undefined });
     });
 
     it("reads 0 g CO2e for a bucket with no emissions", () => {
-        const zero = build([{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max: 0 } }]);
-        expect((zero.options!.plugins!.tooltip!.callbacks as { label: Function }).label(itemAt(0))).toBe("0 g CO2e");
+        const zero = [{ timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 0, max: 0 } }];
+        expect((hover(zero, 0) as TrendTooltipModel).middle.text).toBe("0 g CO2e");
+    });
+
+    it("passes the bucket's position in the canvas, for placing the tooltip", () => {
+        expect([(hover(series, 0) as TrendTooltipModel).x, (hover(series, 0) as TrendTooltipModel).y]).toEqual([40, 60]);
+    });
+
+    it("hides the tooltip when the pointer leaves", () => {
+        expect(hover(series, 0, { opacity: 0 })).toBeUndefined();
     });
 });
 
 describe("Feature: trend chart colours come from the Analytics.UI palette", () => {
-    it("draws the range bars as the first series bar colour at partial alpha", () => {
-        expect((config().data.datasets[0] as { backgroundColor: string }).backgroundColor).toBe("rgba(10, 20, 30, 0.45)");
+    it("draws the range bars as the neutral (status default) bar colour at partial alpha, not the blue series one", () => {
+        expect((config().data.datasets[0] as { backgroundColor: string }).backgroundColor).toBe("rgba(120, 130, 140, 0.45)");
     });
 
     it("draws the range bars without an outline, so the legend swatch is the fill alone", () => {
@@ -134,11 +150,7 @@ describe("Feature: trend chart colours come from the Analytics.UI palette", () =
 
     it("draws the middle line in the first series line colour", () => {
         const line = config().data.datasets[1] as { borderColor: string; pointBackgroundColor: string };
-        expect([line.borderColor, line.pointBackgroundColor]).toEqual(["series-1-line", "series-1-line"]);
-    });
-
-    it("colours the tooltip from the palette surface, text and grid", () => {
-        expect([tooltip().backgroundColor, tooltip().bodyColor, tooltip().titleColor, tooltip().borderColor]).toEqual(["surface", "text", "text", "grid"]);
+        expect([line.borderColor, line.pointBackgroundColor]).toEqual(["rgb(1, 2, 3)", "rgb(1, 2, 3)"]);
     });
 
     it("colours the y-axis title from the palette text", () => {
@@ -154,14 +166,6 @@ describe("Feature: trend chart keeps the Analytics.UI look", () => {
 
     it("keeps the look's legend label colour while turning the legend on", () => {
         expect(config().options!.plugins!.legend!.labels!.color).toBe("text");
-    });
-
-    it("keeps the look's tooltip font", () => {
-        expect((tooltip() as { titleFont: object }).titleFont).toEqual({ family: "font" });
-    });
-
-    it("enables the tooltip explicitly, as another product may have turned it off", () => {
-        expect(tooltip().enabled).toBe(true);
     });
 
     it("tells the axis to label ticks with the local-time bucket label", () => {
@@ -190,10 +194,9 @@ describe("Feature: trend chart compared with a previous period", () => {
         { timestamp: "2026-09-02T00:00:00Z", co2eGrams: { min: 6, max: 10 } },
     ];
     const withCompare = (points = series, previous = compare, labels?: TrendLegendLabels) =>
-        buildTrendChartConfig(points, "Daily", colors, look, undefined, labels, previous);
+        buildTrendChartConfig(points, "Daily", colors, look, { legendLabels: labels, comparePoints: previous });
     const compareDataset = (cfg = withCompare()) => cfg.data.datasets[2] as unknown as Record<string, unknown>;
-    const cbs = (cfg = withCompare()) => cfg.options!.plugins!.tooltip!.callbacks as { title: Function; label: Function };
-    const filter = (cfg = withCompare()) => cfg.options!.plugins!.tooltip!.filter as Function;
+    const tip = (index: number, previous = compare, points = series) => hover(points, index, { compare: previous }) as TrendTooltipModel;
 
     it("adds no dataset without a comparison", () => {
         expect(build(series).data.datasets).toHaveLength(2);
@@ -246,36 +249,127 @@ describe("Feature: trend chart compared with a previous period", () => {
         expect(withCompare().data.datasets.slice(0, 2)).toEqual(config().data.datasets);
     });
 
-    it("shows the previous period's line in the tooltip where it has a point", () => {
-        expect([filter()(itemAt(1, 2)), filter()(itemAt(1, 1))]).toEqual([true, false]);
+    it("shows the previous period's bucket in the tooltip where it has a point", () => {
+        expect(tip(1).compare).toBeDefined();
     });
 
-    it("shows no previous line where the previous period has no point", () => {
+    it("shows no previous bucket where the previous period has no point", () => {
         const longer = [...series, { timestamp: "2026-10-03T00:00:00Z", co2eGrams: { min: 1, max: 1 } }];
-        expect(filter(withCompare(longer))(itemAt(2, 2))).toBe(false);
+        expect(tip(2, compare, longer).compare).toBeUndefined();
     });
 
-    it("lists the current period's line before the previous period's", () => {
-        const sort = withCompare().options!.plugins!.tooltip!.itemSort as Function;
-        expect([sort(itemAt(0, 2), itemAt(0, 0)) > 0, sort(itemAt(0, 0), itemAt(0, 2)) < 0]).toEqual([true, true]);
+    it("gives the previous bucket its figure, range and own date", () => {
+        expect(tip(0).compare).toMatchObject({ text: "≈ 3 g CO2e", range: "2–4 g CO2e", date: formatBucketTitle(compare[0].timestamp, "Daily") });
     });
 
-    it("gives the previous period's line its own date, name and figure, with the range", () => {
-        expect(cbs().label(itemAt(0, 2))).toBe(`Comparison (${formatBucketTitle(compare[0].timestamp, "Daily")}): ≈ 3 g CO2e (2–4 g CO2e)`);
+    it("gives the two middle estimates for the change badge (current, then previous)", () => {
+        expect([tip(0).compare!.current, tip(0).compare!.previous]).toEqual([6, 3]);
     });
 
-    it("gives the current period's line its figure as before, under the current date", () => {
-        expect([cbs().title([itemAt(0)]), cbs().label(itemAt(0))]).toEqual(["1 Oct 2026", "≈ 6 g CO2e (4.5–7.5 g CO2e)"]);
+    it("keeps the current period's figure and date as without a comparison", () => {
+        expect([tip(0).heading, tip(0).middle]).toEqual(["1 Oct 2026", { text: "≈ 6 g CO2e", range: "4.5–7.5 g CO2e" }]);
     });
 
-    it("reads both periods' dates one by one when the periods differ in length", () => {
-        expect(cbs().label(itemAt(1, 2))).toContain(formatBucketTitle(compare[1].timestamp, "Daily"));
+    it("reads both periods' dates one by one", () => {
+        expect(tip(1).compare!.date).toBe(formatBucketTitle(compare[1].timestamp, "Daily"));
     });
 
     it("picks the axis unit from the larger period, so a bigger previous period is not squashed", () => {
         const big = [{ timestamp: "2026-09-01T00:00:00Z", co2eGrams: { min: 4000, max: 6000 } }];
         const units: string[] = [];
-        buildTrendChartConfig(series, "Daily", colors, look, (unit) => (units.push(unit), unit), undefined, big);
+        buildTrendChartConfig(series, "Daily", colors, look, { yAxisTitle: (unit) => (units.push(unit), unit), comparePoints: big });
         expect(units).toEqual(["kg"]);
+    });
+});
+
+describe("Feature: trend chart legend order and swatches", () => {
+    const compare = [
+        { timestamp: "2026-09-01T00:00:00Z", co2eGrams: { min: 2, max: 4 } },
+        { timestamp: "2026-09-02T00:00:00Z", co2eGrams: { min: 6, max: 10 } },
+    ];
+    const legend = (cfg: ReturnType<typeof build>) =>
+        cfg.options!.plugins!.legend!.labels as {
+            sort: (a: { datasetIndex: number }, b: { datasetIndex: number }) => number;
+            generateLabels: (chart: { data: ReturnType<typeof build>["data"] }) => { text: string; pointStyle: string; lineDash: number[]; datasetIndex: number }[];
+            usePointStyle: boolean;
+        };
+    const withCompare = (labels?: TrendLegendLabels) => buildTrendChartConfig(series, "Daily", colors, look, { legendLabels: labels, comparePoints: compare });
+
+    it("lists Likely range, Middle estimate, then the comparison, though the comparison draws first", () => {
+        const cfg = withCompare({ range: "R", middle: "M", comparison: "1 Sep to 2 Sep" });
+        const items = legend(cfg).generateLabels({ data: cfg.data });
+        expect(items.map((i) => i.text)).toEqual(["R", "M", "1 Sep to 2 Sep"]);
+    });
+
+    it("sorts legend entries by dataset index, not draw order", () => {
+        expect([legend(withCompare()).sort({ datasetIndex: 2 }, { datasetIndex: 0 }) > 0, legend(withCompare()).sort({ datasetIndex: 0 }, { datasetIndex: 2 }) < 0]).toEqual([true, true]);
+    });
+
+    it("still draws the comparison last and the line over the bars", () => {
+        expect(withCompare().data.datasets.map((d) => d.order)).toEqual([2, 1, 0]);
+    });
+
+    it("gives the comparison a dashed line swatch, the middle a solid line and the range a block", () => {
+        const cfg = withCompare();
+        const items = legend(cfg).generateLabels({ data: cfg.data });
+        expect(items.map((i) => [i.pointStyle, i.lineDash])).toEqual([["rect", []], ["line", []], ["line", [5, 4]]]);
+    });
+
+    it("draws swatches as point styles", () => {
+        expect(legend(withCompare()).usePointStyle).toBe(true);
+    });
+});
+
+describe("Feature: trend chart incomplete bucket", () => {
+    const three = [...series, { timestamp: "2026-10-03T00:00:00Z", co2eGrams: { min: 1, max: 3 } }];
+    const incomplete: TrendIncomplete = { from: 2, title: (t: string, isNow: boolean) => `${t} [${isNow ? "now" : "inc"}]` };
+    const withIncomplete = (extra = incomplete) => buildTrendChartConfig(three, "Daily", colors, look, { incomplete: extra });
+    const bars = (cfg = withIncomplete()) => cfg.data.datasets[0] as { backgroundColor: string | string[] };
+    const line = (cfg = withIncomplete()) => cfg.data.datasets[1] as unknown as { borderColor: string; segment?: { borderColor: (ctx: { p1DataIndex: number }) => string | undefined } };
+    const pluginOptions = (cfg = withIncomplete()) => (cfg.options!.plugins as Record<string, { from?: number; hatch?: string; now?: { label: string } }>)["aicarbonIncomplete"];
+
+    it("keeps one colour for every bar when nothing is incomplete", () => {
+        expect(typeof bars(buildTrendChartConfig(three, "Daily", colors, look)).backgroundColor).toBe("string");
+    });
+
+    it("fades the incomplete bar's fill, one colour per bar", () => {
+        expect(bars().backgroundColor).toEqual(["rgba(120, 130, 140, 0.45)", "rgba(120, 130, 140, 0.45)", "rgba(120, 130, 140, 0.225)"]);
+    });
+
+    it("fades the line's last segment only", () => {
+        const segment = line().segment!.borderColor;
+        expect([segment({ p1DataIndex: 1 }), segment({ p1DataIndex: 2 })]).toEqual([undefined, "rgba(1, 2, 3, 0.5)"]);
+    });
+
+    it("hands the plugin the incomplete index and a hatch colour made from the text colour", () => {
+        expect(pluginOptions()).toMatchObject({ from: 2 });
+        expect(pluginOptions().hatch).toBe("rgba(128, 128, 128, 0.1)");
+    });
+
+    it("hands the plugin no index when nothing is incomplete", () => {
+        expect(pluginOptions(buildTrendChartConfig(three, "Daily", colors, look)).from).toBeUndefined();
+    });
+
+    it("draws no now line by day", () => {
+        expect(pluginOptions().now).toBeUndefined();
+    });
+
+    it("draws a now line at the incomplete hour when given a label", () => {
+        expect(pluginOptions(withIncomplete({ ...incomplete, nowLabel: "Now" })).now).toMatchObject({ index: 2, label: "Now" });
+    });
+
+    it("adds the incomplete wording to the title of that bucket and later ones only", () => {
+        const heading = (index: number) => (hover(three, index, { incomplete }) as TrendTooltipModel).heading;
+        expect([heading(1), heading(2)]).toEqual(["2 Oct 2026", "3 Oct 2026 [inc]"]);
+    });
+
+    it("names the now bucket as now only when a now line is drawn, and later buckets as plain incomplete", () => {
+        const heading = (index: number) => (hover(three, index, { incomplete: { ...incomplete, from: 1, nowLabel: "Now" } }) as TrendTooltipModel).heading;
+        expect([heading(1), heading(2)]).toEqual(["2 Oct 2026 [now]", "3 Oct 2026 [inc]"]);
+    });
+
+    it("does not fade or hatch the comparison line", () => {
+        const cfg = buildTrendChartConfig(three, "Daily", colors, look, { comparePoints: series, incomplete });
+        expect((cfg.data.datasets[2] as { segment?: unknown }).segment).toBeUndefined();
     });
 });

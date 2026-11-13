@@ -26,10 +26,11 @@ export const stubColors: ReturnType<typeof Real.uauiChartColors> = {
     compareBar: "compare-bar",
     fontFamily: "font",
     grid: "grid",
-    // Slot 1's bar is a real rgb() so the tests can check the alpha we derive from it.
-    series: [1, 2, 3, 4, 5, 6, 7, 8].map((slot) => (slot === 1 ? { ...shades("series-1"), bar: "rgb(10, 20, 30)" } : shades(`series-${slot}`))),
+    // Slot 1's line is a real rgb() so the tests can check the alpha we derive from it.
+    series: [1, 2, 3, 4, 5, 6, 7, 8].map((slot) => (slot === 1 ? { ...shades("series-1"), line: "rgb(1, 2, 3)" } : shades(`series-${slot}`))),
     status: {
-        default: shades("default"),
+        // The neutral's bar is a real rgb() so the tests can check the alpha we derive from it.
+        default: { ...shades("default"), bar: "rgb(120, 130, 140)" },
         positive: shades("positive"),
         warning: shades("warning"),
         danger: shades("danger"),

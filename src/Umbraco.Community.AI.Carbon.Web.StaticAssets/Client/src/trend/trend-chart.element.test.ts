@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { stubColors } from "../test-support/analytics-ui/chart.stub.js";
 import type { EstimateTimeSeriesPointModel } from "../api/types.gen.js";
+import { formatBucketTitle } from "./trend-format.js";
 import { AICarbonTrendChartElement, type TrendChart } from "./trend-chart.element.js";
 
 const points: EstimateTimeSeriesPointModel[] = [
@@ -120,7 +121,7 @@ describe("Feature: aicarbon-trend-chart theme switching", () => {
         return { ...base, stop, watcher, changeTheme: (colors: typeof stubColors) => onChange!(colors) };
     }
 
-    const darkColors = { ...stubColors, series: stubColors.series.map((s) => ({ ...s, line: "dark-line", fill: "dark-fill", bar: "rgb(200, 210, 220)" })) };
+    const darkColors = { ...stubColors, status: { ...stubColors.status, default: { ...stubColors.status.default, bar: "rgb(200, 210, 220)" } } };
     const barFill = (chart: TrendChart) => (chart.data.datasets[0] as { backgroundColor: string }).backgroundColor;
 
     it("watches the chart's theme once it is created", async () => {
@@ -233,10 +234,192 @@ describe("Feature: aicarbon-trend-chart loading", () => {
         element.comparePoints = compare;
         await element.updateComplete;
         expect(factory).toHaveBeenCalledTimes(1);
-        expect(chart.data.datasets.map((d) => d.label)).toEqual(["Likely range", "Middle estimate", "Comparison"]);
+        expect(chart.data.datasets.map((d) => d.label)).toEqual(["Likely range", "Middle estimate", "2026-09-01 - 2026-09-01"]);
         element.comparePoints = undefined;
         await element.updateComplete;
         expect(chart.data.datasets).toHaveLength(2);
+        element.remove();
+    });
+});
+
+describe("Feature: aicarbon-trend-chart incomplete bucket, comparison label and plugin", () => {
+    type Config = { plugins?: { id: string }[]; data: { datasets: { label: string; backgroundColor: unknown }[] }; options: { plugins: Record<string, { from?: number; now?: { label: string } }> } };
+    const configOf = (factory: ReturnType<typeof setup>["factory"]) => (factory.mock.calls[0] as unknown as [HTMLCanvasElement, Config])[1];
+    /** Plays the pointer arriving over a bucket, as Chart.js would call the tooltip's external handler. */
+    const hoverBucket = (factory: ReturnType<typeof setup>["factory"], dataIndex: number) => {
+        const external = (configOf(factory).options.plugins["tooltip"] as unknown as { external: Function }).external;
+        external({ tooltip: { opacity: 1, dataPoints: [{ dataIndex }], caretX: 10 + dataIndex, caretY: 20 } });
+    };
+    const days = [
+        { timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 1, max: 3 } },
+        { timestamp: "2026-10-02T00:00:00Z", co2eGrams: { min: 1, max: 3 } },
+    ];
+
+    it("passes the chart its own incomplete plugin, and registers nothing globally", async () => {
+        const { element, factory } = setup();
+        element.points = points;
+        await mount(element);
+        expect(configOf(factory).plugins!.map((p) => p.id)).toEqual(["aicarbonIncomplete"]);
+        element.remove();
+    });
+
+    it("marks today's day, in the estimate's zone, as the incomplete bucket", async () => {
+        const { element, factory } = setup();
+        element.now = () => new Date("2026-10-02T10:00:00Z");
+        element.timeZone = "UTC";
+        element.points = days;
+        await mount(element);
+        expect(configOf(factory).options.plugins["aicarbonIncomplete"].from).toBe(1);
+        element.remove();
+    });
+
+    it("uses the estimate's zone, not the browser's, to find today", async () => {
+        const { element, factory } = setup();
+        // 2 October 05:00 UTC is still 1 October in Honolulu (UTC-10), whose days start at 10:00 UTC; read in UTC it would be the second day.
+        element.now = () => new Date("2026-10-02T05:00:00Z");
+        element.timeZone = "Pacific/Honolulu";
+        element.points = [
+            { timestamp: "2026-10-01T10:00:00Z", co2eGrams: { min: 1, max: 3 } },
+            { timestamp: "2026-10-02T10:00:00Z", co2eGrams: { min: 1, max: 3 } },
+        ];
+        await mount(element);
+        expect(configOf(factory).options.plugins["aicarbonIncomplete"].from).toBe(0);
+        element.remove();
+    });
+
+    it("marks nothing incomplete when the range is in the past", async () => {
+        const { element, factory } = setup();
+        element.now = () => new Date("2026-11-20T10:00:00Z");
+        element.points = days;
+        await mount(element);
+        expect(configOf(factory).options.plugins["aicarbonIncomplete"].from).toBeUndefined();
+        element.remove();
+    });
+
+    it("fades the incomplete bar and draws no now line by day", async () => {
+        const { element, factory } = setup();
+        element.now = () => new Date("2026-10-02T10:00:00Z");
+        element.timeZone = "UTC";
+        element.points = days;
+        await mount(element);
+        const config = configOf(factory);
+        expect([Array.isArray(config.data.datasets[0].backgroundColor), config.options.plugins["aicarbonIncomplete"].now]).toEqual([true, undefined]);
+        element.remove();
+    });
+
+    it("marks the current hour at Hourly and draws the now line there", async () => {
+        const { element, factory } = setup();
+        element.granularity = "Hourly";
+        element.now = () => new Date("2026-10-02T10:30:00Z");
+        element.points = [
+            { timestamp: "2026-10-02T09:00:00Z", co2eGrams: { min: 1, max: 3 } },
+            { timestamp: "2026-10-02T10:00:00Z", co2eGrams: { min: 1, max: 3 } },
+        ];
+        await mount(element);
+        expect(configOf(factory).options.plugins["aicarbonIncomplete"]).toMatchObject({ from: 1, now: { label: expect.any(String) } });
+        element.remove();
+    });
+
+    it("words the incomplete tooltip title as Analytics.UI does", async () => {
+        const { element, factory } = setup();
+        element.now = () => new Date("2026-10-02T10:00:00Z");
+        element.timeZone = "UTC";
+        element.points = days;
+        await mount(element);
+        hoverBucket(factory, 1);
+        // No translations are registered here, so this is the fallback text: the date must still be in it.
+        expect(element["_tooltip"]!.heading).toBe("2 Oct 2026 (incomplete)");
+        element.remove();
+    });
+
+    it("names only the current hour as now at Hourly, and the hours after it as incomplete", async () => {
+        const { element, factory } = setup();
+        element.granularity = "Hourly";
+        element.now = () => new Date("2026-10-02T10:30:00Z");
+        element.points = [
+            { timestamp: "2026-10-02T10:00:00Z", co2eGrams: { min: 1, max: 3 } },
+            { timestamp: "2026-10-02T11:00:00Z", co2eGrams: { min: 1, max: 3 } },
+        ];
+        await mount(element);
+        const heading = (dataIndex: number) => {
+            hoverBucket(factory, dataIndex);
+            return element["_tooltip"]!.heading;
+        };
+        // No translations are registered here, so these are the fallback texts: the date must still be in them.
+        expect([heading(0), heading(1)]).toEqual([
+            `${formatBucketTitle("2026-10-02T10:00:00Z", "Hourly")} (now, incomplete)`,
+            `${formatBucketTitle("2026-10-02T11:00:00Z", "Hourly")} (incomplete)`,
+        ]);
+        element.remove();
+    });
+
+    it("labels the comparison in the legend with its own date range", async () => {
+        const { element, factory } = setup();
+        element.points = days;
+        element.timeZone = "UTC";
+        element.comparePoints = [
+            { timestamp: "2026-09-30T00:00:00Z", co2eGrams: { min: 1, max: 3 } },
+            { timestamp: "2026-10-01T00:00:00Z", co2eGrams: { min: 1, max: 3 } },
+        ];
+        await mount(element);
+        expect(configOf(factory).data.datasets[2].label).toBe("2026-09-30 - 2026-10-01");
+        element.remove();
+    });
+
+    it("renders the hovered bucket in the tooltip element, and removes it when the pointer leaves", async () => {
+        const { element, factory } = setup();
+        element.points = days;
+        await mount(element);
+        hoverBucket(factory, 0);
+        await element.updateComplete;
+        const shown = element.shadowRoot!.querySelector("aicarbon-trend-tooltip") as unknown as { model: { heading: string } } | null;
+        const heading = shown?.model.heading;
+        const external = (configOf(factory).options.plugins["tooltip"] as unknown as { external: Function }).external;
+        external({ tooltip: { opacity: 0, dataPoints: [], caretX: 0, caretY: 0 } });
+        await element.updateComplete;
+        expect([heading, element.shadowRoot!.querySelector("aicarbon-trend-tooltip")]).toEqual(["1 Oct 2026", null]);
+        element.remove();
+    });
+
+    it("keeps the tooltip out of the accessibility tree: the canvas carries the summary", async () => {
+        const { element, factory } = setup();
+        element.points = days;
+        await mount(element);
+        hoverBucket(factory, 0);
+        await element.updateComplete;
+        expect(element.shadowRoot!.querySelector("aicarbon-trend-tooltip")!.getAttribute("aria-hidden")).toBe("true");
+        element.remove();
+    });
+
+    it("drops a hovered tooltip when the chart is destroyed, so it is not there when the element comes back", async () => {
+        const { element, factory } = setup();
+        element.points = days;
+        await mount(element);
+        hoverBucket(factory, 0);
+        await element.updateComplete;
+        element.remove();
+        document.body.appendChild(element);
+        await element.updateComplete;
+        expect(element.shadowRoot!.querySelector("aicarbon-trend-tooltip")).toBeNull();
+        element.remove();
+    });
+
+    it("redraws the tooltip when a data refresh changes its figures under the same bucket", async () => {
+        const { element, chart } = setup();
+        element.points = days;
+        await mount(element);
+        // The chart keeps one options object, which the element replaces on a refresh; hover through its current handler.
+        const hover = () =>
+            (chart.options!.plugins!.tooltip as unknown as { external: Function }).external({ tooltip: { opacity: 1, dataPoints: [{ dataIndex: 0 }], caretX: 10, caretY: 20 } });
+        // The stand-in chart gets its options from the first refresh.
+        element.points = days.map((d) => ({ ...d }));
+        await element.updateComplete;
+        hover();
+        const before = element["_tooltip"]!.middle.text;
+        element.points = days.map((d) => ({ ...d, co2eGrams: { min: 10, max: 30 } }));
+        await element.updateComplete;
+        hover();
+        expect([before, element["_tooltip"]!.middle.text]).toEqual(["≈ 2 g CO2e", "≈ 20 g CO2e"]);
         element.remove();
     });
 });
