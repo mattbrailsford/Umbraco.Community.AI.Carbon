@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localDayStart, localIsoDate, windowForDateRange } from "./date-range-window.js";
+import { browserTimeZone, localDayStart, localIsoDate, windowForDateRange } from "./date-range-window.js";
 
 const CPH = "Europe/Copenhagen";
 const iso = (date: Date) => date.toISOString();
@@ -26,6 +26,16 @@ describe("Feature: request window for a date range picked in Umbraco.AI's header
                 to: "2026-11-10T23:00:00.000Z",
                 granularity: "Hourly",
             });
+        });
+    });
+
+    describe("Scenario: the window carries its time zone", () => {
+        it("names the zone the day edges are in", () => {
+            expect(windowForDateRange({ from: "2026-11-04", to: "2026-11-10" }, "America/New_York").timeZone).toBe("America/New_York");
+        });
+
+        it("defaults to the browser's zone", () => {
+            expect(windowForDateRange({ from: "2026-11-04", to: "2026-11-10" }).timeZone).toBe(browserTimeZone());
         });
     });
 

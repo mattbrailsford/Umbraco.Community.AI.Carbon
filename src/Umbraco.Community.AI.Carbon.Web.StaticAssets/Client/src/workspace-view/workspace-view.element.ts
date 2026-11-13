@@ -118,8 +118,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this._loading = true;
         // A retry starts from a clean slate; figures already on screen stay until replaced, while the chart and tables show a loading bar.
         this._error = undefined;
-        const { from, to, granularity } = windowForDateRange(this._dateRange.range);
-        const { data, error } = await this.loader({ from, to, granularity }, abortController.signal);
+        const { data, error } = await this.loader(windowForDateRange(this._dateRange.range), abortController.signal);
 
         // A newer load, or leaving the tab, supersedes this one.
         if (abortController.signal.aborted) return;

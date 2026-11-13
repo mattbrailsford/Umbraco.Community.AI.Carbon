@@ -9,6 +9,8 @@ export interface AICarbonEstimateRequest {
     to: Date;
     /** Omit to let the server pick; `windowForDateRange` always supplies it. */
     granularity?: AiUsagePeriod;
+    /** The viewer's IANA time zone: Daily buckets are the days of this zone. `windowForDateRange` supplies it. */
+    timeZone: string;
 }
 
 export interface AICarbonEstimateResult {
@@ -25,14 +27,14 @@ export class AICarbonEstimateServerDataSource {
     }
 
     async requestEstimate(
-        { from, to, granularity }: AICarbonEstimateRequest,
+        { from, to, granularity, timeZone }: AICarbonEstimateRequest,
         signal?: AbortSignal,
     ): Promise<AICarbonEstimateResult> {
         // Notifications are off: the view owns the error and forbidden states (with Retry).
         const { data, error } = await tryExecute(
             this.#host,
             EstimateService.getEstimate({
-                query: { from: from.toISOString(), to: to.toISOString(), granularity },
+                query: { from: from.toISOString(), to: to.toISOString(), granularity, timeZone },
                 signal,
             }),
             { disableNotifications: true, abortSignal: signal },

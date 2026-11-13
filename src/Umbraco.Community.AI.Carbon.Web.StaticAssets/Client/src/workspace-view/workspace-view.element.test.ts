@@ -377,6 +377,13 @@ describe("Feature: CO2 tab states", () => {
             expect(to.getTime() - from.getTime()).toBeLessThanOrEqual(7 * 24 * 3_600_000 + 3_600_000);
         });
 
+        it("sends the browser's time zone with the window", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), lastWeek);
+            await flush(element);
+            expect(requests.map((r) => r.timeZone)).toEqual([Intl.DateTimeFormat().resolvedOptions().timeZone]);
+        });
+
         it("loads hourly for a one-day range", async () => {
             const requests: AICarbonEstimateRequest[] = [];
             const { element } = await renderIn(

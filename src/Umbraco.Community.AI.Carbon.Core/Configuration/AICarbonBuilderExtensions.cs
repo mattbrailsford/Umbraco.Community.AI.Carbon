@@ -42,6 +42,8 @@ public static class AICarbonBuilderExtensions
         // IAIUsageAnalyticsService as a singleton too, so nothing scoped is captured.
         builder.Services.AddSingleton<ICarbonFactorCalculator, CarbonFactorCalculator>();
         builder.Services.AddSingleton<ModelFactorResolver>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<AICarbonUsageReader>();
         builder.Services.AddSingleton<AICarbonFeatureSplitter>();
 
         // The calculating service is registered as its own type; the public interface is the cached decorator over it.

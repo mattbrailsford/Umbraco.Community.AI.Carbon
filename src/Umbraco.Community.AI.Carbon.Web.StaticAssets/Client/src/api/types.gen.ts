@@ -104,6 +104,7 @@ export type GetEstimateData = {
         from: string;
         to: string;
         granularity?: AiUsagePeriod;
+        timeZone?: string;
     };
     url: '/umbraco/ai-carbon/management/api/v1/estimate';
 };

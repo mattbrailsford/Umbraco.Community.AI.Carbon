@@ -3,21 +3,19 @@ import { formatCo2eRange } from "../estimate/format-co2.js";
 import type { LocalizeWithDefault } from "../estimate/warning-text.js";
 
 /*
- * Hourly buckets are shown in the viewer's local time zone. The API's buckets are UTC hour starts,
- * which are real instants, so they convert cleanly. Daily buckets are UTC calendar days, so their
- * date is formatted in UTC: converting midnight UTC would show the previous or next date in zones
- * west or east of UTC. Formatters are built per call so they follow the zone in force at that moment.
+ * Buckets are shown in the viewer's local time zone. Hourly buckets are UTC hour starts and Daily buckets
+ * are the start of a local day (the request sends the viewer's zone), so both are real instants that convert
+ * cleanly. Formatters are built per call so they follow the zone in force at that moment.
  */
 
 const LOCALE = "en-GB";
 
-/** Date part. Daily buckets are UTC days (format in UTC); hourly buckets use the viewer's zone. */
-function dateFormat(granularity: AiUsagePeriod, withYear: boolean): Intl.DateTimeFormat {
+/** Date part, in the viewer's zone. */
+function dateFormat(withYear: boolean): Intl.DateTimeFormat {
     return new Intl.DateTimeFormat(LOCALE, {
         day: "numeric",
         month: "short",
         ...(withYear ? { year: "numeric" } : {}),
-        ...(granularity === "Hourly" ? {} : { timeZone: "UTC" }),
     });
 }
 
@@ -29,7 +27,7 @@ function hourFormat(): Intl.DateTimeFormat {
 export function formatBucketLabel(timestamp: string, granularity: AiUsagePeriod): string {
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
-    const day = dateFormat(granularity, false).format(date);
+    const day = dateFormat(false).format(date);
     return granularity === "Hourly" ? `${day} ${hourFormat().format(date)}` : day;
 }
 
@@ -37,7 +35,7 @@ export function formatBucketLabel(timestamp: string, granularity: AiUsagePeriod)
 export function formatBucketTitle(timestamp: string, granularity: AiUsagePeriod): string {
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
-    const day = dateFormat(granularity, true).format(date);
+    const day = dateFormat(true).format(date);
     return granularity === "Hourly" ? `${day}, ${hourFormat().format(date)}` : day;
 }
 

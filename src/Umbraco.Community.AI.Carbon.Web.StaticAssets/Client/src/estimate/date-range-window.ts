@@ -10,6 +10,8 @@ export interface EstimateWindow {
     from: Date;
     to: Date;
     granularity: AiUsagePeriod;
+    /** The zone the window's day edges are in, which the server needs to count Daily buckets on the same days. */
+    timeZone: string;
 }
 
 /** The longest range, in days, that gets hourly buckets. Same rule as Umbraco.AI's group-by options for a range. */
@@ -72,14 +74,15 @@ const inclusiveDays = ({ from, to }: LocalDateRange): number => Math.round((utcM
 /**
  * The request window for a range picked in Umbraco.AI's header: from the start of the first local day up to, and
  * not including, the start of the day after the last one. For Hourly ranges that is exactly the window Umbraco.AI's
- * Usage tab reads (`AIUsageOverviewService`), so the figures cover the same requests. For Daily ranges the server
- * builds its buckets from Umbraco.AI's UTC daily rows, so the day edges follow UTC days, not the viewer's, until the
- * server takes the viewer's time zone. Ranges of two days or fewer get hourly buckets, longer ones daily.
+ * Usage tab reads (`AIUsageOverviewService`). Daily ranges send the same window plus the zone, and the server
+ * counts its daily buckets on that zone's local days the way the Usage tab does, so the figures cover the same
+ * requests there too. Ranges of two days or fewer get hourly buckets, longer ones daily.
  */
 export function windowForDateRange(range: LocalDateRange, timeZone: string = browserTimeZone()): EstimateWindow {
     return {
         from: localDayStart(range.from, timeZone),
         to: localDayStart(addDays(range.to, 1), timeZone),
         granularity: inclusiveDays(range) <= MAX_HOURLY_DAYS ? "Hourly" : "Daily",
+        timeZone,
     };
 }

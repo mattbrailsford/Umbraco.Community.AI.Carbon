@@ -48,7 +48,7 @@ const createChart: TrendChartFactory = (canvas, config) => {
 /**
  * The estimated CO2e trend: floating bars for each bucket's likely range (min to max) with a line through the middle estimate. Renders from the
  * `points` and `granularity` properties; it never fetches. Does nothing without points, unless `loading` (the empty
- * page state belongs to the view). Hourly times are shown in the viewer's local zone; daily buckets are UTC days (see trend-format.ts).
+ * page state belongs to the view). Times and days are shown in the viewer's local zone (see trend-format.ts).
  */
 @customElement("aicarbon-trend-chart")
 export class AICarbonTrendChartElement extends UmbLitElement {

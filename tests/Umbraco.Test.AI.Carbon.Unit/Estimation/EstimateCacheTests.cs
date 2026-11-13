@@ -29,11 +29,11 @@ public class EstimateCacheTests
 
         public int Calls { get; private set; }
 
-        public Task<AICarbonEstimate> GetEstimateAsync(DateTime from, DateTime to, AIUsagePeriod? granularity, CancellationToken cancellationToken = default)
+        public Task<AICarbonEstimate> GetEstimateAsync(DateTime from, DateTime to, AIUsagePeriod? granularity, TimeZoneInfo? timeZone, CancellationToken cancellationToken = default)
         {
             Calls++;
             cancellationToken.ThrowIfCancellationRequested();
-            return _real.GetEstimateAsync(from, to, granularity, cancellationToken);
+            return _real.GetEstimateAsync(from, to, granularity, timeZone, cancellationToken);
         }
     }
 
@@ -62,13 +62,13 @@ public class EstimateCacheTests
                 carbonMonitor,
                 NullLogger<ModelFactorResolver>.Instance);
 
-            Inner = new CountingEstimateService(new AICarbonEstimateService(usage, analyticsMonitor, data, factors, new AICarbonFeatureSplitter(usage), carbonMonitor));
+            Inner = new CountingEstimateService(new AICarbonEstimateService(new AICarbonUsageReader(usage, analyticsMonitor, TimeProvider.System), analyticsMonitor, data, factors, new AICarbonFeatureSplitter(new AICarbonUsageReader(usage, analyticsMonitor, TimeProvider.System)), carbonMonitor));
             Cache = new CachedAICarbonEstimateService(Inner, new ObjectCacheAppCache(), analyticsMonitor, factors, carbonMonitor, duration ?? CachedAICarbonEstimateService.Duration);
         }
 
         public CountingEstimateService Inner { get; }
 
-        public CachedAICarbonEstimateService Cache { get; }
+        public IAICarbonEstimateService Cache { get; }
 
         public string? ZoneOverride { set => _carbonOptions.ElectricityZone = value; }
 
@@ -164,6 +164,32 @@ public class EstimateCacheTests
             await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), AIUsagePeriod.Daily);
 
             Assert.That(_harness.Inner.Calls, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task AnotherTimeZoneComputesAgainForDailyBuckets()
+        {
+            await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), AIUsagePeriod.Daily, TimeZoneInfo.FindSystemTimeZoneById("Europe/Copenhagen"));
+            await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), AIUsagePeriod.Daily, TimeZoneInfo.FindSystemTimeZoneById("America/New_York"));
+
+            Assert.That(_harness.Inner.Calls, Is.EqualTo(3));
+        }
+
+        [Test]
+        public async Task TheSameTimeZoneSharesTheEntryForDailyBuckets()
+        {
+            await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), AIUsagePeriod.Daily, TimeZoneInfo.FindSystemTimeZoneById("Europe/Copenhagen"));
+            await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), AIUsagePeriod.Daily, TimeZoneInfo.FindSystemTimeZoneById("Europe/Copenhagen"));
+
+            Assert.That(_harness.Inner.Calls, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task TheTimeZoneDoesNotSplitHourlyEntries()
+        {
+            await _harness.Cache.GetEstimateAsync(From, From.AddDays(7), AIUsagePeriod.Hourly, TimeZoneInfo.FindSystemTimeZoneById("America/New_York"));
+
+            Assert.That(_harness.Inner.Calls, Is.EqualTo(1));
         }
 
         [Test]

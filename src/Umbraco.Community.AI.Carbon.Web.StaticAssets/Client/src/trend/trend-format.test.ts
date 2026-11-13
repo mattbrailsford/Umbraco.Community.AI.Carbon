@@ -33,9 +33,14 @@ describe("Feature: trend chart formatting", () => {
             expect(formatBucketLabel("2026-10-07T12:00:00Z", "Hourly")).toBe("7 Oct 14:00");
         });
 
-        it("keeps the UTC date for Daily buckets west of UTC", () => {
+        it("shows the local date of a Daily bucket west of UTC", () => {
             env.TZ = "America/New_York";
-            expect(formatBucketLabel("2026-10-07T00:00:00Z", "Daily")).toBe("7 Oct");
+            expect(formatBucketLabel("2026-10-07T04:00:00Z", "Daily")).toBe("7 Oct");
+        });
+
+        it("shows the local date of a Daily bucket east of UTC", () => {
+            env.TZ = "Europe/Copenhagen";
+            expect(formatBucketLabel("2026-10-06T22:00:00Z", "Daily")).toBe("7 Oct");
         });
 
         it("hands back text it cannot read as a date", () => {
@@ -50,6 +55,11 @@ describe("Feature: trend chart formatting", () => {
 
         it("shows the full date and the hour for Hourly buckets", () => {
             expect(formatBucketTitle("2026-10-01T14:00:00Z", "Hourly")).toBe("1 Oct 2026, 14:00");
+        });
+
+        it("shows the local date of a Daily bucket in the full heading", () => {
+            env.TZ = "Europe/Copenhagen";
+            expect(formatBucketTitle("2026-10-06T22:00:00Z", "Daily")).toBe("7 Oct 2026");
         });
 
         it("has no UTC suffix for Hourly buckets in a local zone", () => {

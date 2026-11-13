@@ -14,6 +14,7 @@ const request = {
     from: new Date("2026-10-05T15:00:00Z"),
     to: new Date("2026-10-06T15:00:00Z"),
     granularity: "Hourly" as const,
+    timeZone: "Europe/Copenhagen",
 };
 
 describe("Feature: requesting an estimate", () => {
@@ -34,11 +35,16 @@ describe("Feature: requesting an estimate", () => {
         it("returns the data", async () => expect((await repository.requestEstimate(request)).data).toBe(payload));
         it("returns no error", async () => expect((await repository.requestEstimate(request)).error).toBeUndefined());
 
-        it("sends the window as ISO timestamps with the granularity", async () => {
+        it("sends the window as ISO timestamps with the granularity and the time zone", async () => {
             await repository.requestEstimate(request);
             expect(getEstimate).toHaveBeenCalledWith({
                 signal: undefined,
-                query: { from: "2026-10-05T15:00:00.000Z", to: "2026-10-06T15:00:00.000Z", granularity: "Hourly" },
+                query: {
+                    from: "2026-10-05T15:00:00.000Z",
+                    to: "2026-10-06T15:00:00.000Z",
+                    granularity: "Hourly",
+                    timeZone: "Europe/Copenhagen",
+                },
             });
         });
     });

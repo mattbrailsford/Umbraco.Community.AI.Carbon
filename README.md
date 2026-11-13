@@ -117,7 +117,7 @@ public class MyGatewayResolver(IEcoLogitsDataRepository data) : IAICarbonModelRe
 
 `Insert<T>()` puts your resolver before `ConfiguredMappingResolver`, so it beats `ModelMappings` in appsettings. If appsettings should win, use `InsertAfter<ConfiguredMappingResolver, MyGatewayResolver>()` instead. `Append<T>()` and `Remove<T>()` are available too.
 
-To change the calculation itself, register your own with `builder.Services.AddUnique<IAICarbonEstimateService, MyService>()` (from `Umbraco.Extensions`). It replaces the built-in service and its cache.
+To change the calculation itself, register your own with `builder.Services.AddUnique<IAICarbonEstimateService, MyService>()` (from `Umbraco.Extensions`). It replaces the built-in service and its cache. Custom implementations must implement the new `GetEstimateAsync` overload, the one taking `TimeZoneInfo? timeZone` (the older signature is now a default method that calls it with `null`). The estimate endpoint always passes the viewer's time zone, so a replacement receives it and decides how to bucket Daily estimates.
 
 ## Development
 
