@@ -4,7 +4,7 @@
 
 Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. It follows the date range you pick in the Analytics header, including its comparison with an earlier period. Each energy and CO2e figure leads with a rounded middle estimate (≈) and shows the low-to-high range under it.
 
-![The CO2 tab in Umbraco.AI Analytics for the last 30 days compared with the previous period: estimated CO2e and energy tiles with change badges, an everyday comparison, a daily chart with likely-range bars, a middle-estimate line and a dashed comparison line, and tables by model and by feature](https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/HEAD/docs/images/co2-dashboard.png)
+![The CO2 tab in Umbraco.AI Analytics for the last 30 days compared with the previous period: estimated CO2e and energy tiles with change badges, an everyday comparison, a daily chart with a grey likely-range band, a blue middle-estimate line and a dashed comparison line, tables by model and by feature with share bars, and a footnote on what the estimate covers](https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/HEAD/docs/images/co2-dashboard.png)
 
 *Screenshot uses sample data.*
 
@@ -40,13 +40,13 @@ The tab has no range picker of its own. It uses the date range in the Analytics 
 
 ## What the dashboard shows
 
-- **Header:** says the figures cover the AI provider side of chat requests only, not your own servers, database or hosting. The info icon opens the "How is this calculated?" panel.
+- **Scope note:** a footnote under the tables says the figures cover the AI provider side of chat requests only, not your own servers, database or hosting. Its "How is this calculated?" link opens the method panel. The info icon in the chart's header opens the same panel.
 - **Tiles:** estimated CO2e, estimated energy, requests estimated, and how many models could not be estimated.
 - **Comparison:** with the header's comparison on, the CO2e and energy tiles and the CO2e column in both tables show how much the figure changed against the compared period (a fall is the good direction). The chart adds a dashed line for the compared period.
 - **Everyday comparison** (on by default, see `ShowEquivalents`): the top of the estimate as something familiar, for example "Up to about the same as charging a phone 13 times".
-- **CO2e over time:** a bar for each hour or day showing the likely range, with a line for the middle estimate. Hover a point to see its figures.
-- **By model:** each model Umbraco.AI used, the EcoLogits model it was matched to, the electricity zone, requests, output tokens and estimated CO2e. Models that can't be estimated say so, with the reason. You can sort the columns, search by model name and page through the rows.
-- **By feature:** the same estimate split by agents, prompts, inline chat and other uses. You can sort and page it.
+- **CO2e over time:** a grey band for each hour or day showing the likely range, with a blue line for the middle estimate. Hover a point to see its figures and, with comparison on, the change. The hour or day still in progress is hatched and faded. On an hourly range, a "Now" line marks the current hour.
+- **By model:** each model Umbraco.AI used, the EcoLogits model it was matched to, the electricity zone, requests (with a share bar), output tokens and estimated CO2e. Models that can't be estimated say so, with the reason. You can sort the columns, search by model name and page through the rows.
+- **By feature:** the same estimate split by agents, prompts, inline chat and other uses, with a share bar for requests. You can sort and page it.
 
 While figures load, the tab shows placeholders. A range with no usage shows an empty message. If the estimate cannot be loaded, it shows an error with a **Retry** button.
 
