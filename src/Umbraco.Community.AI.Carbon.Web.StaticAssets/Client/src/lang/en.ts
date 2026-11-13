@@ -31,6 +31,7 @@ export default {
         byFeature_requests: "Requests",
         byFeature_co2e: "Estimated CO2e",
         byFeature_switchedOff: "Feature breakdown is switched off in Umbraco.AI analytics settings.",
+        byFeature_switchedOffHint: "Turn on the feature type breakdown in the Umbraco.AI analytics settings to see this.",
         feature_agent: "Agents",
         feature_prompt: "Prompts",
         "feature_inline-chat": "Inline chat",

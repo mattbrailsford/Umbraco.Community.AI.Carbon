@@ -6,5 +6,6 @@ export * from "./format-co2.js";
 export * from "./format-count.js";
 export * from "./format-equivalent.js";
 export * from "./no-value.js";
+export * from "./range-midpoint.js";
 export * from "./trend-dataset.js";
 export * from "./warning-text.js";
