@@ -17,9 +17,15 @@ internal static class EstimateRequestValidator
     /// <param name="from">The requested start.</param>
     /// <param name="to">The requested end.</param>
     /// <param name="granularity">The requested bucket size, if any.</param>
+    /// <param name="timeZone">The requested IANA time zone name, if any.</param>
     /// <returns>The problem, or <c>null</c>.</returns>
-    public static EstimateRequestProblem? Validate(DateTime from, DateTime to, AIUsagePeriod? granularity)
+    public static EstimateRequestProblem? Validate(DateTime from, DateTime to, AIUsagePeriod? granularity, string? timeZone = null)
     {
+        if (!TryFindTimeZone(timeZone, out _))
+        {
+            return new EstimateRequestProblem("timeZone", "The time zone must be an IANA time zone name, such as Europe/Copenhagen.");
+        }
+
         if (granularity is { } requested && !Enum.IsDefined(requested))
         {
             return new EstimateRequestProblem("granularity", "Granularity must be Hourly or Daily.");
@@ -53,6 +59,16 @@ internal static class EstimateRequestValidator
         }
 
         return null;
+    }
+
+    /// <summary>Finds a time zone by its IANA name; <c>null</c>, empty or white space means none (UTC days), and the name is trimmed.</summary>
+    /// <param name="name">The requested name.</param>
+    /// <param name="timeZone">The zone, or <c>null</c> when none was asked for.</param>
+    /// <returns><c>false</c> when a name was given that is not a known zone.</returns>
+    public static bool TryFindTimeZone(string? name, out TimeZoneInfo? timeZone)
+    {
+        timeZone = null;
+        return string.IsNullOrWhiteSpace(name) || TimeZoneInfo.TryFindSystemTimeZoneById(name.Trim(), out timeZone);
     }
 }
 

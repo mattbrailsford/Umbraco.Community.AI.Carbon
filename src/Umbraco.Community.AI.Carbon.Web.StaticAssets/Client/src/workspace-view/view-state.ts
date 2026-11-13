@@ -6,7 +6,7 @@ export interface ViewStateInput {
     estimate?: Pick<EstimateResponseModel, "total" | "notEstimated"> & {
         method: Pick<EstimateResponseModel["method"], "analyticsEnabled">;
     };
-    /** Accepted for symmetry with the view's state; a reload keeps its figures, so it doesn't change the body. */
+    /** Accepted for symmetry with the view's state; a reload keeps its figures (each part shows its own loading), so it doesn't change the body. */
     loading?: boolean;
     /** HTTP status of the failed request; pass 0 when it failed without one (e.g. offline). */
     errorStatus?: number;

@@ -6,6 +6,8 @@ export interface AICarbonEstimateError {
     message: string;
     /** True when the request was cancelled by the caller; drop the result instead of showing an error. */
     isAborted: boolean;
+    /** The request fields the server rejected (lower-case), from a validation problem's `errors`. */
+    invalidFields: string[];
 }
 
 export const toAICarbonEstimateError = (error: unknown, signal?: AbortSignal): AICarbonEstimateError => {
@@ -14,12 +16,15 @@ export const toAICarbonEstimateError = (error: unknown, signal?: AbortSignal): A
         name?: unknown;
         message?: unknown;
         title?: unknown;
-        problemDetails?: { status?: unknown };
+        problemDetails?: { status?: unknown; errors?: unknown };
+        errors?: unknown;
     };
     const rawStatus = candidate.status ?? candidate.problemDetails?.status;
     const status = typeof rawStatus === "number" && rawStatus > 0 ? rawStatus : undefined;
     const rawMessage = candidate.message ?? candidate.title;
+    const errors = candidate.errors ?? candidate.problemDetails?.errors;
     return {
+        invalidFields: errors && typeof errors === "object" ? Object.keys(errors).map((field) => field.toLowerCase()) : [],
         status,
         isForbidden: status === 403,
         isAborted: signal?.aborted === true || candidate.name === "AbortError",

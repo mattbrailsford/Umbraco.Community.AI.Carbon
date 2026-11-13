@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EstimateModelRowModel } from "../api/types.gen.js";
 import { AICarbonModelTableElement } from "./model-table.element.js";
 
@@ -13,81 +13,169 @@ const row = (overrides: Partial<EstimateModelRowModel>): EstimateModelRowModel =
     ...overrides,
 });
 
-async function render(rows?: EstimateModelRowModel[]) {
+async function render(rows?: EstimateModelRowModel[], compareRows?: EstimateModelRowModel[]) {
     const element = new AICarbonModelTableElement();
     element.rows = rows;
+    element.compareRows = compareRows;
     document.body.appendChild(element);
     await element.updateComplete;
-    return element;
+    // `uaui-data-table` is not registered in tests, so its properties are read straight off the element.
+    const table = element.shadowRoot!.querySelector("uaui-data-table") as
+        | (Element & { columns: Array<{ label: string }>; rows: Array<{ modelId: string }>; compareRows: Array<{ modelId: string; usage: string; co2eMid?: number; requests: number }>; sort: unknown })
+        | null;
+    return { element, table };
 }
 
 describe("Feature: aicarbon-model-table element", () => {
-    it("renders nothing without rows", async () => {
-        const element = await render([]);
-        expect(element.shadowRoot!.querySelector("uui-table")).toBeNull();
-        element.remove();
+    afterEach(() => {
+        document.body.innerHTML = "";
     });
 
-    it("renders one row per model, in order", async () => {
-        const element = await render([
+    it("renders nothing without rows", async () => {
+        const { element, table } = await render([]);
+        expect(table).toBeNull();
+        expect(element.shadowRoot!.querySelector("uui-box")).toBeNull();
+    });
+
+    it("passes one row per model, in order, keyed by row-key", async () => {
+        const { table } = await render([
             row({ modelId: "a" }),
             row({ modelId: "b", status: "UnknownModel", co2eGrams: null }),
             row({ modelId: "c", status: "UnsupportedCapability", co2eGrams: null }),
         ]);
-        const rows = [...element.shadowRoot!.querySelectorAll("uui-table-row")];
-        expect(rows.map((r) => r.querySelector(".model-id")!.textContent)).toEqual(["a", "b", "c"]);
-        element.remove();
+        expect(table!.rows.map((r) => r.modelId)).toEqual(["a", "b", "c"]);
+        expect((table as unknown as { rowKey: string[] }).rowKey).toEqual(["providerId", "modelId", "usage"]);
     });
 
-    it("has no Status column", async () => {
-        const element = await render([row({})]);
-        const heads = [...element.shadowRoot!.querySelectorAll("uui-table-head-cell")].map((h) => h.textContent!.trim());
-        expect(heads).toEqual(["Model", "Matched As", "Zone", "Requests", "Output Tokens", "Estimated CO2e"]);
-        expect(element.shadowRoot!.querySelector("uui-tag")).toBeNull();
-        element.remove();
-    });
-
-    it("shows an estimated row's central figure with its range on a second line", async () => {
-        const element = await render([row({ co2eGrams: { min: 48, max: 72 } })]);
-        const cell = element.shadowRoot!.querySelector(".co2e")!;
-        expect([cell.querySelector(".central")!.textContent, cell.querySelector(".range")!.textContent]).toEqual([
-            "≈ 60 g CO2e",
-            "48–72 g CO2e",
+    it("passes the columns, with no Status column", async () => {
+        const { table } = await render([row({})]);
+        expect(table!.columns.map((c) => c.label)).toEqual([
+            "Model",
+            "Matched As",
+            "Zone",
+            "Requests",
+            "Output Tokens",
+            "Estimated CO2e",
         ]);
-        element.remove();
     });
 
-    it.each([
-        ["UnknownModel", "Unknown model \u2014 EcoLogits doesn't know this model."],
-        ["UnsupportedCapability", "Not supported \u2014 only chat (text generation) is estimated."],
-    ] as const)("shows %s rows as Not estimated with the reason as tooltip and assistive text", async (status, reason) => {
-        const element = await render([row({ status, co2eGrams: null })]);
-        const cell = element.shadowRoot!.querySelector(".co2e")!;
-        const label = cell.querySelector(".not-estimated")!;
-        expect(label.textContent!.trim()).toBe("Not estimated");
-        expect(label.getAttribute("title")).toBe(reason);
-        expect(cell.querySelector(".sr-only")!.textContent).toBe(reason);
-        element.remove();
+    it("starts sorted by the CO2e midpoint, biggest first", async () => {
+        const { table } = await render([row({})]);
+        expect(table!.sort).toEqual({ key: "co2eMid", direction: "desc" });
     });
 
-    it("puts the warning icon in the CO2e cell", async () => {
-        const element = await render([row({ warnings: ["model-arch-not-released"] })]);
-        expect(element.shadowRoot!.querySelector(".co2e .warnings")).not.toBeNull();
-        element.remove();
+    it("puts the search field in the first column's toolbar cell, so it lines up with the column's text", async () => {
+        const { table } = await render([row({})]);
+        const field = table!.querySelector("uaui-search-field")!;
+        expect(field.getAttribute("slot")).toBe("toolbar-start");
+        expect(field.parentElement).toBe(table);
     });
 
-    it("shows a warning icon only for rows with warnings, with plain-English text", async () => {
-        const element = await render([row({ modelId: "a" }), row({ modelId: "b", warnings: ["model-arch-not-released"] })]);
-        const icons = element.shadowRoot!.querySelectorAll(".warnings");
-        expect(icons).toHaveLength(1);
-        expect(icons[0].getAttribute("title")).toMatch(/size isn.t published.*wide/i);
-        expect(icons[0].closest("uui-table-row")!.querySelector(".model-id")!.textContent).toBe("b");
-        element.remove();
+    it("gives the By Model box an h3 heading, as the Usage boxes have", async () => {
+        const { element } = await render([row({})]);
+        expect(element.shadowRoot!.querySelector("uui-box")!.getAttribute("headline-variant")).toBe("h3");
     });
 
-    it("renders model ids as text, not markup", async () => {
-        const element = await render([row({ modelId: "<img src=x onerror=alert(1)>" })]);
-        expect(element.shadowRoot!.querySelector("img")).toBeNull();
-        element.remove();
+    it("keeps the By Model heading", async () => {
+        const { element } = await render([row({})]);
+        expect(element.shadowRoot!.querySelector("uui-box")!.getAttribute("headline")).toBe("By Model");
+    });
+
+    it("keeps the same row array when it re-renders without new rows", async () => {
+        const { element, table } = await render([row({})]);
+        const first = table!.rows;
+        element.requestUpdate();
+        await element.updateComplete;
+        expect(element.shadowRoot!.querySelector<Element & { rows: unknown }>("uaui-data-table")!.rows).toBe(first);
+    });
+
+    it("shows new header labels when the language or translations change, without a new row array", async () => {
+        const { element, table } = await render([row({})]);
+        const rows = table!.rows;
+        const columns = table!.columns;
+        vi.spyOn(element.localize, "termOrDefault").mockImplementation(((key: string, fallback?: string) =>
+            key === "aiCarbon_byModel_model" ? "Modell" : (fallback ?? key)) as never);
+        element.requestUpdate();
+        await element.updateComplete;
+        const after = element.shadowRoot!.querySelector("uaui-data-table") as typeof table;
+        expect(after!.columns[0].label).toBe("Modell");
+        expect(after!.columns).not.toBe(columns);
+        expect(after!.rows).toBe(rows);
+    });
+
+    it("keeps the same column array when the labels have not changed", async () => {
+        const { element, table } = await render([row({})]);
+        const columns = table!.columns;
+        element.requestUpdate();
+        await element.updateComplete;
+        expect(element.shadowRoot!.querySelector<Element & { columns: unknown }>("uaui-data-table")!.columns).toBe(columns);
+    });
+
+    describe("Scenario: loading", () => {
+        async function renderLoading(rows?: EstimateModelRowModel[]) {
+            const element = new AICarbonModelTableElement();
+            element.rows = rows;
+            element.loading = true;
+            document.body.appendChild(element);
+            await element.updateComplete;
+            return element.shadowRoot!.querySelector("uaui-data-table") as (Element & { columns: unknown[]; rows: unknown[] }) | null;
+        }
+
+        it("first load: shows the table, with its columns and no rows, loading", async () => {
+            const table = await renderLoading(undefined);
+            expect(table!.hasAttribute("loading")).toBe(true);
+            expect([table!.columns.length, table!.rows]).toEqual([6, []]);
+        });
+
+        it("keeps the heading while loading, so the box does not jump", async () => {
+            const table = await renderLoading(undefined);
+            expect(table!.closest("uui-box")!.getAttribute("headline")).toBe("By Model");
+        });
+
+        it("reload: keeps the rows and sets loading", async () => {
+            const table = await renderLoading([row({})]);
+            expect([table!.hasAttribute("loading"), table!.rows.length]).toEqual([true, 1]);
+        });
+
+        it("is not loading by default", async () => {
+            const { table } = await render([row({})]);
+            expect(table!.hasAttribute("loading")).toBe(false);
+        });
+    });
+});
+
+describe("Feature: aicarbon-model-table compared with a previous period", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    it("passes the compared rows with only their key and CO2e midpoint, so Requests and Output Tokens get no badge", async () => {
+        const { table } = await render([row({ modelId: "a" })], [row({ modelId: "a", co2eGrams: { min: 2, max: 4 }, requests: 7 })]);
+        expect(table!.compareRows).toEqual([{ providerId: "openai", modelId: "a", usage: "chat", co2eMid: 3 }]);
+    });
+
+    it("passes no compared rows without a comparison", async () => {
+        const { table } = await render([row({})]);
+        expect(table!.compareRows).toEqual([]);
+    });
+
+    it("gives the CO2e column a fall-is-good compare badge", async () => {
+        const { table } = await render([row({})], []);
+        const columns = (table as unknown as { columns: Array<{ key: string; meta?: { lowerIsBetter?: boolean } }> }).columns;
+        expect(columns.find((c) => c.key === "co2eMid")!.meta).toEqual({ lowerIsBetter: true });
+    });
+
+    it("leaves the requests column neutral, so a change in requests is neither good nor bad", async () => {
+        const { table } = await render([row({})], []);
+        const columns = (table as unknown as { columns: Array<{ key: string; meta?: unknown }> }).columns;
+        expect(columns.find((c) => c.key === "requests")!.meta).toBeUndefined();
+    });
+
+    it("keeps the compared rows when the rows change but the comparison does not", async () => {
+        const { element, table } = await render([row({ modelId: "a" })], [row({ modelId: "a" })]);
+        const before = table!.compareRows;
+        element.rows = [row({ modelId: "b" })];
+        await element.updateComplete;
+        expect(table!.compareRows).toBe(before);
     });
 });

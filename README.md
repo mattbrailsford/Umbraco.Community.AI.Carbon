@@ -2,9 +2,9 @@
 
 > 🧪 **Beta.** Available on [NuGet](https://www.nuget.org/packages/Umbraco.Community.AI.Carbon) as a prerelease. Settings, wording and public types may still change before 1.0. Feedback is welcome in [GitHub issues](https://github.com/mattbrailsford/Umbraco.Community.AI.Carbon/issues).
 
-Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. Each energy and CO2e figure leads with a rounded middle estimate (≈) and shows the low-to-high range under it.
+Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbraco.AI). It reads the usage Umbraco.AI already records and shows the estimated energy and CO2e (carbon dioxide equivalent) of your text generation, by model, by feature and over time. It follows the date range you pick in the Analytics header, including its comparison with an earlier period. Each energy and CO2e figure leads with a rounded middle estimate (≈) and shows the low-to-high range under it.
 
-![The CO2 tab in Umbraco.AI Analytics: estimated CO2e and energy cards, an everyday comparison, an hourly chart with likely-range bars and a middle-estimate line, and tables by model and by feature](https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/HEAD/docs/images/co2-dashboard.png)
+![The CO2 tab in Umbraco.AI Analytics for the last 30 days compared with the previous period: estimated CO2e and energy tiles with change badges, an everyday comparison, a daily chart with a grey likely-range band, a blue middle-estimate line and a dashed comparison line, tables by model and by feature with share bars, and a footnote on what the estimate covers](https://raw.githubusercontent.com/mattbrailsford/Umbraco.Community.AI.Carbon/HEAD/docs/images/co2-dashboard.png)
 
 *Screenshot uses sample data.*
 
@@ -12,18 +12,19 @@ Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbra
 
 ## Requirements
 
-- Umbraco CMS 18
-- Umbraco.AI 18 (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `18.x`)
+- Umbraco CMS 19 on .NET 11
+- Umbraco.AI 19.0.0-rc.1 or later (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `19.x`)
 - Umbraco.AI usage analytics switched on. They are on by default (`Umbraco:AI:Analytics:Enabled`). The "By feature" split also needs `Umbraco:AI:Analytics:IncludeUsageFeatureTypeDimension`, which is on by default too.
 
 Each Umbraco major has its own version line of this package, which depends on the matching Umbraco CMS and Umbraco.AI major:
 
 | Umbraco CMS | Umbraco.AI | Package | Branch |
 |-------------|------------|---------|--------|
+| 19 | 19.x (19.0.0-rc.1 or later) | 19.x | `v19/dev` |
 | 18 | 18.x | 18.x | `v18/dev` |
 | 17 (17.4.0 or later) | 17.x | 17.x | `v17/dev` |
 
-This is the Umbraco CMS 18 line.
+This is the Umbraco CMS 19 line.
 
 ## Install
 
@@ -31,20 +32,25 @@ This is the Umbraco CMS 18 line.
 dotnet add package Umbraco.Community.AI.Carbon --prerelease
 ```
 
-NuGet picks the version line that matches your Umbraco CMS major (`18.x` for CMS 18, `17.x` for CMS 17).
+NuGet picks the version line that matches your Umbraco CMS major (`19.x` for CMS 19, `18.x` for CMS 18, `17.x` for CMS 17).
 
-Open the **AI** section, then **Analytics**, then the **CO2** tab. Anyone who can open the AI section can see it. The dashboard offers the last 24 hours, 7 days or 30 days.
+Open the **AI** section, then **Analytics**, then the **CO2** tab. Anyone who can open the AI section can see it.
+
+The tab has no range picker of its own. It uses the date range in the Analytics header, the same one the Usage tab uses. Pick a preset (today, yesterday, last 7 or 30 days, this month, last month, last year). Turn on comparison in the header to compare with an earlier period. The chart shows one point per hour for a range of one or two days, and one per day for anything longer. Days are your own local days, as on the Usage tab.
 
 ## What the dashboard shows
 
-- **Header:** says the figures cover the AI provider side of chat requests only, not your own servers, database or hosting. The info icon opens the "How is this calculated?" panel.
-- **Cards:** estimated CO2e, estimated energy, requests estimated, and how many models could not be estimated.
+- **Scope note:** a footnote under the tables says the figures cover the AI provider side of chat requests only, not your own servers, database or hosting. Its "How is this calculated?" link opens the method panel. The info icon in the chart's header opens the same panel.
+- **Tiles:** estimated CO2e, estimated energy, requests estimated, and how many models could not be estimated.
+- **Comparison:** with the header's comparison on, the CO2e and energy tiles and the CO2e column in both tables show how much the figure changed against the compared period (a fall is the good direction). The chart adds a dashed line for the compared period.
 - **Everyday comparison** (on by default, see `ShowEquivalents`): the top of the estimate as something familiar, for example "Up to about the same as charging a phone 13 times".
-- **CO2e over time:** a bar for each hour or day showing the likely range, with a line for the middle estimate. Hover a point to see its figures.
-- **By model:** each model Umbraco.AI used, the EcoLogits model it was matched to, the electricity zone, requests, output tokens and estimated CO2e. Models that can't be estimated say so, with the reason.
-- **By feature:** the same estimate split by agents, prompts, inline chat and other uses.
+- **CO2e over time:** a grey band for each hour or day showing the likely range, with a blue line for the middle estimate. Hover a point to see its figures and, with comparison on, the change. The hour or day still in progress is hatched and faded. On an hourly range, a "Now" line marks the current hour.
+- **By model:** each model Umbraco.AI used, the EcoLogits model it was matched to, the electricity zone, requests (with a share bar), output tokens and estimated CO2e. Models that can't be estimated say so, with the reason. You can sort the columns, search by model name and page through the rows.
+- **By feature:** the same estimate split by agents, prompts, inline chat and other uses, with a share bar for requests. You can sort and page it.
 
-The dashboard follows the backoffice light and dark themes.
+While figures load, the tab shows placeholders. A range with no usage shows an empty message. If the estimate cannot be loaded, it shows an error with a **Retry** button.
+
+The dashboard is built on Umbraco.Analytics.UI, so it looks like the rest of Analytics and follows the backoffice light and dark themes.
 
 ## Configuration
 
@@ -85,9 +91,9 @@ Things to know:
 
 - Closed models do not publish their size, so it is estimated and the range is wide.
 - EcoLogits normally limits the modelled generation time to how long a request took. Umbraco.AI does not record that, so the limit is not applied. This can only make the estimate higher, not lower.
-- A window of up to 93 days can use hourly points, and up to about 5 years (1,830 days) can use daily points. The dashboard only asks for 24 hours, 7 days and 30 days. Umbraco.AI keeps hourly data for 30 days by default (up to 90), so the 93-day hourly limit does not mean the data is there.
+- The estimate endpoint accepts a window of up to 93 days for hourly points, and up to about 5 years (1,830 days) for daily points. The dashboard asks for hourly points only for ranges of one or two days. Umbraco.AI keeps hourly data for 30 days by default (up to 90), so older days come from its daily totals.
 - Estimates are cached for 5 minutes on each server.
-- The 30-day range (daily points) can miss today's usage if Umbraco.AI has not yet rolled the hours up into days.
+- Daily points count the viewer's local days, as Umbraco.AI's Usage tab does. The endpoint takes an optional `timeZone` query parameter (an IANA name such as `Europe/Copenhagen`). Without it, days are UTC days.
 
 ## Extending
 
@@ -117,7 +123,7 @@ public class MyGatewayResolver(IEcoLogitsDataRepository data) : IAICarbonModelRe
 
 `Insert<T>()` puts your resolver before `ConfiguredMappingResolver`, so it beats `ModelMappings` in appsettings. If appsettings should win, use `InsertAfter<ConfiguredMappingResolver, MyGatewayResolver>()` instead. `Append<T>()` and `Remove<T>()` are available too.
 
-To change the calculation itself, register your own with `builder.Services.AddUnique<IAICarbonEstimateService, MyService>()` (from `Umbraco.Extensions`). It replaces the built-in service and its cache.
+To change the calculation itself, register your own with `builder.Services.AddUnique<IAICarbonEstimateService, MyService>()` (from `Umbraco.Extensions`). It replaces the built-in service and its cache. A custom implementation must add the `GetEstimateAsync` overload that takes `TimeZoneInfo? timeZone`, or it will not compile. The older signature is now a default method that calls the new one with `null`, so you do not need to implement it. The dashboard sends the viewer's time zone to the estimate endpoint, and the endpoint passes it on, so a replacement receives it and decides how to count Daily buckets (`null` means UTC days).
 
 ## Development
 
@@ -133,13 +139,13 @@ Create the demo site (gitignored, under `demos/`) with `scripts/install-demo-sit
 
 ## Releasing
 
-Package versions track the Umbraco CMS major: this line (`v18/*` branches) ships `18.x`, the v17 line ships `17.x`, under the same package ids. Each line is released from its own `vN/main` branch.
+Package versions track the Umbraco CMS major: this line (`v19/*` branches) ships `19.x`, the v18 line ships `18.x`, the v17 line ships `17.x`, under the same package ids. Each line is released from its own `vN/main` branch.
 
 To cut a release:
 
-1. Set `version` in `version.json` on `vN/dev` (for example `18.0.0-beta.1` or `18.0.0`). Use dotted prerelease identifiers only (`-beta.1`, never `-beta1`).
+1. Set `version` in `version.json` on `vN/dev` (for example `19.0.0-rc.1` or `19.0.0`). Use dotted prerelease identifiers only (`-beta.1`, never `-beta1`).
 2. Merge `vN/dev` into `vN/main`.
-3. Create a GitHub Release with the tag `vN.x.y` (for example `v18.0.0-beta.1`), targeting `vN/main`, with hand-written release notes. The tagged commit must be on `vN/main`; the release workflow checks this and fails otherwise. Tick "pre-release" for prerelease versions. Publishing the release triggers `.github/workflows/release.yml`.
+3. Create a GitHub Release with the tag `vN.x.y` (for example `v19.0.0-rc.1`), targeting `vN/main`, with hand-written release notes. The tagged commit must be on `vN/main`; the release workflow checks this and fails otherwise. Tick "pre-release" for prerelease versions. Publishing the release triggers `.github/workflows/release.yml`.
 
 The workflow first checks that the tag matches the computed package version, the CMS major of the branch, and that the tagged commit is on `vN/main`. It then builds the frontend and the solution, runs the frontend and .NET tests, packs, and, in a separate publish job that has no access to the build steps, pushes to nuget.org using **Trusted Publishing** (OIDC). No long-lived API key is stored in the repo. Pull requests and pushes to `vN/dev` run the same build and tests (frontend and .NET) through `.github/workflows/ci.yml`, without packing or publishing.
 
@@ -152,7 +158,7 @@ One-time setup:
 
 ### Keeping EcoLogits data current
 
-`.github/workflows/ecologits-sync.yml` runs every Monday (and on demand from the Actions tab, optionally with a `tag` input) and checks the latest [EcoLogits release](https://github.com/mlco2/ecologits/releases). If it is newer than the pinned version (`DataVersion` in `EcoLogitsDataRepository.cs`), it opens one PR per version line (`v18/dev` and `v17/dev`) on a branch like `v18/chore/ecologits-x.y.z`. The PR updates the embedded data files and every reference to the version, using `scripts/bump-ecologits-version.sh <tag>`, which you can also run by hand. The PR body says whether the upstream files we hand-ported to C# changed (with a diff). Those ports and their header tags are never updated automatically.
+`.github/workflows/ecologits-sync.yml` runs every Monday (and on demand from the Actions tab, optionally with a `tag` input) and checks the latest [EcoLogits release](https://github.com/mlco2/ecologits/releases). If it is newer than the pinned version (`DataVersion` in `EcoLogitsDataRepository.cs`), it opens one PR per version line (`v19/dev`, `v18/dev` and `v17/dev`) on a branch like `v19/chore/ecologits-x.y.z`. The PR updates the embedded data files and every reference to the version, using `scripts/bump-ecologits-version.sh <tag>`, which you can also run by hand. The PR body says whether the upstream files we hand-ported to C# changed (with a diff). Those ports and their header tags are never updated automatically.
 
 - The workflow needs an `ECOLOGITS_SYNC_TOKEN` repo secret to open PRs: a fine-grained personal access token for this repo with Contents and Pull requests set to read and write. This repo has "Allow GitHub Actions to create and approve pull requests" turned off, so the default `GITHUB_TOKEN` cannot open them. PRs opened with this token also get CI. Fine-grained tokens expire, so renew the token before it does, or the weekly run will start failing.
 - Alternative without a token: tick Settings > Actions > General > Workflow permissions > "Allow GitHub Actions to create and approve pull requests". PRs then open, but CI does not run on them (PRs from `GITHUB_TOKEN` do not start other workflows). Push an empty commit or close and reopen the PR to trigger CI.

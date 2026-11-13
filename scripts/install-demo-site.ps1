@@ -39,7 +39,7 @@ if ($Force) {
     if (Test-Path $localSln) { Remove-Item -Force $localSln }
 }
 
-$cleanVersion = switch ($versionMajor) { '17' { '7.*' } '18' { '8.*' } default { '' } }
+$cleanVersion = switch ($versionMajor) { '17' { '7.*' } '18' { '8.*' } '19' { '19.*-*' } default { '' } }
 
 if (-not $SkipTemplateInstall) {
     Write-Host "Installing Umbraco.Templates ($templateVersion)..."
@@ -78,7 +78,7 @@ if ($cleanVersion) {
 Pop-Location
 
 Write-Host "Adding Umbraco.AI (v$versionMajor.*)..."
-dotnet add "$demoSiteDir/Umbraco.Community.AI.Carbon.DemoSite.csproj" package Umbraco.AI --version "$versionMajor.*"
+dotnet add "$demoSiteDir/Umbraco.Community.AI.Carbon.DemoSite.csproj" package Umbraco.AI --version "$versionMajor.*-*"
 Write-Host "Adding project reference to Umbraco.Community.AI.Carbon..."
 dotnet add "$demoSiteDir/Umbraco.Community.AI.Carbon.DemoSite.csproj" reference `
     "src/Umbraco.Community.AI.Carbon/Umbraco.Community.AI.Carbon.csproj"

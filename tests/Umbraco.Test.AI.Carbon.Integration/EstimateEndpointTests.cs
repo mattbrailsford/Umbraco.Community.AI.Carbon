@@ -76,7 +76,7 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
             .Build();
 
         await new RunAIMigrationNotificationHandler(configuration, NullLogger<RunAIMigrationNotificationHandler>.Instance)
-            .HandleAsync(new UmbracoApplicationStartedNotification(isRestarting: false), CancellationToken.None);
+            .HandleAsync(new PostRuntimePremigrationsUpgradeNotification(), CancellationToken.None);
     }
 
     [Test]
@@ -135,6 +135,39 @@ public class EstimateEndpointTests : ManagementApiTest<BackOfficeController>
     {
         var response = await GetAsAdminAsync($"from={From:O}&to={From.AddDays(1):O}&granularity=Weekly");
         Assert.That(await ErrorFieldsAsync(response), Does.Contain("granularity"));
+    }
+
+    [Test]
+    public async Task ReturnsBadRequestWhenTheTimeZoneIsNotKnown()
+    {
+        var response = await GetAsAdminAsync($"from={From:O}&to={From.AddDays(1):O}&timeZone=Mars/Olympus_Mons");
+        Assert.That(await ErrorFieldsAsync(response), Does.Contain("timezone"));
+    }
+
+    [Test]
+    public async Task AcceptsAnIanaTimeZone()
+    {
+        var response = await GetAsAdminAsync($"from={From:O}&to={From.AddDays(1):O}&timeZone=Europe/Copenhagen");
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+    }
+
+    // Local 5 to 7 October in Copenhagen (UTC+2) is 4 October 22:00Z up to 7 October 22:00Z.
+    [Test]
+    public async Task StartsDailyTimeSeriesPointsAtLocalMidnightWhenATimeZoneIsGiven()
+    {
+        var json = await GetJsonAsAdminAsync("from=2026-10-04T22:00:00Z&to=2026-10-07T22:00:00Z&granularity=Daily&timeZone=Europe/Copenhagen");
+        Assert.That(
+            json.RootElement.GetProperty("timeSeries").EnumerateArray().Select(point => point.GetProperty("timestamp").GetString()),
+            Is.EqualTo(new[] { "2026-10-04T22:00:00Z", "2026-10-05T22:00:00Z", "2026-10-06T22:00:00Z" }));
+    }
+
+    [Test]
+    public async Task KeepsUtcDaysWhenNoTimeZoneIsGiven()
+    {
+        var json = await GetJsonAsAdminAsync("from=2026-10-05T00:00:00Z&to=2026-10-08T00:00:00Z&granularity=Daily");
+        Assert.That(
+            json.RootElement.GetProperty("timeSeries").EnumerateArray().Select(point => point.GetProperty("timestamp").GetString()),
+            Is.EqualTo(new[] { "2026-10-05T00:00:00Z", "2026-10-06T00:00:00Z", "2026-10-07T00:00:00Z" }));
     }
 
     [Test]

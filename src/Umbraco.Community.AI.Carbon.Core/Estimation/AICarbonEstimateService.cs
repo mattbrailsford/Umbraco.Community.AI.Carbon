@@ -10,7 +10,7 @@ namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 /// <inheritdoc />
 internal sealed class AICarbonEstimateService : IAICarbonEstimateService
 {
-    private readonly IAIUsageAnalyticsService _usage;
+    private readonly AICarbonUsageReader _usage;
     private readonly IOptionsMonitor<AIAnalyticsOptions> _analyticsOptions;
     private readonly IEcoLogitsDataRepository _data;
     private readonly ModelFactorResolver _factors;
@@ -26,14 +26,14 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         IReadOnlyList<AICarbonTimeSeriesPoint> Buckets);
 
     /// <summary>Initializes a new instance of the <see cref="AICarbonEstimateService"/> class.</summary>
-    /// <param name="usage">Umbraco.AI's usage analytics.</param>
+    /// <param name="usage">Reads Umbraco.AI's usage analytics, as local days where the request has a zone.</param>
     /// <param name="analyticsOptions">Umbraco.AI's analytics options.</param>
     /// <param name="data">The EcoLogits reference data.</param>
     /// <param name="factors">Finds the carbon factor for a model.</param>
     /// <param name="featureSplitter">Builds the split by feature type.</param>
     /// <param name="carbonOptions">This package's options, read on every estimate.</param>
     public AICarbonEstimateService(
-        IAIUsageAnalyticsService usage,
+        AICarbonUsageReader usage,
         IOptionsMonitor<AIAnalyticsOptions> analyticsOptions,
         IEcoLogitsDataRepository data,
         ModelFactorResolver factors,
@@ -53,6 +53,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         DateTime from,
         DateTime to,
         AIUsagePeriod? granularity,
+        TimeZoneInfo? timeZone,
         CancellationToken cancellationToken = default)
     {
         from = AICarbonEstimateWindow.ToUtc(from);
@@ -75,22 +76,21 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         // Read once so a configuration reload mid-estimate cannot mix zones within one result.
         var zoneOverride = _factors.GetZoneOverride();
 
+        // The reads are planned once, so every figure of the estimate covers the same window.
+        var window = await _usage.CreateWindowAsync(from, to, bucket, timeZone, cancellationToken).ConfigureAwait(false);
+
         var rows = analyticsEnabled
-            ? await GetModelRowsAsync(from, to, bucket, zoneOverride, cancellationToken).ConfigureAwait(false)
+            ? await GetModelRowsAsync(window, zoneOverride, cancellationToken).ConfigureAwait(false)
             : [];
 
-        return await BuildEstimateAsync(from, to, bucket, analyticsEnabled, zoneOverride, rows, cancellationToken).ConfigureAwait(false);
+        return await BuildEstimateAsync(window, analyticsEnabled, zoneOverride, rows, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<List<ModelRow>> GetModelRowsAsync(
-        DateTime from, DateTime to, AIUsagePeriod bucket, string? zoneOverride, CancellationToken ct)
+        AICarbonUsageReader.Window window, string? zoneOverride, CancellationToken ct)
     {
-        // Umbraco.AI's analytics service runs on EF scopes that are not safe for concurrent use, so every
-        // call below is awaited one after another.
-        var providers = (await _usage.GetBreakdownByProviderAsync(from, to, bucket, ct).ConfigureAwait(false))
-            .Select(item => item.Dimension).Distinct(StringComparer.Ordinal).ToList();
-        var models = (await _usage.GetBreakdownByModelAsync(from, to, bucket, ct).ConfigureAwait(false))
-            .Select(item => item.Dimension).Distinct(StringComparer.Ordinal).ToList();
+        var providers = await _usage.GetProviderIdsAsync(window, ct).ConfigureAwait(false);
+        var models = await _usage.GetModelIdsAsync(window, ct).ConfigureAwait(false);
 
         var factorCache = new Dictionary<string, ModelFactorLookup>(StringComparer.Ordinal);
         var rows = new List<ModelRow>();
@@ -100,7 +100,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         {
             foreach (var modelId in models)
             {
-                rows.AddRange(await EstimatePairAsync(providerId, modelId, from, to, bucket, zoneOverride, factorCache, ct).ConfigureAwait(false));
+                rows.AddRange(await EstimatePairAsync(providerId, modelId, window, zoneOverride, factorCache, ct).ConfigureAwait(false));
             }
         }
 
@@ -114,16 +114,14 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
     private async Task<IReadOnlyList<ModelRow>> EstimatePairAsync(
         string providerId,
         string modelId,
-        DateTime from,
-        DateTime to,
-        AIUsagePeriod bucket,
+        AICarbonUsageReader.Window window,
         string? zoneOverride,
         Dictionary<string, ModelFactorLookup> factorCache,
         CancellationToken ct)
     {
         var allFilter = new AIUsageFilter { ProviderId = providerId, ModelId = modelId };
-        var all = await _usage.GetSummaryAsync(from, to, bucket, allFilter, ct).ConfigureAwait(false);
-        if (all.TotalRequests == 0)
+        var all = await _usage.GetTotalsAsync(window, allFilter, ct).ConfigureAwait(false);
+        if (all.Requests == 0)
         {
             return [];
         }
@@ -132,9 +130,9 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         // reads (with live data for the current period in between), so only the buckets are guaranteed to add up
         // to the per-model total, and through it to the grand total.
         var chatFilter = new AIUsageFilter { ProviderId = providerId, ModelId = modelId, Capability = AICapability.Chat };
-        var chatBuckets = (await _usage.GetTimeSeriesAsync(from, to, bucket, chatFilter, ct).ConfigureAwait(false)).ToList();
-        var chatSuccesses = chatBuckets.Sum(point => (long)point.SuccessCount);
-        var chatOutputTokens = chatBuckets.Sum(point => (long)point.OutputTokens);
+        var chatBuckets = await _usage.GetSeriesAsync(window, chatFilter, ct).ConfigureAwait(false);
+        var chatSuccesses = chatBuckets.Sum(point => point.Successes);
+        var chatOutputTokens = chatBuckets.Sum(point => point.OutputTokens);
 
         var rows = new List<ModelRow>(2);
         if (chatSuccesses > 0)
@@ -142,7 +140,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             rows.Add(EstimateChat(providerId, modelId, chatBuckets, chatSuccesses, chatOutputTokens, zoneOverride, factorCache));
         }
 
-        var otherRequests = all.SuccessCount - chatSuccesses;
+        var otherRequests = all.Successes - chatSuccesses;
         if (otherRequests > 0)
         {
             rows.Add(new ModelRow(
@@ -167,7 +165,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
     private ModelRow EstimateChat(
         string providerId,
         string modelId,
-        IReadOnlyList<AIUsageTimeSeriesPoint> buckets,
+        IReadOnlyList<AICarbonUsageReader.Point> buckets,
         long successes,
         long outputTokens,
         string? zoneOverride,
@@ -202,7 +200,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
         var energy = default(RangeValue);
         foreach (var point in buckets)
         {
-            var impact = lookup.Factor.Apply(point.OutputTokens, point.SuccessCount);
+            var impact = lookup.Factor.Apply(point.OutputTokens, point.Successes);
             var bucketCo2e = Scale(impact.Co2eKg);
             var bucketEnergy = Scale(impact.EnergyKwh);
             series.Add(new AICarbonTimeSeriesPoint(point.Timestamp, bucketCo2e));
@@ -229,10 +227,10 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
     // One point for every bucket Umbraco.AI can return for the window, empty ones as zero, plus any bucket it
     // returned outside that grid so the points always add up to the total.
     private static IReadOnlyList<AICarbonTimeSeriesPoint> BuildTimeSeries(
-        DateTime from, DateTime to, AIUsagePeriod bucket, IEnumerable<ModelRow> estimated)
+        AICarbonUsageReader.Window window, IEnumerable<ModelRow> estimated)
     {
         var points = new Dictionary<DateTime, RangeValue>();
-        for (var start = FirstBucketStart(from, bucket); start < to; start = NextBucketStart(start, bucket))
+        foreach (var start in BucketStarts(window))
         {
             points[start] = default;
         }
@@ -248,6 +246,33 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             .Select(pair => new AICarbonTimeSeriesPoint(pair.Key, pair.Value))
             .ToList()
             .AsReadOnly();
+    }
+
+    // The grid of bucket starts. Local days start at each local midnight (see AICarbonLocalDays.LocalDayStartUtc);
+    // UTC buckets are described below. As with UTC buckets, a first day that starts before the window is left out.
+    private static IEnumerable<DateTime> BucketStarts(AICarbonUsageReader.Window window)
+    {
+        if (window.TimeZone is { } zone)
+        {
+            for (var day = AICarbonLocalDays.LocalDate(window.From, zone); ; day = day.AddDays(1))
+            {
+                var start = AICarbonLocalDays.LocalDayStartUtc(day, zone);
+                if (start >= window.To)
+                {
+                    yield break;
+                }
+
+                if (start >= window.From)
+                {
+                    yield return start;
+                }
+            }
+        }
+
+        for (var start = FirstBucketStart(window.From, window.Bucket); start < window.To; start = NextBucketStart(start, window.Bucket))
+        {
+            yield return start;
+        }
     }
 
     // Umbraco.AI stores each bucket at its UTC start and returns the stored buckets whose start lies in
@@ -269,9 +294,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             : new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, 0, 0, 0, DateTimeKind.Utc);
 
     private async Task<AICarbonEstimate> BuildEstimateAsync(
-        DateTime from,
-        DateTime to,
-        AIUsagePeriod bucket,
+        AICarbonUsageReader.Window window,
         bool analyticsEnabled,
         string? zoneOverride,
         IReadOnlyList<ModelRow> rows,
@@ -289,7 +312,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             OutputTokens: estimated.Sum(row => row.Estimate.OutputTokens),
             Equivalent: _carbonOptions.CurrentValue.ShowEquivalents ? AICarbonEquivalents.Create(co2eGrams.Max) : null);
 
-        var byFeature = await BuildFeatureBreakdownAsync(from, to, bucket, analyticsEnabled, estimated, ct).ConfigureAwait(false);
+        var byFeature = await BuildFeatureBreakdownAsync(window, analyticsEnabled, estimated, ct).ConfigureAwait(false);
 
         var zones = estimated
             .Select(row => row.Estimate.ElectricityZone)
@@ -300,13 +323,13 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             .AsReadOnly();
 
         return new AICarbonEstimate(
-            from,
-            to,
-            bucket,
+            window.From,
+            window.To,
+            window.Bucket,
             total,
             rows.Select(row => row.Estimate).ToList().AsReadOnly(),
             ByFeature: byFeature,
-            TimeSeries: BuildTimeSeries(from, to, bucket, estimated),
+            TimeSeries: BuildTimeSeries(window, estimated),
             NotEstimated: new AICarbonNotEstimated(
                 notEstimated.Sum(row => row.Requests), notEstimated.Sum(row => row.OutputTokens), notEstimated.Count),
             Method: new AICarbonMethod(
@@ -320,9 +343,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
 
     // The split needs Umbraco.AI to record feature types, and has nothing to split when analytics are off.
     private Task<AICarbonFeatureBreakdown> BuildFeatureBreakdownAsync(
-        DateTime from,
-        DateTime to,
-        AIUsagePeriod bucket,
+        AICarbonUsageReader.Window window,
         bool analyticsEnabled,
         IReadOnlyList<ModelRow> estimated,
         CancellationToken ct)
@@ -342,7 +363,7 @@ internal sealed class AICarbonEstimateService : IAICarbonEstimateService
             }
         }
 
-        return _featureSplitter.SplitAsync(from, to, bucket, models, ct);
+        return _featureSplitter.SplitAsync(window, models, ct);
     }
 
     private static RangeValue Scale(RangeValue kilo) => new(kilo.Min * MetricUnits.PerKilo, kilo.Max * MetricUnits.PerKilo);

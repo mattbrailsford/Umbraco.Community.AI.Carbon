@@ -25,7 +25,9 @@ internal static class EstimateServiceFactory
         IAICarbonModelResolver? extraResolver = null,
         IOptionsMonitor<AICarbonOptions>? zoneOptions = null,
         ILogger<ModelFactorResolver>? factorLogger = null,
-        bool? showEquivalents = null)
+        bool? showEquivalents = null,
+        int? hourlyRetentionDays = null,
+        TimeProvider? time = null)
     {
         if (usage is FakeUsageAnalyticsService fake)
         {
@@ -47,6 +49,7 @@ internal static class EstimateServiceFactory
         {
             Enabled = analyticsEnabled,
             IncludeUsageFeatureTypeDimension = featureTypeDimension,
+            UsageHourlyRetentionDays = hourlyRetentionDays ?? new AIAnalyticsOptions().UsageHourlyRetentionDays,
         });
 
         var resolvers = new List<IAICarbonModelResolver>
@@ -68,6 +71,7 @@ internal static class EstimateServiceFactory
             carbonMonitor,
             factorLogger ?? NullLogger<ModelFactorResolver>.Instance);
 
-        return new AICarbonEstimateService(usage, analyticsOptions, data, factors, new AICarbonFeatureSplitter(usage), carbonMonitor);
+        var reader = new AICarbonUsageReader(usage, analyticsOptions, time ?? TimeProvider.System);
+        return new AICarbonEstimateService(reader, analyticsOptions, data, factors, new AICarbonFeatureSplitter(reader), carbonMonitor);
     }
 }

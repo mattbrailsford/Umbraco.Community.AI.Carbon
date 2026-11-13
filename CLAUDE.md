@@ -4,9 +4,10 @@ Umbraco.Community.AI.Carbon: an unofficial community package that adds an estima
 
 ## Stack
 
-- Umbraco CMS: 18.x on this line (`Umbraco.Cms*` range `[18.0.0,18.999.999)` in `Directory.Packages.props`), .NET 10 (`net10.0`)
+- Umbraco CMS: 19.x on this line (`Umbraco.Cms*` range `[19.0.0-rc1,19.999.999)` in `Directory.Packages.props`), .NET 11 (`net11.0`)
 - Umbraco.AI: `Umbraco.AI.Core` as a NuGet package reference on the same major range. Never a project reference across repos.
 - Database: TODO (no persistence yet; decide during `umb-design` whether the package needs any)
+- Umbraco.Analytics.UI: a dependency (NuGet on `Web.StaticAssets`, npm `@umbraco/analytics-ui` types-only).
 - Frontend: Lit + UUI + Vite, in `src/Umbraco.Community.AI.Carbon.Web.StaticAssets/Client/` → `wwwroot/` (served at `App_Plugins/AICarbon`)
 
 ## Project layout
@@ -47,13 +48,13 @@ Each phase owns its own file in the feature's plan folder (`BRIEF.md`, `ARCHITEC
 `SPEC.md`, `STORIES.md` + `PLAN.md`, `BUILD-LOG.md`) — see the playbook's README for the
 file-ownership table.
 
-**Branch/worktree per feature:** new features start from `v18/dev` (branch-per-major model:
+**Branch/worktree per feature:** new features start from `v19/dev` (branch-per-major model:
 `vN/dev`, `vN/main`, `vN/feature/<name>`, matching ContentChecks and Umbraco.AI). Plan-folder
 files stay uncommitted through `umb-explore`/`umb-design`/`umb-plan`. `umb-build-loop` commits
 the plan folder to trunk and cuts the feature's branch/worktree — named after the plan folder —
 the moment building actually starts, not before (see `git-workflow`'s "Branch/worktree per
 feature" section). No `WorktreeCreate` hook is configured for this project, so `umb-build-loop`
-falls back to a plain `git checkout -b v18/feature/<feature-slug>` off trunk.
+falls back to a plain `git checkout -b v19/feature/<feature-slug>` off trunk.
 
 **Finding the current feature's plan folder:** once a branch/worktree exists for a feature,
 its name already carries the feature slug — strip a leading `vN/` and/or `<type>/` prefix (see
@@ -64,7 +65,7 @@ doesn't correspond to any plan folder).
 
 ## Conventions
 
-- Versioning: Nerdbank.GitVersioning (`version.json`); release refs are `(vN/)?main`, `hotfix/`, `release/` and `vN.x.y` tags. Package versions track the Umbraco CMS major (v18 line ships `18.x`, v17 line `17.x`, same package ids). Dotted prerelease identifiers only (`-beta.1`).
+- Versioning: Nerdbank.GitVersioning (`version.json`); release refs are `(vN/)?main`, `hotfix/`, `release/` and `vN.x.y` tags. Package versions track the Umbraco CMS major (v19 line ships `19.x`, v18 line `18.x`, v17 line `17.x`, same package ids). Dotted prerelease identifiers only (`-beta.1`).
 - Releasing: bump `version.json` on `vN/dev`, merge to `vN/main`, publish a GitHub Release tagged `vN.x.y` on `vN/main` with hand-written notes. `.github/workflows/release.yml` tests, packs and pushes via NuGet trusted publishing, and fails if the tag does not match the package version or the branch's CMS major, or if the tagged commit is not on `vN/main`. See the README "Releasing" section.
 - Central Package Management: versions only in `Directory.Packages.props`; ranges for Umbraco and Umbraco.AI.
 - Public wording: figures are always "estimated". Any CO2 claim must say how it is calculated. The README must keep the "unofficial, not Umbraco HQ" notice.

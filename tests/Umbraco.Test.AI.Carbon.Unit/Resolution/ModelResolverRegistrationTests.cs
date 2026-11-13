@@ -39,7 +39,7 @@ public class ModelResolverRegistrationTests
 
     private sealed class HouseEstimateService : IAICarbonEstimateService
     {
-        public Task<AICarbonEstimate> GetEstimateAsync(DateTime from, DateTime to, Umbraco.AI.Core.Analytics.Usage.AIUsagePeriod? granularity, CancellationToken cancellationToken = default)
+        public Task<AICarbonEstimate> GetEstimateAsync(DateTime from, DateTime to, Umbraco.AI.Core.Analytics.Usage.AIUsagePeriod? granularity, TimeZoneInfo? timeZone, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
     }
 

@@ -1,4 +1,3 @@
-using Umbraco.AI.Core.Analytics;
 using Umbraco.AI.Core.Analytics.Usage;
 using Umbraco.AI.Core.Models;
 
@@ -11,7 +10,7 @@ namespace Umbraco.Community.AI.Carbon.Core.Estimation;
 /// </summary>
 internal sealed class AICarbonFeatureSplitter
 {
-    private readonly IAIUsageAnalyticsService _usage;
+    private readonly AICarbonUsageReader _usage;
 
     /// <summary>One estimated chat row: the (provider, model) pair, its carbon factor and its chat usage in the total.</summary>
     /// <param name="ProviderId">The provider id.</param>
@@ -23,16 +22,14 @@ internal sealed class AICarbonFeatureSplitter
         string ProviderId, string ModelId, CarbonFactor Factor, long ChatSuccesses, long ChatOutputTokens);
 
     /// <summary>Initializes a new instance of the <see cref="AICarbonFeatureSplitter"/> class.</summary>
-    /// <param name="usage">Umbraco.AI's usage analytics.</param>
-    public AICarbonFeatureSplitter(IAIUsageAnalyticsService usage) => _usage = usage;
+    /// <param name="usage">Reads Umbraco.AI's usage analytics over the estimate's window.</param>
+    public AICarbonFeatureSplitter(AICarbonUsageReader usage) => _usage = usage;
 
     /// <summary>The split to report when Umbraco.AI does not record feature types.</summary>
     public static AICarbonFeatureBreakdown Unavailable { get; } = new(Available: false, Items: []);
 
     /// <summary>Builds the split.</summary>
-    /// <param name="from">Start of the window (UTC).</param>
-    /// <param name="to">End of the window (UTC).</param>
-    /// <param name="bucket">The granularity the estimate uses.</param>
+    /// <param name="window">The window the estimate was read over, so the split covers the same usage.</param>
     /// <param name="models">The estimated chat rows, whose usage the items add up to.</param>
     /// <param name="cancellationToken">Cancels the analytics reads.</param>
     /// <returns>
@@ -45,9 +42,7 @@ internal sealed class AICarbonFeatureSplitter
     /// aggregated, and its usage then shows up as <c>other</c>.
     /// </returns>
     public async Task<AICarbonFeatureBreakdown> SplitAsync(
-        DateTime from,
-        DateTime to,
-        AIUsagePeriod bucket,
+        AICarbonUsageReader.Window window,
         IReadOnlyList<EstimatedModel> models,
         CancellationToken cancellationToken)
     {
@@ -69,10 +64,10 @@ internal sealed class AICarbonFeatureSplitter
                     Capability = AICapability.Chat,
                     FeatureType = featureType,
                 };
-                var summary = await _usage.GetSummaryAsync(from, to, bucket, filter, cancellationToken).ConfigureAwait(false);
-                co2e = Add(co2e, model.Factor.Apply(summary.OutputTokens, summary.SuccessCount));
-                requests += summary.SuccessCount;
-                knownSuccesses[i] += summary.SuccessCount;
+                var summary = await _usage.GetTotalsAsync(window, filter, cancellationToken).ConfigureAwait(false);
+                co2e = Add(co2e, model.Factor.Apply(summary.OutputTokens, summary.Successes));
+                requests += summary.Successes;
+                knownSuccesses[i] += summary.Successes;
                 knownTokens[i] += summary.OutputTokens;
             }
 

@@ -53,9 +53,10 @@ internal sealed class CachedAICarbonEstimateService : IAICarbonEstimateService
         DateTime from,
         DateTime to,
         AIUsagePeriod? granularity,
+        TimeZoneInfo? timeZone,
         CancellationToken cancellationToken = default)
     {
-        var key = CreateKey(from, to, granularity);
+        var key = CreateKey(from, to, granularity, timeZone);
         if (_cache.Get(key) is AICarbonEstimate cached)
         {
             return cached;
@@ -63,21 +64,24 @@ internal sealed class CachedAICarbonEstimateService : IAICarbonEstimateService
 
         // A throw (invalid window, cancellation, a failing read) leaves nothing behind, so it is never cached.
         // Two concurrent first requests may both compute; the result is the same and the work is short.
-        var estimate = await _inner.GetEstimateAsync(from, to, granularity, cancellationToken).ConfigureAwait(false);
+        var estimate = await _inner.GetEstimateAsync(from, to, granularity, timeZone, cancellationToken).ConfigureAwait(false);
         _cache.Insert(key, () => estimate, _duration);
         return estimate;
     }
 
     // The inputs the estimate depends on, normalised as the calculating service does, plus the settings that
     // change its content, so toggling them is not hidden for the cache's lifetime.
-    private string CreateKey(DateTime from, DateTime to, AIUsagePeriod? granularity)
+    private string CreateKey(DateTime from, DateTime to, AIUsagePeriod? granularity, TimeZoneInfo? timeZone)
     {
         var fromUtc = AICarbonEstimateWindow.ToUtc(from);
         var toUtc = AICarbonEstimateWindow.ToUtc(to);
         var bucket = AICarbonEstimateWindow.ResolveGranularity(granularity, fromUtc, toUtc);
         var zone = _factors.GetZoneOverride() ?? "-";
+
+        // Only Daily buckets depend on the zone, so Hourly requests from different zones share an entry.
+        var timeZoneId = bucket == AIUsagePeriod.Daily ? timeZone?.Id ?? "-" : "-";
         var analytics = _analyticsOptions.CurrentValue;
 
-        return $"{KeyPrefix}|{fromUtc.Ticks}|{toUtc.Ticks}|{bucket}|{zone}|{analytics.Enabled}|{analytics.IncludeUsageFeatureTypeDimension}|{_carbonOptions.CurrentValue.ShowEquivalents}";
+        return $"{KeyPrefix}|{fromUtc.Ticks}|{toUtc.Ticks}|{bucket}|{timeZoneId}|{zone}|{analytics.Enabled}|{analytics.IncludeUsageFeatureTypeDimension}|{_carbonOptions.CurrentValue.ShowEquivalents}";
     }
 }

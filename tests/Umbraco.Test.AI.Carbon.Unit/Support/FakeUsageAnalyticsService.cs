@@ -23,6 +23,7 @@ namespace Umbraco.Community.AI.Carbon.Tests.Unit.Support;
 
 /// <param name="Requests">All requests, successful and failed.</param>
 /// <param name="FailedRequests">How many of <paramref name="Requests"/> failed.</param>
+/// <param name="DailyOnly">Whether the row's hourly statistics are cleaned up, so only Daily reads see it.</param>
 internal sealed record UsageRow(
     string ProviderId,
     string ModelId,
@@ -33,7 +34,8 @@ internal sealed record UsageRow(
     long InputTokens = 0,
     long? CachedInputTokens = null,
     string? FeatureType = null,
-    int FailedRequests = 0);
+    int FailedRequests = 0,
+    bool DailyOnly = false);
 
 internal sealed class FakeUsageAnalyticsService : IAIUsageAnalyticsService
 {
@@ -155,6 +157,11 @@ internal sealed class FakeUsageAnalyticsService : IAIUsageAnalyticsService
         var granularity = DetermineGranularity(from, to, requestedGranularity);
         var rows = _rows.Select(r => IncludeFeatureTypeDimension ? r : r with { FeatureType = null }).Where(r =>
         {
+            if (r.DailyOnly && granularity == AIUsagePeriod.Hourly)
+            {
+                return false;
+            }
+
             var bucket = BucketStart(r.Timestamp, granularity);
             return bucket >= from && bucket < to;
         });

@@ -39,6 +39,7 @@ public class GetEstimateController : EstimateControllerBase
     /// <param name="from">Start of the period (inclusive, ISO 8601).</param>
     /// <param name="to">End of the period (exclusive, ISO 8601).</param>
     /// <param name="granularity">Optional bucket size (Hourly or Daily). When omitted, the same automatic choice Umbraco.AI makes.</param>
+    /// <param name="timeZone">Optional IANA time zone name (for example Europe/Copenhagen). Daily buckets are then the days of that zone, as in Umbraco.AI's Usage tab; when omitted they are UTC days.</param>
     /// <returns>The estimate.</returns>
     [HttpGet]
     [MapToApiVersion("1.0")]
@@ -49,16 +50,20 @@ public class GetEstimateController : EstimateControllerBase
         CancellationToken cancellationToken,
         [BindRequired] DateTime from,
         [BindRequired] DateTime to,
-        AIUsagePeriod? granularity = null)
+        AIUsagePeriod? granularity = null,
+        string? timeZone = null)
     {
-        if (EstimateRequestValidator.Validate(from, to, granularity) is { } problem)
+        if (EstimateRequestValidator.Validate(from, to, granularity, timeZone) is { } problem)
         {
             return InvalidField(problem.Field, problem.Message);
         }
 
+        // The validator has accepted the name, so this finds the zone (or none, for UTC days).
+        EstimateRequestValidator.TryFindTimeZone(timeZone, out var zone);
+
         try
         {
-            var estimate = await _estimateService.GetEstimateAsync(from, to, granularity, cancellationToken);
+            var estimate = await _estimateService.GetEstimateAsync(from, to, granularity, zone, cancellationToken);
             return Ok(_umbracoMapper.Map<EstimateResponseModel>(estimate));
         }
         catch (ArgumentException ex) when (ex.ParamName is "from" or "to")

@@ -58,6 +58,7 @@ fi
 case "$VERSION_MAJOR" in
     17) CLEAN_VERSION="7.*" ;;
     18) CLEAN_VERSION="8.*" ;;
+    19) CLEAN_VERSION="19.*-*" ;; # prerelease floating range until 19 is stable
     *)  CLEAN_VERSION="" ;;
 esac
 
@@ -105,7 +106,7 @@ popd > /dev/null
 
 # Step 4: Umbraco.AI from NuGet (same CMS major), then the local package meta-project
 echo "Adding Umbraco.AI (v$VERSION_MAJOR.*)..."
-dotnet add "$DEMO_SITE_DIR/Umbraco.Community.AI.Carbon.DemoSite.csproj" package Umbraco.AI --version "$VERSION_MAJOR.*"
+dotnet add "$DEMO_SITE_DIR/Umbraco.Community.AI.Carbon.DemoSite.csproj" package Umbraco.AI --version "$VERSION_MAJOR.*-*"
 echo "Adding project reference to Umbraco.Community.AI.Carbon..."
 dotnet add "$DEMO_SITE_DIR/Umbraco.Community.AI.Carbon.DemoSite.csproj" reference \
     "src/Umbraco.Community.AI.Carbon/Umbraco.Community.AI.Carbon.csproj"

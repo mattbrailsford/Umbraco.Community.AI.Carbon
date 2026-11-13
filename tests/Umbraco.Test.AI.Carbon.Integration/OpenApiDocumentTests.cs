@@ -63,6 +63,20 @@ public class OpenApiDocumentTests : ManagementApiTest<BackOfficeController>
     }
 
     [Test]
+    public async Task DescribesTheOptionalTimeZoneQueryParameterAsAString()
+    {
+        using var document = await GetDocumentAsync();
+        var parameters = document.RootElement.GetProperty("paths")
+            .GetProperty($"/umbraco{CarbonWebConstants.ManagementApiBackofficePath}/v1/{CarbonWebConstants.Estimate.RouteSegment}")
+            .GetProperty("get").GetProperty("parameters").EnumerateArray().ToList();
+
+        var timeZone = parameters.Single(parameter => parameter.GetProperty("name").GetString() == "timeZone");
+        Assert.That(
+            (timeZone.GetProperty("in").GetString(), timeZone.TryGetProperty("required", out var required) && required.GetBoolean(), timeZone.GetProperty("schema").GetProperty("type").GetString()),
+            Is.EqualTo(("query", false, "string")));
+    }
+
+    [Test]
     public async Task DescribesRequestCountsAsPlainIntegers()
     {
         using var document = await GetDocumentAsync();
