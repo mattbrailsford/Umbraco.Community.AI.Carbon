@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        base: [v18/dev, v17/dev]
+        base: [v19/dev, v18/dev, v17/dev]
     env:
       GH_TOKEN: ${{ github.token }}
       UPSTREAM: mlco2/ecologits

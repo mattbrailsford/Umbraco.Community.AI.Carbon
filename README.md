@@ -12,18 +12,19 @@ Adds an estimated CO2 dashboard to [Umbraco.AI](https://github.com/umbraco/Umbra
 
 ## Requirements
 
-- Umbraco CMS 18
-- Umbraco.AI 18 (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `18.x`)
+- Umbraco CMS 19 on .NET 11
+- Umbraco.AI 19.0.0-rc.1 or later (`Umbraco.AI.Core` and `Umbraco.AI.Web`, `19.x`)
 - Umbraco.AI usage analytics switched on. They are on by default (`Umbraco:AI:Analytics:Enabled`). The "By feature" split also needs `Umbraco:AI:Analytics:IncludeUsageFeatureTypeDimension`, which is on by default too.
 
 Each Umbraco major has its own version line of this package, which depends on the matching Umbraco CMS and Umbraco.AI major:
 
 | Umbraco CMS | Umbraco.AI | Package | Branch |
 |-------------|------------|---------|--------|
+| 19 | 19.x (19.0.0-rc.1 or later) | 19.x | `v19/dev` |
 | 18 | 18.x | 18.x | `v18/dev` |
 | 17 (17.4.0 or later) | 17.x | 17.x | `v17/dev` |
 
-This is the Umbraco CMS 18 line.
+This is the Umbraco CMS 19 line.
 
 ## Install
 
@@ -31,7 +32,7 @@ This is the Umbraco CMS 18 line.
 dotnet add package Umbraco.Community.AI.Carbon --prerelease
 ```
 
-NuGet picks the version line that matches your Umbraco CMS major (`18.x` for CMS 18, `17.x` for CMS 17).
+NuGet picks the version line that matches your Umbraco CMS major (`19.x` for CMS 19, `18.x` for CMS 18, `17.x` for CMS 17).
 
 Open the **AI** section, then **Analytics**, then the **CO2** tab. Anyone who can open the AI section can see it. The dashboard offers the last 24 hours, 7 days or 30 days.
 
@@ -133,13 +134,13 @@ Create the demo site (gitignored, under `demos/`) with `scripts/install-demo-sit
 
 ## Releasing
 
-Package versions track the Umbraco CMS major: this line (`v18/*` branches) ships `18.x`, the v17 line ships `17.x`, under the same package ids. Each line is released from its own `vN/main` branch.
+Package versions track the Umbraco CMS major: this line (`v19/*` branches) ships `19.x`, the v18 line ships `18.x`, the v17 line ships `17.x`, under the same package ids. Each line is released from its own `vN/main` branch.
 
 To cut a release:
 
-1. Set `version` in `version.json` on `vN/dev` (for example `18.0.0-beta.1` or `18.0.0`). Use dotted prerelease identifiers only (`-beta.1`, never `-beta1`).
+1. Set `version` in `version.json` on `vN/dev` (for example `19.0.0-rc.1` or `19.0.0`). Use dotted prerelease identifiers only (`-beta.1`, never `-beta1`).
 2. Merge `vN/dev` into `vN/main`.
-3. Create a GitHub Release with the tag `vN.x.y` (for example `v18.0.0-beta.1`), targeting `vN/main`, with hand-written release notes. The tagged commit must be on `vN/main`; the release workflow checks this and fails otherwise. Tick "pre-release" for prerelease versions. Publishing the release triggers `.github/workflows/release.yml`.
+3. Create a GitHub Release with the tag `vN.x.y` (for example `v19.0.0-rc.1`), targeting `vN/main`, with hand-written release notes. The tagged commit must be on `vN/main`; the release workflow checks this and fails otherwise. Tick "pre-release" for prerelease versions. Publishing the release triggers `.github/workflows/release.yml`.
 
 The workflow first checks that the tag matches the computed package version, the CMS major of the branch, and that the tagged commit is on `vN/main`. It then builds the frontend and the solution, runs the frontend and .NET tests, packs, and, in a separate publish job that has no access to the build steps, pushes to nuget.org using **Trusted Publishing** (OIDC). No long-lived API key is stored in the repo. Pull requests and pushes to `vN/dev` run the same build and tests (frontend and .NET) through `.github/workflows/ci.yml`, without packing or publishing.
 
@@ -152,7 +153,7 @@ One-time setup:
 
 ### Keeping EcoLogits data current
 
-`.github/workflows/ecologits-sync.yml` runs every Monday (and on demand from the Actions tab, optionally with a `tag` input) and checks the latest [EcoLogits release](https://github.com/mlco2/ecologits/releases). If it is newer than the pinned version (`DataVersion` in `EcoLogitsDataRepository.cs`), it opens one PR per version line (`v18/dev` and `v17/dev`) on a branch like `v18/chore/ecologits-x.y.z`. The PR updates the embedded data files and every reference to the version, using `scripts/bump-ecologits-version.sh <tag>`, which you can also run by hand. The PR body says whether the upstream files we hand-ported to C# changed (with a diff). Those ports and their header tags are never updated automatically.
+`.github/workflows/ecologits-sync.yml` runs every Monday (and on demand from the Actions tab, optionally with a `tag` input) and checks the latest [EcoLogits release](https://github.com/mlco2/ecologits/releases). If it is newer than the pinned version (`DataVersion` in `EcoLogitsDataRepository.cs`), it opens one PR per version line (`v19/dev`, `v18/dev` and `v17/dev`) on a branch like `v19/chore/ecologits-x.y.z`. The PR updates the embedded data files and every reference to the version, using `scripts/bump-ecologits-version.sh <tag>`, which you can also run by hand. The PR body says whether the upstream files we hand-ported to C# changed (with a diff). Those ports and their header tags are never updated automatically.
 
 - The workflow needs an `ECOLOGITS_SYNC_TOKEN` repo secret to open PRs: a fine-grained personal access token for this repo with Contents and Pull requests set to read and write. This repo has "Allow GitHub Actions to create and approve pull requests" turned off, so the default `GITHUB_TOKEN` cannot open them. PRs opened with this token also get CI. Fine-grained tokens expire, so renew the token before it does, or the weekly run will start failing.
 - Alternative without a token: tick Settings > Actions > General > Workflow permissions > "Allow GitHub Actions to create and approve pull requests". PRs then open, but CI does not run on them (PRs from `GITHUB_TOKEN` do not start other workflows). Push an empty commit or close and reopen the PR to trigger CI.

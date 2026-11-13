@@ -4,8 +4,8 @@
     "private": true,
     "description": "Root package for Umbraco.Community.AI.Carbon frontend development",
     "engines": {
-        "node": ">=22.17.1",
-        "npm": ">=10.9.2"
+        "node": ">=24.13",
+        "npm": ">=11"
     },
     "workspaces": [
         "src/Umbraco.Community.AI.Carbon.Web.StaticAssets/Client"
