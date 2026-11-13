@@ -2,6 +2,7 @@ import type { TooltipItem } from "@umbraco/analytics-ui/external/chart.js";
 import { describe, expect, it } from "vitest";
 import { stubColors, uauiChartOptions } from "../test-support/analytics-ui/chart.stub.js";
 import { buildTrendChartConfig, withAlpha, type TrendLegendLabels } from "./trend-chart-config.js";
+import { formatBucketTitle } from "./trend-format.js";
 
 const colors = stubColors;
 const look = uauiChartOptions(document.body, "bar");
@@ -180,5 +181,101 @@ describe("Feature: withAlpha", () => {
 
     it("returns the fallback for a colour it can't read", () => {
         expect(withAlpha("not-a-colour", 0.5, "fallback")).toBe("fallback");
+    });
+});
+
+describe("Feature: trend chart compared with a previous period", () => {
+    const compare = [
+        { timestamp: "2026-09-01T00:00:00Z", co2eGrams: { min: 2, max: 4 } },
+        { timestamp: "2026-09-02T00:00:00Z", co2eGrams: { min: 6, max: 10 } },
+    ];
+    const withCompare = (points = series, previous = compare, labels?: TrendLegendLabels) =>
+        buildTrendChartConfig(points, "Daily", colors, look, undefined, labels, previous);
+    const compareDataset = (cfg = withCompare()) => cfg.data.datasets[2] as unknown as Record<string, unknown>;
+    const cbs = (cfg = withCompare()) => cfg.options!.plugins!.tooltip!.callbacks as { title: Function; label: Function };
+    const filter = (cfg = withCompare()) => cfg.options!.plugins!.tooltip!.filter as Function;
+
+    it("adds no dataset without a comparison", () => {
+        expect(build(series).data.datasets).toHaveLength(2);
+    });
+
+    it("adds no dataset for an empty comparison", () => {
+        expect(withCompare(series, []).data.datasets).toHaveLength(2);
+    });
+
+    it("draws the previous period's midpoint as a line, point i against point i", () => {
+        expect([compareDataset().type, compareDataset().data]).toEqual(["line", [3, 8]]);
+    });
+
+    it("leaves the labels to the current period", () => {
+        expect(withCompare().data.labels).toEqual(series.map((p) => p.timestamp));
+    });
+
+    it("draws the line dashed and in the palette's compare colour", () => {
+        expect([compareDataset().borderColor, compareDataset().borderDash]).toEqual(["compare", [5, 4]]);
+    });
+
+    it("draws it under the current line", () => {
+        expect(Number(compareDataset().order)).toBeGreaterThan(-1);
+        expect(Number(compareDataset().order)).toBeLessThan(Number(config().data.datasets[1].order));
+    });
+
+    it("leaves points empty where the previous period is shorter", () => {
+        const longer = [...series, { timestamp: "2026-10-03T00:00:00Z", co2eGrams: { min: 1, max: 1 } }];
+        expect(compareDataset(withCompare(longer)).data).toEqual([3, 8, null]);
+    });
+
+    it("drops points where the previous period is longer", () => {
+        const longer = [...compare, { timestamp: "2026-09-03T00:00:00Z", co2eGrams: { min: 9, max: 9 } }];
+        expect(compareDataset(withCompare(series, longer)).data).toEqual([3, 8]);
+    });
+
+    it("breaks the line at a missing point instead of bridging it", () => {
+        expect(compareDataset().spanGaps).toBe(false);
+    });
+
+    it("names the line with the localized comparison label", () => {
+        expect(compareDataset(withCompare(series, compare, { range: "r", middle: "m", comparison: "Sammenligning" })).label).toBe("Sammenligning");
+    });
+
+    it("names it Comparison by default", () => {
+        expect(compareDataset().label).toBe("Comparison");
+    });
+
+    it("keeps the current period's bars and line as they were", () => {
+        expect(withCompare().data.datasets.slice(0, 2)).toEqual(config().data.datasets);
+    });
+
+    it("shows the previous period's line in the tooltip where it has a point", () => {
+        expect([filter()(itemAt(1, 2)), filter()(itemAt(1, 1))]).toEqual([true, false]);
+    });
+
+    it("shows no previous line where the previous period has no point", () => {
+        const longer = [...series, { timestamp: "2026-10-03T00:00:00Z", co2eGrams: { min: 1, max: 1 } }];
+        expect(filter(withCompare(longer))(itemAt(2, 2))).toBe(false);
+    });
+
+    it("lists the current period's line before the previous period's", () => {
+        const sort = withCompare().options!.plugins!.tooltip!.itemSort as Function;
+        expect([sort(itemAt(0, 2), itemAt(0, 0)) > 0, sort(itemAt(0, 0), itemAt(0, 2)) < 0]).toEqual([true, true]);
+    });
+
+    it("gives the previous period's line its own date, name and figure, with the range", () => {
+        expect(cbs().label(itemAt(0, 2))).toBe(`Comparison (${formatBucketTitle(compare[0].timestamp, "Daily")}): ≈ 3 g CO2e (2–4 g CO2e)`);
+    });
+
+    it("gives the current period's line its figure as before, under the current date", () => {
+        expect([cbs().title([itemAt(0)]), cbs().label(itemAt(0))]).toEqual(["1 Oct 2026", "≈ 6 g CO2e (4.5–7.5 g CO2e)"]);
+    });
+
+    it("reads both periods' dates one by one when the periods differ in length", () => {
+        expect(cbs().label(itemAt(1, 2))).toContain(formatBucketTitle(compare[1].timestamp, "Daily"));
+    });
+
+    it("picks the axis unit from the larger period, so a bigger previous period is not squashed", () => {
+        const big = [{ timestamp: "2026-09-01T00:00:00Z", co2eGrams: { min: 4000, max: 6000 } }];
+        const units: string[] = [];
+        buildTrendChartConfig(series, "Daily", colors, look, (unit) => (units.push(unit), unit), undefined, big);
+        expect(units).toEqual(["kg"]);
     });
 });

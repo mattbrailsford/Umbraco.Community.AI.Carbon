@@ -13,14 +13,15 @@ const row = (overrides: Partial<EstimateModelRowModel>): EstimateModelRowModel =
     ...overrides,
 });
 
-async function render(rows?: EstimateModelRowModel[]) {
+async function render(rows?: EstimateModelRowModel[], compareRows?: EstimateModelRowModel[]) {
     const element = new AICarbonModelTableElement();
     element.rows = rows;
+    element.compareRows = compareRows;
     document.body.appendChild(element);
     await element.updateComplete;
     // `uaui-data-table` is not registered in tests, so its properties are read straight off the element.
     const table = element.shadowRoot!.querySelector("uaui-data-table") as
-        | (Element & { columns: Array<{ label: string }>; rows: Array<{ modelId: string }>; sort: unknown })
+        | (Element & { columns: Array<{ label: string }>; rows: Array<{ modelId: string }>; compareRows: Array<{ modelId: string; usage: string; co2eMid?: number; requests: number }>; sort: unknown })
         | null;
     return { element, table };
 }
@@ -133,5 +134,41 @@ describe("Feature: aicarbon-model-table element", () => {
             const { table } = await render([row({})]);
             expect(table!.hasAttribute("loading")).toBe(false);
         });
+    });
+});
+
+describe("Feature: aicarbon-model-table compared with a previous period", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    it("passes the compared rows with only their key and CO2e midpoint, so Requests and Output Tokens get no badge", async () => {
+        const { table } = await render([row({ modelId: "a" })], [row({ modelId: "a", co2eGrams: { min: 2, max: 4 }, requests: 7 })]);
+        expect(table!.compareRows).toEqual([{ providerId: "openai", modelId: "a", usage: "chat", co2eMid: 3 }]);
+    });
+
+    it("passes no compared rows without a comparison", async () => {
+        const { table } = await render([row({})]);
+        expect(table!.compareRows).toEqual([]);
+    });
+
+    it("gives the CO2e column a fall-is-good compare badge", async () => {
+        const { table } = await render([row({})], []);
+        const columns = (table as unknown as { columns: Array<{ key: string; meta?: { lowerIsBetter?: boolean } }> }).columns;
+        expect(columns.find((c) => c.key === "co2eMid")!.meta).toEqual({ lowerIsBetter: true });
+    });
+
+    it("leaves the requests column neutral, so a change in requests is neither good nor bad", async () => {
+        const { table } = await render([row({})], []);
+        const columns = (table as unknown as { columns: Array<{ key: string; meta?: unknown }> }).columns;
+        expect(columns.find((c) => c.key === "requests")!.meta).toBeUndefined();
+    });
+
+    it("keeps the compared rows when the rows change but the comparison does not", async () => {
+        const { element, table } = await render([row({ modelId: "a" })], [row({ modelId: "a" })]);
+        const before = table!.compareRows;
+        element.rows = [row({ modelId: "b" })];
+        await element.updateComplete;
+        expect(table!.compareRows).toBe(before);
     });
 });

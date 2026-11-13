@@ -9,9 +9,10 @@ function estimate(notEstimatedModels: number, co2eGrams = { min: 1.2, max: 8.4 }
     } as EstimateResponseModel;
 }
 
-async function render(value: EstimateResponseModel) {
+async function render(value: EstimateResponseModel, compare?: EstimateResponseModel) {
     const element = new AICarbonSummaryCardsElement();
     element.estimate = value;
+    element.compare = compare;
     document.body.appendChild(element);
     await element.updateComplete;
     // Properties are read off the tile elements (unregistered in tests, so plain HTMLElements).
@@ -129,5 +130,22 @@ describe("Feature: aicarbon-summary-cards element", () => {
             const tiles = await renderState({}, estimate(0));
             expect(tiles.some((t) => t.hasAttribute("loading") || t.hasAttribute("error") || t.hasAttribute("no-data"))).toBe(false);
         });
+    });
+});
+
+describe("Feature: aicarbon-summary-cards compared with a previous period", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+    const previous = estimate(0, { min: 2, max: 4 });
+
+    it("passes previous to the CO2e and energy tiles only: counts show no change badge", async () => {
+        const tiles = await render(estimate(1), previous);
+        expect(tiles.map((t) => t.previous)).toEqual([3, 1.9, undefined, undefined]);
+    });
+
+    it("treats a fall as good for the CO2e and energy tiles", async () => {
+        const tiles = await render(estimate(1), previous);
+        expect(tiles.map((t) => t.lowerIsBetter)).toEqual([true, true, false, false]);
     });
 });

@@ -55,6 +55,8 @@ export default {
             "Estimated CO2e over time, {bucket} from {from} to {to}, shown as range bars with a middle line. The highest period is up to {high}.",
         trend_legendRange: "Likely range",
         trend_legendMiddle: "Middle estimate",
+        trend_legendComparison: "Comparison",
+        trend_summaryComparison: " Compared with {from} to {to}.",
         equivalent_srPrefix: "Estimated CO2e is ",
         equivalent_phoneChargesLessThanOne: "Less than charging a phone once",
         equivalent_phoneChargeOne: "Up to about the same as charging a phone once",

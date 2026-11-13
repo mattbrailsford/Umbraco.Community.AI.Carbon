@@ -53,6 +53,11 @@ export function buildFeatureRows(items: readonly EstimateFeatureItemModel[]): Fe
     });
 }
 
+/** The compared period's rows, cut down to the row's key and CO2e midpoint: the only column that gets a change badge (more requests is not "better" on a CO2 page). */
+export function buildFeatureCompareRows(items: readonly EstimateFeatureItemModel[]): Array<Pick<FeatureRowViewModel, "key" | "co2eMid">> {
+    return buildFeatureRows(items).map(({ key, co2eMid }) => ({ key, co2eMid }));
+}
+
 /** Adds each row's localized name as `feature`, the field the Feature column reads. */
 export function withFeatureNames(rows: readonly FeatureRowViewModel[], t: LocalizeWithDefault): FeatureRowViewModel[] {
     return rows.map((row) => ({ ...row, feature: row.labelKey ? t(row.labelKey, row.fallbackLabel) : row.fallbackLabel }));
@@ -85,6 +90,8 @@ export function buildFeatureColumns(t: LocalizeWithDefault): UauiTableColumn[] {
             align: "end",
             sortable: true,
             sortAs: "number",
+            // Less CO2e than the compared period is the good direction, for the cell's compare badge.
+            meta: { lowerIsBetter: true },
         },
     ];
 }

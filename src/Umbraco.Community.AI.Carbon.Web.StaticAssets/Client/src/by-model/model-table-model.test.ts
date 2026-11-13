@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EstimateModelRowModel } from "../api/types.gen.js";
-import { buildModelColumns, buildModelRows, MODEL_ROW_KEY } from "./model-table-model.js";
+import { buildModelColumns, buildModelRows, MODEL_ROW_KEY, type ModelRowViewModel } from "./model-table-model.js";
 
 const estimated: EstimateModelRowModel = {
     providerId: "anthropic",
@@ -139,5 +139,41 @@ describe("Feature: by-model columns", () => {
     it("uses the localized label when there is one", () => {
         const localized = buildModelColumns((key, fallback) => (key === "aiCarbon_byModel_model" ? "Modell" : fallback));
         expect(localized[0].label).toBe("Modell");
+    });
+});
+
+describe("Feature: model rows matched across periods", () => {
+    const api = (overrides: Partial<EstimateModelRowModel>): EstimateModelRowModel => ({
+        providerId: "openai",
+        modelId: "gpt-x",
+        status: "Estimated",
+        co2eGrams: { min: 1, max: 3 },
+        requests: 1,
+        outputTokens: 1,
+        warnings: [],
+        ...overrides,
+    });
+    const keyOf = (r: ModelRowViewModel) => MODEL_ROW_KEY.map((field) => r[field as keyof ModelRowViewModel]).join("|");
+
+    it("keys a model the same in both periods when only its status changed (Estimated, then UnknownModel)", () => {
+        const [now] = buildModelRows([api({})]);
+        const [then] = buildModelRows([api({ status: "UnknownModel", co2eGrams: null })]);
+        expect(keyOf(now)).toBe(keyOf(then));
+    });
+
+    it("gives a row with no estimate no midpoint, so a compare badge has nothing to measure", () => {
+        const [then] = buildModelRows([api({ status: "UnknownModel", co2eGrams: null })]);
+        expect(then.co2eMid).toBeUndefined();
+    });
+
+    it("keeps a chat row and a non-chat row of the same model apart", () => {
+        const [chat, other] = buildModelRows([api({}), api({ status: "UnsupportedCapability", co2eGrams: null })]);
+        expect(keyOf(chat)).not.toBe(keyOf(other));
+    });
+
+    it("keys a model only one period has by its own fields, so it matches nothing", () => {
+        const keys = buildModelRows([api({ modelId: "new" })]).map(keyOf);
+        const compareKeys = buildModelRows([api({ modelId: "old" })]).map(keyOf);
+        expect(keys.filter((key) => compareKeys.includes(key))).toEqual([]);
     });
 });

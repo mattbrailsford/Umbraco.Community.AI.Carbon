@@ -404,15 +404,6 @@ describe("Feature: CO2 tab states", () => {
             expect(requests[1].from.getTime()).toBeLessThan(requests[0].from.getTime());
         });
 
-        it("does not reload when only the comparison changes", async () => {
-            const requests: AICarbonEstimateRequest[] = [];
-            const { element, context } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }));
-            await flush(element);
-            context!.setDateRange({ ...lastWeek, compare: { mode: "previous-period", from: "2026-10-31", to: "2026-11-06" } });
-            await flush(element);
-            expect(requests).toHaveLength(1);
-        });
-
         it("lets the latest range win when changes overlap", async () => {
             const releases: Array<(r: AICarbonEstimateResult) => void> = [];
             const { element, context } = await renderIn(() => new Promise((resolve) => releases.push(resolve)));
@@ -424,6 +415,261 @@ describe("Feature: CO2 tab states", () => {
             await flush(element);
             const tiles = part(element, "aicarbon-summary-cards") as unknown as { estimate: EstimateResponseModel };
             expect(tiles.estimate.total.requests).toBe(9);
+        });
+    });
+
+    describe("Scenario: comparing with a previous period", () => {
+        const previousPeriod = { mode: "previous-period", from: "2026-10-31", to: "2026-11-06" };
+        const withCompare: AnalyticsDateRange = { ...lastWeek, compare: previousPeriod };
+        const tiles = (element: AICarbonWorkspaceViewElement) =>
+            part(element, "aicarbon-summary-cards") as unknown as { estimate?: EstimateResponseModel; compare?: EstimateResponseModel };
+        // The compare window of `lastWeek` starts around 31 October, the main one around 7 November, in any zone.
+        const isCompare = (request: AICarbonEstimateRequest) => request.from.getTime() < Date.parse("2026-11-04T00:00:00Z");
+
+        it("makes one call when no comparison is on", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }));
+            await flush(element);
+            expect(requests).toHaveLength(1);
+        });
+
+        it("starts both requests before either answers, so they run in parallel", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn((request) => (requests.push(request), new Promise(() => {})), withCompare);
+            await flush(element);
+            expect(requests).toHaveLength(2);
+        });
+
+        it("asks for the compare window with the main window's granularity and zone", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), withCompare);
+            await flush(element);
+            const [main, compare] = requests;
+            expect([compare.granularity, compare.timeZone]).toEqual([main.granularity, main.timeZone]);
+            expect(compare.to.getTime()).toBeLessThanOrEqual(main.from.getTime() + 3_600_000);
+        });
+
+        it("keeps the main granularity when the compared period has another length", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const oneDay: AnalyticsDateRange = {
+                range: { from: "2026-11-13", to: "2026-11-13", preset: "today" },
+                compare: { mode: "custom", from: "2026-11-01", to: "2026-11-10" },
+            };
+            const { element } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), oneDay);
+            await flush(element);
+            expect(requests.map((r) => r.granularity)).toEqual(["Hourly", "Hourly"]);
+        });
+
+        it("hands the compare estimate to the tiles, next to the main one", async () => {
+            const { element } = await renderIn(async (request) => ({ data: estimate(isCompare(request) ? 3 : 8) }), withCompare);
+            await flush(element);
+            expect([tiles(element).estimate?.total.requests, tiles(element).compare?.total.requests]).toEqual([8, 3]);
+        });
+
+        it("reloads only the comparison when only the comparison changes", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element, context } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }));
+            await flush(element);
+            context!.setDateRange(withCompare);
+            await flush(element);
+            expect(requests).toHaveLength(2);
+            expect(requests[1].to.getTime()).toBeLessThanOrEqual(requests[0].from.getTime() + 3_600_000);
+        });
+
+        it("does not touch the figures when only the comparison changes", async () => {
+            const { element, context } = await renderIn(async () => ({ data: estimate(5) }));
+            await flush(element);
+            const before = tiles(element).estimate;
+            context!.setDateRange(withCompare);
+            await flush(element);
+            expect(tiles(element).estimate).toBe(before);
+        });
+
+        it("reloads both when the range changes with a comparison on", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element, context } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), withCompare);
+            await flush(element);
+            context!.setDateRange({ ...longerRange, compare: { mode: "previous-period", from: "2026-09-15", to: "2026-10-14" } });
+            await flush(element);
+            expect(requests).toHaveLength(4);
+        });
+
+        it("makes no call and drops the comparison when it is turned off", async () => {
+            const requests: AICarbonEstimateRequest[] = [];
+            const { element, context } = await renderIn(async (request) => (requests.push(request), { data: estimate(5) }), withCompare);
+            await flush(element);
+            context!.setDateRange(lastWeek);
+            await flush(element);
+            expect([requests.length, tiles(element).compare]).toEqual([2, undefined]);
+        });
+
+        // Either answer can come last, and a failed comparison must leave the figures alone in both orders.
+        it.each([
+            ["before", true],
+            ["after", false],
+        ])("keeps the main figures and shows no comparison when the compare request fails %s the figures arrive", async (_when, compareFirst) => {
+            const { element } = await renderIn(async (request) => {
+                if (!isCompare(request)) {
+                    if (compareFirst) await settle();
+                    return { data: estimate(8) };
+                }
+                if (!compareFirst) await settle();
+                return failure(500);
+            }, withCompare);
+            await flush(element);
+            await flush(element);
+            expect([tiles(element).estimate?.total.requests, tiles(element).compare, element.shadowRoot!.querySelector("uaui-error-state")]).toEqual([8, undefined, null]);
+        });
+
+        it.each([
+            ["before", true],
+            ["after", false],
+        ])("keeps the main figures and shows no comparison when the compare request is aborted by something else %s the figures arrive", async (_when, compareFirst) => {
+            const { element } = await renderIn(async (request) => {
+                if (!isCompare(request)) {
+                    if (compareFirst) await settle();
+                    return { data: estimate(8) };
+                }
+                if (!compareFirst) await settle();
+                return failure(undefined, true);
+            }, withCompare);
+            await flush(element);
+            await flush(element);
+            expect([tiles(element).estimate?.total.requests, tiles(element).compare]).toEqual([8, undefined]);
+        });
+
+        it("does not wait for a slow comparison to show the figures", async () => {
+            const { element } = await renderIn(
+                (request) => (isCompare(request) ? new Promise(() => {}) : Promise.resolve({ data: estimate(8) })),
+                withCompare,
+            );
+            await flush(element);
+            expect([tiles(element).estimate?.total.requests, loading(element, "aicarbon-summary-cards")]).toEqual([8, false]);
+        });
+
+        it("lets the latest comparison win when changes overlap", async () => {
+            const releases: Array<(r: AICarbonEstimateResult) => void> = [];
+            const { element, context } = await renderIn(() => new Promise((resolve) => releases.push(resolve)));
+            await flush(element);
+            releases[0]({ data: estimate(5) });
+            context!.setDateRange(withCompare);
+            await flush(element);
+            context!.setDateRange({ ...lastWeek, compare: { mode: "previous-year", from: "2025-11-07", to: "2025-11-13" } });
+            await flush(element);
+            releases[2]({ data: estimate(9) });
+            releases[1]({ data: estimate(1) });
+            await flush(element);
+            expect(tiles(element).compare?.total.requests).toBe(9);
+        });
+
+        it("aborts a comparison in flight when it is turned off", async () => {
+            const signals: AbortSignal[] = [];
+            const { element, context } = await renderIn((_request, signal) => (signals.push(signal), new Promise(() => {})), withCompare);
+            await flush(element);
+            context!.setDateRange(lastWeek);
+            await flush(element);
+            expect(signals.map((signal) => signal.aborted)).toEqual([false, true]);
+        });
+
+        it("aborts both requests when the tab is left", async () => {
+            const signals: AbortSignal[] = [];
+            const { element } = await renderIn((_request, signal) => (signals.push(signal), new Promise(() => {})), withCompare);
+            await flush(element);
+            element.remove();
+            expect(signals.map((signal) => signal.aborted)).toEqual([true, true]);
+        });
+
+        describe("a range change while a comparison is on", () => {
+            const compareB = { mode: "previous-period", from: "2026-09-15", to: "2026-10-14" };
+            const rangeB: AnalyticsDateRange = { ...longerRange, compare: compareB };
+            // Calls come in this order: A (figures), A' (its comparison), B, B'. Each answers with its own request count.
+            const COUNTS = { A: 1, "A'": 2, B: 3, "B'": 4 } as const;
+            const names = ["A", "A'", "B", "B'"] as const;
+
+            async function setup() {
+                const answers: Array<(r: AICarbonEstimateResult) => void> = [];
+                const { element, context } = await renderIn(() => new Promise((resolve) => answers.push(resolve)), withCompare);
+                await flush(element);
+                const answer = (name: (typeof names)[number], result?: AICarbonEstimateResult) =>
+                    answers[names.indexOf(name)](result ?? { data: estimate(COUNTS[name]) });
+                // Every pairing the tab may show: figures with their own comparison, or with none.
+                const seen: Array<[number | undefined, number | undefined]> = [];
+                const look = async () => {
+                    await flush(element);
+                    seen.push([tiles(element).estimate?.total.requests, tiles(element).compare?.total.requests]);
+                    const chart = part(element, "aicarbon-trend-chart") as unknown as { comparePoints?: unknown };
+                    const model = part(element, "aicarbon-model-table") as unknown as { compareRows?: unknown };
+                    // The chart and the tables follow the tiles: a comparison is passed to all of them or none.
+                    expect([chart.comparePoints !== undefined, model.compareRows !== undefined]).toEqual([
+                        tiles(element).compare !== undefined,
+                        tiles(element).compare !== undefined,
+                    ]);
+                };
+                // The first figures and their comparison are in before the range changes.
+                answer("A");
+                answer("A'");
+                await flush(element);
+                return { answer, context, look, seen };
+            }
+            const allowed = [
+                [undefined, undefined],
+                [1, undefined],
+                [1, 2],
+                [3, undefined],
+                [3, 4],
+            ];
+
+            it("keeps the old figures with their own comparison until the new figures arrive", async () => {
+                const { context, look, seen } = await setup();
+                await look();
+                context!.setDateRange(rangeB);
+                await look();
+                expect(seen[seen.length - 1]).toEqual([1, 2]);
+            });
+
+            it("shows no comparison when the new comparison arrives before the new figures", async () => {
+                const { answer, context, look, seen } = await setup();
+                context!.setDateRange(rangeB);
+                await look();
+                answer("B'");
+                await look();
+                expect(seen[seen.length - 1]).toEqual([1, undefined]);
+                answer("B");
+                await look();
+                expect(seen[seen.length - 1]).toEqual([3, 4]);
+                expect(seen.every((pair) => allowed.some((ok) => ok[0] === pair[0] && ok[1] === pair[1]))).toBe(true);
+            });
+
+            it("shows no comparison when the new figures arrive before the new comparison, until it does", async () => {
+                const { answer, context, look, seen } = await setup();
+                context!.setDateRange(rangeB);
+                await look();
+                answer("B");
+                await look();
+                expect(seen[seen.length - 1]).toEqual([3, undefined]);
+                answer("B'");
+                await look();
+                expect(seen[seen.length - 1]).toEqual([3, 4]);
+            });
+
+            it("never pairs the old figures with the new comparison when the new figures are cancelled by something else", async () => {
+                const { answer, context, look, seen } = await setup();
+                context!.setDateRange(rangeB);
+                await look();
+                answer("B'");
+                answer("B", failure(undefined, true));
+                await look();
+                expect(seen.every((pair) => allowed.some((ok) => ok[0] === pair[0] && ok[1] === pair[1]))).toBe(true);
+                expect(seen[seen.length - 1]).toEqual([1, undefined]);
+            });
+
+            it("drops the comparison at once when only the comparison changes", async () => {
+                const { context, look, seen } = await setup();
+                await look();
+                context!.setDateRange({ ...lastWeek, compare: { mode: "previous-year", from: "2025-11-07", to: "2025-11-13" } });
+                await look();
+                expect(seen[seen.length - 1]).toEqual([1, undefined]);
+            });
         });
     });
 

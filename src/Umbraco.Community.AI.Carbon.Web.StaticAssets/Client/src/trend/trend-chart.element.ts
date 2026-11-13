@@ -58,6 +58,10 @@ export class AICarbonTrendChartElement extends UmbLitElement {
     @property({ type: String })
     granularity: AiUsagePeriod = "Daily";
 
+    /** The compared period's points, drawn as a dashed line lined up by position. Unset draws no comparison. */
+    @property({ type: Array })
+    comparePoints?: EstimateTimeSeriesPointModel[];
+
     /**
      * The estimate is being loaded. With no points yet the box keeps its heading and height and shows a placeholder where
      * the chart goes; with points the chart stays under a loading bar.
@@ -100,7 +104,7 @@ export class AICarbonTrendChartElement extends UmbLitElement {
                 this.#chart = this.chartFactory(this._canvas, this.#buildConfig(this.points));
                 if (this.#chart) this.#stopWatchingTheme = this.themeWatcher(this.#chart, (colors) => this.#applyConfig(colors));
             }
-        } else if (changed.has("points") || changed.has("granularity")) {
+        } else if (changed.has("points") || changed.has("granularity") || changed.has("comparePoints")) {
             this.#applyConfig();
         }
     }
@@ -115,7 +119,9 @@ export class AICarbonTrendChartElement extends UmbLitElement {
             {
                 range: this.localize.termOrDefault("aiCarbon_trend_legendRange", "Likely range"),
                 middle: this.localize.termOrDefault("aiCarbon_trend_legendMiddle", "Middle estimate"),
+                comparison: this.localize.termOrDefault("aiCarbon_trend_legendComparison", "Comparison"),
             },
+            this.comparePoints,
         );
     }
 
@@ -144,7 +150,7 @@ export class AICarbonTrendChartElement extends UmbLitElement {
                 <div class="chart-container" aria-busy=${this.loading ? "true" : "false"}>
                     ${hasPoints && this.loading ? html`<uui-loader-bar></uui-loader-bar>` : nothing}
                     ${hasPoints
-                        ? html`<canvas role="img" aria-label=${describeTrend(this.points!, this.granularity, t)}></canvas>`
+                        ? html`<canvas role="img" aria-label=${describeTrend(this.points!, this.granularity, t, this.comparePoints)}></canvas>`
                         : html`<div class="skeleton" aria-hidden="true"></div>`}
                 </div>
             </uui-box>

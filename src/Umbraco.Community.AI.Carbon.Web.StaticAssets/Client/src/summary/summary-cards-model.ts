@@ -16,6 +16,10 @@ export interface SummaryCardModel {
      * can't be shown. A compare `previous` goes beside it, on the same scale.
      */
     current?: number;
+    /** The same number in the compared period, on the same scale as `current`; unset without a comparison, or when it can't be shown. */
+    previous?: number;
+    /** A fall is the good direction (CO2e and energy). Only those two tiles ever get a `previous`; counts show no change badge. */
+    lowerIsBetter: boolean;
     /** True when the estimate has this figure but it can't be computed (not a finite number), so the tile says "no data" rather than a bare dash. Never set without an estimate. */
     noData: boolean;
     /** Tints the tile: only "models not estimated" sets it, "warning" above 0 and neutral at 0. */
@@ -33,19 +37,21 @@ const CARDS: ReadonlyArray<Pick<SummaryCardModel, "kind" | "icon">> = [
  * Turns an estimate into the four summary cards. Pure, so it can be tested without rendering. Without an estimate
  * (loading, or failed) it still lists the four cards, with no figures, so the view can draw them as skeletons or error dashes.
  */
-export function buildSummaryCards(estimate?: EstimateResponseModel): SummaryCardModel[] {
-    if (!estimate) return CARDS.map((card) => ({ ...card, range: "", noData: false }));
+export function buildSummaryCards(estimate?: EstimateResponseModel, compare?: EstimateResponseModel): SummaryCardModel[] {
+    if (!estimate) return CARDS.map((card) => ({ ...card, range: "", noData: false, lowerIsBetter: false }));
     const notEstimatedModels = estimate.notEstimated.models;
-    const cards: Array<Omit<SummaryCardModel, "noData">> = [
+    const cards: Array<Omit<SummaryCardModel, "noData" | "lowerIsBetter">> = [
         {
             ...CARDS[0],
             ...fromFigure(formatCo2eFigure(estimate.total.co2eGrams), formatCo2eRangeParts(estimate.total.co2eGrams).value),
             current: midpoint(estimate.total.co2eGrams),
+            previous: compare && midpoint(compare.total.co2eGrams),
         },
         {
             ...CARDS[1],
             ...fromFigure(formatEnergyFigure(estimate.total.energyWh), formatEnergyRangeParts(estimate.total.energyWh).value),
             current: midpoint(estimate.total.energyWh),
+            previous: compare && midpoint(compare.total.energyWh),
         },
         {
             ...CARDS[2],
@@ -61,7 +67,12 @@ export function buildSummaryCards(estimate?: EstimateResponseModel): SummaryCard
             status: notEstimatedModels > 0 ? "warning" : "default",
         },
     ];
-    return cards.map((card) => ({ ...card, noData: !Number.isFinite(card.current) }));
+    // Requests and "not estimated" get no previous: Analytics.UI's badge has no neutral colour, so more requests would show as good.
+    return cards.map((card) => ({
+        ...card,
+        noData: !Number.isFinite(card.current),
+        lowerIsBetter: card.kind === "co2e" || card.kind === "energy",
+    }));
 }
 
 /** `rangeNumbers` is the range without its unit; the figure's own `range` is empty when the ends read the same. */

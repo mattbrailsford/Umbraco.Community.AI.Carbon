@@ -9,6 +9,7 @@ import "../co2e-cell/index.js";
 import "../missing-text-cell/index.js";
 import {
     buildModelColumns,
+    buildModelCompareRows,
     buildModelRows,
     MODEL_ROW_KEY,
     MODEL_TABLE_DEFAULT_SORT,
@@ -26,6 +27,10 @@ export class AICarbonModelTableElement extends UmbLitElement {
     @property({ type: Array })
     rows?: EstimateModelRowModel[];
 
+    /** The compared period's rows. A row with a match (same provider, model and usage) shows a change badge on its CO2e figure. */
+    @property({ type: Array })
+    compareRows?: EstimateModelRowModel[];
+
     /** The estimate is being loaded: with no rows yet the table draws skeleton rows, with rows it keeps them under a loading bar. */
     @property({ type: Boolean })
     loading = false;
@@ -38,11 +43,15 @@ export class AICarbonModelTableElement extends UmbLitElement {
     @state()
     private _tableRows: ModelRowViewModel[] = [];
 
+    @state()
+    private _compareTableRows: ReturnType<typeof buildModelCompareRows> = [];
+
     #labels = "";
 
     protected override willUpdate(changed: PropertyValues<this>) {
         super.willUpdate(changed);
         if (changed.has("rows")) this._tableRows = buildModelRows(this.rows ?? []);
+        if (changed.has("compareRows")) this._compareTableRows = buildModelCompareRows(this.compareRows ?? []);
         const columns = buildModelColumns((key, fallback) => this.localize.termOrDefault(key, fallback));
         const labels = JSON.stringify(columns.map((column) => column.label));
         if (labels !== this.#labels) {
@@ -61,6 +70,7 @@ export class AICarbonModelTableElement extends UmbLitElement {
                     .rowKey=${MODEL_ROW_KEY}
                     .columns=${this._columns}
                     .rows=${this._tableRows}
+                    .compareRows=${this._compareTableRows}
                     .sort=${MODEL_TABLE_DEFAULT_SORT}
                     ?loading=${this.loading}
                 >

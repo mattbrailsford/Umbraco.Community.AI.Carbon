@@ -4,17 +4,23 @@ import { co2eAxisUnit, formatCo2eAxisValue, formatCo2eFigure } from "../estimate
 import { toTrendBand } from "../estimate/trend-dataset.js";
 import { formatBucketLabel, formatBucketTitle } from "./trend-format.js";
 
-export type TrendChartConfiguration = ChartConfiguration<"bar" | "line", (number | [number, number])[], string>;
+export type TrendChartConfiguration = ChartConfiguration<"bar" | "line", (number | [number, number] | null)[], string>;
 
 const MAX_X_TICKS = 12;
 
-/** Legend text for the two datasets (the element passes localized text). */
+/** Legend text for the datasets (the element passes localized text). */
 export interface TrendLegendLabels {
     range: string;
     middle: string;
+    /** The compared period's line. A neutral word, as Analytics.UI's own chart uses: it can be the previous period, the previous year or a custom range. */
+    comparison?: string;
 }
 
-const DEFAULT_LEGEND_LABELS: TrendLegendLabels = { range: "Likely range", middle: "Middle estimate" };
+const DEFAULT_LEGEND_LABELS: TrendLegendLabels = { range: "Likely range", middle: "Middle estimate", comparison: "Comparison" };
+
+/** The compare line's width and dash, as Analytics.UI draws its own compare lines. */
+const COMPARE_LINE_WIDTH = 1.75;
+const COMPARE_DASH = [5, 4];
 
 const RGB = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/;
 const COLOR_SRGB = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/;
@@ -48,10 +54,19 @@ export function buildTrendChartConfig(
     look: ChartOptions<"bar">,
     yAxisTitle: (unitLabel: string) => string = (unit) => `${unit} CO2e`,
     legendLabels: TrendLegendLabels = DEFAULT_LEGEND_LABELS,
+    comparePoints?: readonly EstimateTimeSeriesPointModel[],
 ): TrendChartConfiguration {
     const band = toTrendBand(points);
-    const unit = co2eAxisUnit(Math.max(0, ...band.upper));
+    // The compared period lines up by position (point i under point i); where it is shorter, the line stops, and where it is longer, the extra points are dropped.
+    const compare = comparePoints && comparePoints.length > 0 ? toTrendBand(comparePoints.slice(0, points.length)) : undefined;
+    const unit = co2eAxisUnit(Math.max(0, ...band.upper, ...(compare?.upper ?? [])));
     const middle = band.lower.map((min, index) => (min + band.upper[index]) / 2);
+    const compareMiddle = compare ? band.labels.map((_, i): number | null => (i < compare.lower.length ? (compare.lower[i] + compare.upper[i]) / 2 : null)) : undefined;
+    const compareIndex = 2;
+    const figureText = (min: number, max: number) => {
+        const figure = formatCo2eFigure({ min, max });
+        return figure.range ? `${figure.centralText} (${figure.range})` : figure.centralText;
+    };
     // One point has no line to draw, so show it as a dot.
     const pointRadius = points.length === 1 ? 3 : 0;
     const series = colors.series[0];
@@ -90,6 +105,25 @@ export function buildTrendChartConfig(
                     // A lower order draws later, so the line sits on top of the bars.
                     order: 1,
                 },
+                ...(compareMiddle
+                    ? [
+                          {
+                              type: "line" as const,
+                              label: legendLabels.comparison ?? DEFAULT_LEGEND_LABELS.comparison!,
+                              data: compareMiddle,
+                              borderColor: colors.compare,
+                              backgroundColor: colors.compare,
+                              borderWidth: COMPARE_LINE_WIDTH,
+                              borderDash: COMPARE_DASH,
+                              pointRadius: compareMiddle.filter((v) => v !== null).length === 1 ? 3 : 0,
+                              pointHoverRadius: 4,
+                              pointBackgroundColor: colors.compare,
+                              cubicInterpolationMode: "monotone" as const,
+                              spanGaps: false,
+                              order: 0,
+                          },
+                      ]
+                    : []),
             ],
         },
         options: {
@@ -114,15 +148,24 @@ export function buildTrendChartConfig(
                     bodyColor: colors.text,
                     borderColor: colors.grid,
                     borderWidth: 1,
-                    // Both datasets describe one bucket, so show one line (from the bar dataset).
+                    // The bar and the middle line describe one bucket, so show one line (from the bar dataset);
+                    // the compared period adds a second line of its own, when it has a point here.
                     // The unit is picked per bucket here (as on the summary cards, so a tiny bucket reads "4 mg"),
                     // while the axis uses one unit for the whole series. The difference is on purpose.
-                    filter: (item) => item.datasetIndex === 0,
+                    // The current period first, then the compared one (the compare line draws first, so it would lead otherwise).
+                    itemSort: (a, b) => a.datasetIndex - b.datasetIndex,
+                    filter: (item) =>
+                        item.datasetIndex === 0 || (item.datasetIndex === compareIndex && compare !== undefined && item.dataIndex < compare.lower.length),
                     callbacks: {
                         title: (items) => (items[0] ? formatBucketTitle(band.labels[items[0].dataIndex], granularity) : ""),
                         label: (item) => {
-                            const figure = formatCo2eFigure({ min: band.lower[item.dataIndex], max: band.upper[item.dataIndex] });
-                            return figure.range ? `${figure.centralText} (${figure.range})` : figure.centralText;
+                            if (item.datasetIndex === compareIndex && compare) {
+                                // The compared period's own date, so the two lines can be told apart.
+                                const date = formatBucketTitle(compare.labels[item.dataIndex], granularity);
+                                const name = legendLabels.comparison ?? DEFAULT_LEGEND_LABELS.comparison!;
+                                return `${name} (${date}): ${figureText(compare.lower[item.dataIndex], compare.upper[item.dataIndex])}`;
+                            }
+                            return figureText(band.lower[item.dataIndex], band.upper[item.dataIndex]);
                         },
                     },
                 },

@@ -63,6 +63,14 @@ export class AICarbonCo2eCellElement extends UmbLitElement implements UauiTableC
         </span>`;
     }
 
+    /**
+     * The change from the same row in the compared period, worked out from the column's value (the midpoint) by Analytics.UI's
+     * badge, which finds the compare row through the table. It draws nothing for a row with no match, or one without a figure.
+     */
+    #renderCompare() {
+        return html`<uaui-table-compare-badge .column=${this.column} .item=${this.item} .value=${this.value}></uaui-table-compare-badge>`;
+    }
+
     /** The range with a link word for screen readers ("Likely 1.2–8.4 g CO2e"); the visible line stays the bare range. */
     #renderRange(range: string) {
         const spoken = this.localize.termOrDefault("aiCarbon_card_range", "Likely {range}").replace("{range}", () => range);
@@ -78,7 +86,7 @@ export class AICarbonCo2eCellElement extends UmbLitElement implements UauiTableC
         if (status === "Estimated") {
             return html`<div class="figure">
                 <div class="figure-text">
-                    <div class="central">${co2e}</div>
+                    <div class="central">${co2e}${this.#renderCompare()}</div>
                     ${co2eRange ? this.#renderRange(co2eRange) : nothing}
                 </div>
                 ${this.#renderWarnings(warnings)}
@@ -118,6 +126,11 @@ export class AICarbonCo2eCellElement extends UmbLitElement implements UauiTableC
             .range,
             .not-estimated {
                 white-space: nowrap;
+            }
+
+            uaui-table-compare-badge {
+                --_uaui-table-compare-badge-gap: 6px;
+                line-height: 1.4;
             }
 
             .range,

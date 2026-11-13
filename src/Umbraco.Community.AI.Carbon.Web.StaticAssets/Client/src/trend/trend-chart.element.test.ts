@@ -223,4 +223,20 @@ describe("Feature: aicarbon-trend-chart loading", () => {
         element.remove();
     });
 });
+
+    it("draws the comparison when given comparison points, and rebuilds the same chart when they change", async () => {
+        const { element, chart, factory } = setup();
+        element.points = points;
+        await mount(element);
+        expect(chart.data.datasets).toHaveLength(0);
+        const compare: EstimateTimeSeriesPointModel[] = [{ timestamp: "2026-09-01T00:00:00Z", co2eGrams: { min: 2, max: 4 } }];
+        element.comparePoints = compare;
+        await element.updateComplete;
+        expect(factory).toHaveBeenCalledTimes(1);
+        expect(chart.data.datasets.map((d) => d.label)).toEqual(["Likely range", "Middle estimate", "Comparison"]);
+        element.comparePoints = undefined;
+        await element.updateComplete;
+        expect(chart.data.datasets).toHaveLength(2);
+        element.remove();
+    });
 });

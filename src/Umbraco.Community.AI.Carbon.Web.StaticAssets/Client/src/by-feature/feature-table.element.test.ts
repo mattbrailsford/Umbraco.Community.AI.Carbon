@@ -14,12 +14,18 @@ const available: EstimateFeatureBreakdownModel = {
 type TableProps = Element & {
     columns: Array<{ label: string }>;
     rows: Array<{ feature: string; co2e: string; co2eRange: string }>;
+    compareRows: Array<{ key: string; co2eMid?: number }>;
     sort: unknown;
 };
 
-async function render(byFeature: EstimateFeatureBreakdownModel | undefined, analyticsEnabled: boolean | undefined) {
+async function render(
+    byFeature: EstimateFeatureBreakdownModel | undefined,
+    analyticsEnabled: boolean | undefined,
+    compareByFeature?: EstimateFeatureBreakdownModel,
+) {
     const element = new AICarbonFeatureTableElement();
     element.byFeature = byFeature;
+    element.compareByFeature = compareByFeature;
     element.analyticsEnabled = analyticsEnabled;
     document.body.appendChild(element);
     await element.updateComplete;
@@ -143,5 +149,48 @@ describe("Feature: aicarbon-feature-table element", () => {
             const { table } = await render(available, true);
             expect(table!.hasAttribute("loading")).toBe(false);
         });
+    });
+});
+
+describe("Feature: aicarbon-feature-table compared with a previous period", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    const before: EstimateFeatureBreakdownModel = {
+        available: true,
+        items: [
+            { featureType: "agent", requests: 20, co2eGrams: { min: 2, max: 4 } },
+            { featureType: "inline-chat", requests: 3, co2eGrams: { min: 0.1, max: 0.3 } },
+        ],
+    };
+
+    it("passes the compared rows keyed by feature type, the table's row-key", async () => {
+        const { table } = await render(available, true, before);
+        expect(table!.getAttribute("row-key")).toBe("key");
+        expect(table!.compareRows).toEqual([
+            { key: "agent", co2eMid: 3 },
+            { key: "inline-chat", co2eMid: 0.2 },
+        ]);
+    });
+
+    it("leaves a feature only one period has unmatched: prompt is not in the compared rows, inline-chat is not in the current ones", async () => {
+        const { table } = await render(available, true, before);
+        const current = table!.rows.map((r) => (r as unknown as { key: string }).key);
+        const compared = table!.compareRows.map((r) => r.key);
+        expect([current.filter((k) => !compared.includes(k)), compared.filter((k) => !current.includes(k))]).toEqual([
+            ["prompt", "brand-new"],
+            ["inline-chat"],
+        ]);
+    });
+
+    it("passes no compared rows when the compared breakdown is unavailable", async () => {
+        const { table } = await render(available, true, { available: false, items: [] });
+        expect(table!.compareRows).toEqual([]);
+    });
+
+    it("passes no compared rows without a comparison", async () => {
+        const { table } = await render(available, true);
+        expect(table!.compareRows).toEqual([]);
     });
 });

@@ -5,6 +5,7 @@ import { UmbTextStyles } from "@umbraco-cms/backoffice/style";
 import { UMB_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/workspace";
 import type { EstimateResponseModel } from "../api/types.gen.js";
 import {
+    windowForCompareRange,
     windowForDateRange,
     AICarbonEstimateRepository,
     type AICarbonEstimateError,
@@ -25,6 +26,9 @@ import "../summary/index.js";
 import "../trend/index.js";
 import { selectViewState, type ViewState } from "./view-state.js";
 
+/** Identifies the main range an estimate was loaded for. */
+const rangeKey = (range: { from: string; to: string }) => `${range.from}|${range.to}`;
+
 const SCOPE_FALLBACK =
     "AI provider side of chat requests only. Excludes your own servers, database and hosting.";
 
@@ -43,6 +47,7 @@ export type AICarbonEstimateLoader = (
 export class AICarbonWorkspaceViewElement extends UmbLitElement {
     #repository = new AICarbonEstimateRepository(this);
     #abortController?: AbortController;
+    #compareAbortController?: AbortController;
 
     /**
      * Test seam for the server call. Not a supported extension point.
@@ -54,13 +59,23 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     @state()
     private _estimate?: EstimateResponseModel;
 
+    /** The main range `_estimate` was loaded for. A comparison only goes with figures of the same range. */
+    private _estimateKey?: string;
+
+    /**
+     * The compared period's estimate, with the main range it was loaded for. Only ever decoration: when it is missing,
+     * failed, still loading, or for another range than the figures on screen, the tab shows no comparison.
+     */
+    @state()
+    private _compare?: { key: string; estimate: EstimateResponseModel };
+
     @state()
     private _error?: AICarbonEstimateError;
 
     @state()
     private _loading = false;
 
-    /** The range of Umbraco.AI's header picker. Kept whole so the comparison can use it later; only `range` is read today. */
+    /** The range of Umbraco.AI's header picker, with its comparison when one is on. */
     @state()
     private _dateRange?: AnalyticsDateRange;
 
@@ -78,6 +93,7 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     override disconnectedCallback() {
         super.disconnectedCallback();
         this.#abortController?.abort();
+        this.#compareAbortController?.abort();
         this._loading = false;
     }
 
@@ -102,11 +118,15 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
             );
         }
         const range = next ?? defaultAnalyticsDateRange();
-        const previous = this._dateRange?.range;
+        const previous = this._dateRange;
         this._dateRange = range;
-        // A change to the comparison alone gives the same figures.
-        if (previous?.from === range.range.from && previous?.to === range.range.to) return;
-        void this.#load();
+        if (previous?.range.from !== range.range.from || previous?.range.to !== range.range.to) {
+            // A new range reloads both: the compared period moves with it.
+            void this.#load();
+        } else if (previous.compare?.from !== range.compare?.from || previous.compare?.to !== range.compare?.to) {
+            // A change to the comparison alone gives the same figures, so only the comparison reloads.
+            void this.#loadCompare(true);
+        }
     }
 
     async #load() {
@@ -118,7 +138,11 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         this._loading = true;
         // A retry starts from a clean slate; figures already on screen stay until replaced, while the chart and tables show a loading bar.
         this._error = undefined;
-        const { data, error } = await this.loader(windowForDateRange(this._dateRange.range), abortController.signal);
+        // Both requests start before either is awaited, so they run in parallel. The comparison never waits for or fails the figures.
+        const key = rangeKey(this._dateRange.range);
+        const request = this.loader(windowForDateRange(this._dateRange.range), abortController.signal);
+        void this.#loadCompare(false);
+        const { data, error } = await request;
 
         // A newer load, or leaving the tab, supersedes this one.
         if (abortController.signal.aborted) return;
@@ -130,8 +154,33 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
         }
 
         this._estimate = data;
+        this._estimateKey = key;
         this._error = error;
         this._loading = false;
+    }
+
+    /**
+     * Loads the compared period's estimate, with the main window's granularity and zone. A comparison is only shown
+     * beside figures of the range it was loaded for (`rangeKey`), so a range change can keep the old pair on screen
+     * until both new answers are in, whichever lands first. A change to the comparison alone drops the old one at
+     * once, since it no longer matches. A failure or a cancelled request leaves no comparison and no message: the
+     * figures it would have decorated stand on their own.
+     */
+    async #loadCompare(clearFirst: boolean) {
+        this.#compareAbortController?.abort();
+        const dateRange = this._dateRange;
+        if (clearFirst || !dateRange?.compare) this._compare = undefined;
+        if (!dateRange?.compare) return;
+        const abortController = new AbortController();
+        this.#compareAbortController = abortController;
+
+        const key = rangeKey(dateRange.range);
+        const request = windowForCompareRange(dateRange.compare, windowForDateRange(dateRange.range));
+        const { data } = await this.loader(request, abortController.signal);
+
+        // A newer comparison, a comparison switched off, or leaving the tab supersedes this one.
+        if (abortController.signal.aborted) return;
+        this._compare = data ? { key, estimate: data } : undefined;
     }
 
     async #onRetry() {
@@ -156,10 +205,16 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
     /** The page for the loading and content states: the same parts either way, so nothing jumps when the figures arrive. */
     #renderDashboard(estimate?: EstimateResponseModel) {
         const loading = this._loading;
+        // The comparison of another range than the figures shown would measure the wrong periods against each other.
+        const compare = estimate && this._compare && this._compare.key === this._estimateKey ? this._compare.estimate : undefined;
         return html`
             <div class="sections">
                 <section id="summary">
-                    <aicarbon-summary-cards .estimate=${estimate} ?loading=${loading}></aicarbon-summary-cards>
+                    <aicarbon-summary-cards
+                        .estimate=${estimate}
+                        .compare=${compare}
+                        ?loading=${loading}
+                    ></aicarbon-summary-cards>
                 </section>
                 ${estimate?.total.equivalent
                     ? html`<section id="equivalent">
@@ -169,16 +224,22 @@ export class AICarbonWorkspaceViewElement extends UmbLitElement {
                 <section id="trend">
                     <aicarbon-trend-chart
                         .points=${estimate?.timeSeries}
+                        .comparePoints=${compare?.timeSeries}
                         .granularity=${estimate?.granularity ?? "Daily"}
                         ?loading=${loading}
                     ></aicarbon-trend-chart>
                 </section>
                 <section id="by-model">
-                    <aicarbon-model-table .rows=${estimate?.byModel} ?loading=${loading}></aicarbon-model-table>
+                    <aicarbon-model-table
+                        .rows=${estimate?.byModel}
+                        .compareRows=${compare?.byModel}
+                        ?loading=${loading}
+                    ></aicarbon-model-table>
                 </section>
                 <section id="by-feature">
                     <aicarbon-feature-table
                         .byFeature=${estimate?.byFeature}
+                        .compareByFeature=${compare?.byFeature}
                         .analyticsEnabled=${estimate?.method.analyticsEnabled}
                         ?loading=${loading}
                     ></aicarbon-feature-table>

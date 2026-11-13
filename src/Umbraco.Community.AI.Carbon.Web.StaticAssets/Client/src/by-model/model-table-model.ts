@@ -60,6 +60,15 @@ export function buildModelRows(rows: readonly EstimateModelRowModel[]): ModelRow
 }
 
 /**
+ * The compared period's rows, cut down to what a badge may measure: the row's identity and its CO2e midpoint. The
+ * table's badge shows nothing for a column the compare row has no value for, so Requests and Output Tokens get none:
+ * more requests is not "better" on a CO2 page, and Analytics.UI's badge has no neutral colour.
+ */
+export function buildModelCompareRows(rows: readonly EstimateModelRowModel[]): Array<Pick<ModelRowViewModel, "providerId" | "modelId" | "usage" | "co2eMid">> {
+    return buildModelRows(rows).map(({ providerId, modelId, usage, co2eMid }) => ({ providerId, modelId, usage, co2eMid }));
+}
+
+/**
  * The table's columns. There is no status column: a row with no estimate says so in its CO2e cell.
  * Search covers the text columns only (the model's second line, the provider, counts as the model's text).
  */
@@ -73,6 +82,8 @@ export function buildModelColumns(t: LocalizeWithDefault): UauiTableColumn[] {
         sortable: true,
         sortAs: "number",
         reserveWarningSpace: true,
+        // Less CO2e than the compared period is the good direction, for the cell's compare badge.
+        meta: { lowerIsBetter: true },
     };
     return [
         {

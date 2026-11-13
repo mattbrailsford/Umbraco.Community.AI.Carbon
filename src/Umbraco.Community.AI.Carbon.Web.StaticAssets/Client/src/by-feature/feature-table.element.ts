@@ -8,6 +8,7 @@ import type { EstimateFeatureBreakdownModel } from "../api/types.gen.js";
 import "../co2e-cell/index.js";
 import {
     buildFeatureColumns,
+    buildFeatureCompareRows,
     buildFeatureRows,
     FEATURE_TABLE_DEFAULT_SORT,
     withFeatureNames,
@@ -32,6 +33,10 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
     @property({ attribute: false })
     byFeature?: EstimateFeatureBreakdownModel;
 
+    /** The compared period's breakdown. A feature with a match (same type) shows a change badge on its CO2e figure. */
+    @property({ attribute: false })
+    compareByFeature?: EstimateFeatureBreakdownModel;
+
     /** From the estimate's method info. Unknown (not loaded yet) renders nothing. */
     @property({ attribute: false })
     analyticsEnabled?: boolean;
@@ -48,9 +53,13 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
     @state()
     private _tableRows: FeatureRowViewModel[] = [];
 
+    @state()
+    private _compareTableRows: ReturnType<typeof buildFeatureCompareRows> = [];
+
     #labels = "";
     #names = "";
     #items?: readonly unknown[];
+    #compareItems?: readonly unknown[];
 
     #t = (key: string, fallback: string) => this.localize.termOrDefault(key, fallback);
 
@@ -69,6 +78,11 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
             this.#items = items;
             this.#names = names;
             this._tableRows = rows;
+        }
+        const compareItems = this.compareByFeature?.available ? this.compareByFeature.items : NO_ITEMS;
+        if (compareItems !== this.#compareItems) {
+            this.#compareItems = compareItems;
+            this._compareTableRows = buildFeatureCompareRows(compareItems);
         }
     }
 
@@ -97,6 +111,7 @@ export class AICarbonFeatureTableElement extends UmbLitElement {
                     )}
                     .columns=${this._columns}
                     .rows=${this._tableRows}
+                    .compareRows=${this._compareTableRows}
                     .sort=${FEATURE_TABLE_DEFAULT_SORT}
                     ?loading=${this.loading}
                 ></uaui-data-table>

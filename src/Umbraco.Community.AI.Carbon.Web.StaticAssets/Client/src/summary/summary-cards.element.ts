@@ -19,6 +19,10 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
     @property({ type: Object })
     estimate?: EstimateResponseModel;
 
+    /** The compared period's estimate. With it the tiles show how each figure changed; unset shows no change. */
+    @property({ type: Object })
+    compare?: EstimateResponseModel;
+
     /** The estimate is being loaded: tiles with no figures yet draw a skeleton, tiles with figures stay as they are. */
     @property({ type: Boolean })
     loading = false;
@@ -43,12 +47,14 @@ export class AICarbonSummaryCardsElement extends UmbLitElement {
     }
 
     override render() {
-        return html`<div class="grid">${buildSummaryCards(this.estimate).map(
+        return html`<div class="grid">${buildSummaryCards(this.estimate, this.compare).map(
             (card) => html`<uaui-kpi-tile
                 label=${this.localize.termOrDefault(`aiCarbon_card_${card.kind}_label`, LABELS[card.kind].label)}
                 icon=${card.icon}
                 .value=${card.value}
                 .current=${card.current}
+                .previous=${card.previous}
+                .lowerIsBetter=${card.lowerIsBetter}
                 .detail=${this.#detail(card)}
                 .color=${card.status}
                 ?loading=${this.loading}

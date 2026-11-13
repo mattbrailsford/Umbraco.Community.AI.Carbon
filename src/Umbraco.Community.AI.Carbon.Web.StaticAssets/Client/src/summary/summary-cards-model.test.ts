@@ -74,3 +74,35 @@ describe("Feature: summary cards", () => {
         });
     });
 });
+
+describe("Feature: summary cards compared with a previous period", () => {
+    const previous = {
+        total: { co2eGrams: { min: 2, max: 4 }, energyWh: { min: 1000, max: 1200 }, requests: 1000, outputTokens: 0 },
+        notEstimated: { requests: 0, outputTokens: 0, models: 5 },
+    } as EstimateResponseModel;
+    const cards = buildSummaryCards(estimate(1), previous);
+    const byKind = (kind: string) => cards.find((c) => c.kind === kind)!;
+
+    it("gives CO2e and energy the previous midpoint, on the scale of their current number", () => {
+        expect([byKind("co2e").previous, byKind("energy").previous]).toEqual([3, 1100]);
+    });
+
+    it("gives requests and models not estimated no previous, so those tiles have no badge (more requests is not better)", () =>
+        expect([byKind("requests").previous, byKind("notEstimated").previous]).toEqual([undefined, undefined]));
+
+    it("treats a fall as good for CO2e and energy only", () =>
+        expect(cards.map((c) => [c.kind, c.lowerIsBetter])).toEqual([
+            ["co2e", true],
+            ["energy", true],
+            ["requests", false],
+            ["notEstimated", false],
+        ]));
+
+    it("gives no previous without a comparison", () =>
+        expect(buildSummaryCards(estimate(1)).map((c) => c.previous)).toEqual([undefined, undefined, undefined, undefined]));
+
+    it("gives no previous for a figure the compared estimate can't compute", () => {
+        const broken = { ...previous, total: { ...previous.total, co2eGrams: { min: Number.NaN, max: 1 } } } as EstimateResponseModel;
+        expect(buildSummaryCards(estimate(1), broken).find((c) => c.kind === "co2e")!.previous).toBeUndefined();
+    });
+});

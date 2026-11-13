@@ -86,3 +86,13 @@ export function windowForDateRange(range: LocalDateRange, timeZone: string = bro
         timeZone,
     };
 }
+
+/**
+ * The request window for the compared period of a header range. It takes the main window's granularity and zone
+ * rather than working them out from its own length: the two estimates' buckets have to line up one by one, and
+ * a compare period of another length (a month against the one before it, or a custom range) would otherwise
+ * pick different buckets.
+ */
+export function windowForCompareRange(range: LocalDateRange, main: Pick<EstimateWindow, "granularity" | "timeZone">): EstimateWindow {
+    return { ...windowForDateRange(range, main.timeZone), granularity: main.granularity };
+}

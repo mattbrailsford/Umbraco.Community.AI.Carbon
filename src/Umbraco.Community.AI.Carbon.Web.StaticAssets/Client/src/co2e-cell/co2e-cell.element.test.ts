@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { AICarbonCo2eCellElement, type Co2eCellItem } from "./co2e-cell.element.js";
+import type { UauiTableColumn } from "@umbraco/analytics-ui";
 import type { Co2eColumnOptions } from "./co2e-cell.name.js";
 
-async function render(item: Co2eCellItem, column?: Co2eColumnOptions) {
+async function render(item: Co2eCellItem, column?: Partial<UauiTableColumn> & Co2eColumnOptions, value?: unknown) {
     const element = new AICarbonCo2eCellElement();
     if (column) element.column = { key: "co2eMid", label: "", ...column };
     element.item = item as Record<string, unknown>;
+    element.value = value;
     document.body.appendChild(element);
     await element.updateComplete;
     return element.shadowRoot!;
@@ -120,5 +122,31 @@ describe("Feature: aicarbon-co2e-cell element", () => {
             expect(element.shadowRoot!.querySelector("uaui-table-skeleton-cell")).toBeNull();
             expect(element.shadowRoot!.querySelector(".central")!.textContent).toBe("3 g CO2e");
         });
+    });
+});
+
+describe("Feature: aicarbon-co2e-cell compare badge", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+    });
+
+    const badge = (root: ShadowRoot) =>
+        root.querySelector("uaui-table-compare-badge") as (Element & { column: unknown; item: unknown; value: unknown }) | null;
+
+    it("hands Analytics.UI's badge the column, row and midpoint, so it finds the compare row itself", async () => {
+        const item = { status: "Estimated", co2e: "≈ 3 g CO2e", co2eRange: "" } as const;
+        const column = { key: "co2eMid", label: "", meta: { lowerIsBetter: true } };
+        const root = await render(item, column, 3);
+        expect([badge(root)!.column, badge(root)!.item, badge(root)!.value]).toEqual([expect.objectContaining(column), item, 3]);
+    });
+
+    it("sits on the figure's line", async () => {
+        const root = await render({ status: "Estimated", co2e: "≈ 3 g CO2e", co2eRange: "" }, undefined, 3);
+        expect(root.querySelector(".central uaui-table-compare-badge")).not.toBeNull();
+    });
+
+    it("has no badge for a row that is not estimated", async () => {
+        const root = await render({ status: "UnknownModel", co2e: "—", co2eRange: "" });
+        expect(badge(root)).toBeNull();
     });
 });

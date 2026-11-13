@@ -47,6 +47,7 @@ export function describeTrend(
     points: readonly EstimateTimeSeriesPointModel[],
     granularity: AiUsagePeriod,
     localize: LocalizeWithDefault = (_key, fallback) => fallback,
+    comparePoints?: readonly EstimateTimeSeriesPointModel[],
 ): string {
     if (points.length === 0) return "";
     const first = points[0];
@@ -55,7 +56,7 @@ export function describeTrend(
     const bucket = granularity === "Hourly"
         ? localize("aiCarbon_trend_hourly", "hourly")
         : localize("aiCarbon_trend_daily", "daily");
-    return localize(
+    const summary = localize(
         "aiCarbon_trend_summary",
         "Estimated CO2e over time, {bucket} from {from} to {to}, shown as range bars with a middle line. The highest period is up to {high}.",
     )
@@ -63,4 +64,12 @@ export function describeTrend(
         .replace("{from}", formatBucketTitle(first.timestamp, granularity))
         .replace("{to}", formatBucketTitle(last.timestamp, granularity))
         .replace("{high}", formatCo2eRange({ min: peak, max: peak }));
+    if (!comparePoints || comparePoints.length === 0) return summary;
+    // The comparison's own dates, since the line is the other period's figures lined up under this one's days.
+    return (
+        summary +
+        localize("aiCarbon_trend_summaryComparison", " Compared with {from} to {to}.")
+            .replace("{from}", formatBucketTitle(comparePoints[0].timestamp, granularity))
+            .replace("{to}", formatBucketTitle(comparePoints[comparePoints.length - 1].timestamp, granularity))
+    );
 }

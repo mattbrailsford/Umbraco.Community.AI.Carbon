@@ -103,6 +103,16 @@ describe("Feature: trend chart formatting", () => {
             );
         });
 
+        it("adds the comparison's own dates when a comparison is drawn", () => {
+            const compare = [
+                { timestamp: "2026-09-01T00:00:00Z", co2eGrams: { min: 1, max: 1 } },
+                { timestamp: "2026-09-02T00:00:00Z", co2eGrams: { min: 1, max: 1 } },
+            ];
+            expect(describeTrend(points, "Daily", undefined, compare)).toBe(
+                `${describeTrend(points, "Daily")} Compared with ${formatBucketTitle(compare[0].timestamp, "Daily")} to ${formatBucketTitle(compare[1].timestamp, "Daily")}.`,
+            );
+        });
+
         it("is empty without points", () => {
             expect(describeTrend([], "Daily")).toBe("");
         });
